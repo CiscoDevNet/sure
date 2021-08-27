@@ -1,5 +1,8 @@
 ## Change Log
-  v1.0.2
+ - v1.0.3
+  	- Added handler for python import error in 20.5/20.6
+	
+ - v1.0.2
   	- Minor cosmeric changes
   	
 - v1.0.1 
