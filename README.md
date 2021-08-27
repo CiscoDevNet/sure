@@ -28,7 +28,7 @@ Depending on access from vManage to the internet <br>
 
 If you have access to the internet from vManage, can clone the repository (containing the executable) <br>
 > git clone https://github.com/CiscoDevNet/sure.git<br>
-### This is Cisco Internal URL. External URL will be provided on release date
+
 
 **Option 2. Isolated environment.** <br>
 You will need to clone (using method 1) to an intermediate machine and copy to vManage, using scp. <br>
@@ -135,6 +135,7 @@ After executing the python/python3 command, there will be a input prompt to ente
 vmanage-cluster1:~$ python sure.py -u admin
 vManage Password:
 ```
+User can be operator/readonly,  no special privileges required
 
 ## Output
 **Normal Execution:**<br>
