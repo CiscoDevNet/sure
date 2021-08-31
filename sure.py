@@ -2,6 +2,9 @@
 
 #!/usr/bin/env python
 
+
+__sure_version =  "1.0.3"
+
 #Common Imports
 import os 
 try:
@@ -13,7 +16,7 @@ except ImportError:
 import re
 from datetime import datetime, timedelta
 from argparse import ArgumentParser
-import socket
+import socket	
 import subprocess
 import logging
 import time 
@@ -32,8 +35,6 @@ try:
 except:
 	#python2 Imports
 	import Queue
-
-__sure_version =  "1.0.3"
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Argument Parsing anf Validation 
@@ -143,7 +144,7 @@ def CSRFTokenpy3(vManageIP,JSessionID,Port):
 	if tokenID.status_code==200:
 		return tokenID.text
 	else:
-		print(" Please make if the vManage IP/URL is correct and JSessionID is valid ")
+		print(" Please check if the vManage IP/URL is correct and JSessionID is valid ")
 
 
 def getRequestpy3(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenID = None):
@@ -13725,7 +13726,7 @@ if __name__ == "__main__":
 	print('SDWAN SURE Report and Logs can be found at:')
 	print ('    -- SDWAN SURE  Report: {} '.format(report_file_path))
 	print ('    -- SDWAN SURE  Logs: {}\n'.format(log_file_path))
-	print('Reach out to sure\-tool\@cisco.com if you have any questions or feedback\n')
+	print('Reach out to sure-tool@cisco.com if you have any questions or feedback\n')
 
 
 
