@@ -1,9 +1,15 @@
 ## Change Log
  - v1.0.3
   	- Added handler for python import error in 20.5/20.6
+
+  	- Corrected the mailer details 
+
+  	- Deleting the cookies.txt file at the end of script execution
+
+  	- Cosmetic Changes 
 	
  - v1.0.2
-  	- Minor cosmeric changes
+  	- Minor cosmetic changes
   	
 - v1.0.1 
 	- #09:Check:vManage:Evaluate incoming DPI data size<br>
