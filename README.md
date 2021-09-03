@@ -40,7 +40,7 @@ You will need to clone (using method 1) to an intermediate machine and copy to v
 * Open sure_script.py file, select all and copy to clipboard
 * SSH to the vManage, and do vshell command
 * Open vi, press Esc i (letter i), then paste the content
-* Press Esc, wq (letters w,q) to save it
+* Press Esc, :wq (symbol : and letters w,q) to save it
 
 
 ## To get the latest version
@@ -81,7 +81,7 @@ python3 ./jamun/sure.py
 ```sh
 usage: sure.py [-h] [-q] [-v] [-d] -u USERNAME 
 
-SURE - SDWAN Uprade Readiness Engine - v1.0.2
+SURE - SDWAN Uprade Readiness Engine - v1.0.3
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -144,8 +144,12 @@ CLI Output on executing the script in normal mode.
 vmanage-cluster1:~$ python sure.py -u username 
 vManage Password:
 #########################################################
+###         SURE – Version 1.0.3                      ###
+#########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
+
+
 
 
 *Starting Checks, this may take several minutes
@@ -163,8 +167,11 @@ In the quiet execution mode it quietly performs all the checks and on completion
 vmanage-cluster1:~$ python sure.py -q -u username 
 vManage Password:
 #########################################################
+###         SURE – Version 1.0.3                      ###
+#########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
+
 
 
 *Starting Checks, this may take several minutes
@@ -179,8 +186,12 @@ In this mode the progress of the checks being performed can be monitored from th
 vmanage-cluster1:~$ python sure.py -v -u username 
 vManage Password:
 #########################################################
+###         SURE – Version 1.0.3                      ###
+#########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
+
+
 
 
 *Starting Checks, this may take several minutes
@@ -198,8 +209,12 @@ vManage Password:
 vmanage-cluster1:~$ python sure.py -d -u username 
 vManage Password:
 #########################################################
+###         SURE – Version 1.0.3                      ###
+#########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
+
+
 
 
 *Starting Checks, this may take several minutes
@@ -218,12 +233,14 @@ vManage Password:
 
 ```sh
 ******
-Cisco SDWAN SURE tool execution completed. 
-SDWAN SURE Report and Logs can be found at:
-    -- SDWAN SURE  Report: sdwan_sure/sure_report_17_07_2021_17_13_07.txt 
-    -- SDWAN SURE  Logs: sdwan_sure/sure_logs_17_07_2021_17_13_07.log 
+Cisco SDWAN SURE tool execution completed.
+
+Overall Assessment: 4 Critical errors, 2 Warnings, please check report for details.
+    -- Full Results Report: sdwan_sure/sure_report_03_09_2021_11_35_56.txt 
+    -- Logs: sdwan_sure/sure_logs_03_09_2021_11_35_56.log
 
 Reach out to sure-tool@cisco.com if you have any questions or feedback
+
 
 ```
 
