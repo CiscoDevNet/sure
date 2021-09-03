@@ -30,7 +30,6 @@ try:
 	import requests
 	import queue
 
-	from urllib3.exceptions import InsecureRequestWarning
 	requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
 except:
 	#python2 Imports
@@ -504,7 +503,7 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 				check_result = 'Failed'
 				check_analysis = 'xEdge device count is more than 1500, it exceeds supported scenarios.'
 				check_action = 'Please implement network changes to bring the scale into supported range'
-		elif cluster_size > 1:
+		elif cluster_size>1:
 			if vedge_count <= 2000 and memory_size < 64:
 				check_result = 'Failed'
 				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n 
@@ -1016,37 +1015,37 @@ def threadedpy3(f, daemon=False):
 		return t
 	return wrap
 
-
-
-
 @threadedpy3
-def criticalCheckseventeenpy3(vmanage_info,  system_ip):
-	ping_output = {}
-	ping_output_failed = {}
+def criticalCheckseventeenpy3(vmanage_info,  system_ip, log_file_logger):
+	try:
+		ping_output = {}
+		ping_output_failed = {}
 
-	for device in cluster_health_data['data'][0]['data']:
-		vmanage_system_ip = device['configJson']['system-ip']
-		vmanage_cluster_ip = device['configJson']['deviceIP']
-		vmanage_host_name = device['configJson']['host-name']
-		if vmanage_system_ip != system_ip:
-			output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
-			output = output.split('\n')[-3:]
-			xmit_stats = output[0].split(",")
-			timing_stats = xmit_stats[3]
-			packet_loss = float(xmit_stats[2].split("%")[0])
-			ping_output[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
-			if packet_loss != 0:
-				ping_output_failed[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
+		for device in cluster_health_data['data'][0]['data']:
+			vmanage_system_ip = device['configJson']['system-ip']
+			vmanage_cluster_ip = device['configJson']['deviceIP']
+			vmanage_host_name = device['configJson']['host-name']
+			if vmanage_system_ip != system_ip:
+				output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
+				output = output.split('\n')[-3:]
+				xmit_stats = output[0].split(",")
+				timing_stats = xmit_stats[3]
+				packet_loss = float(xmit_stats[2].split("%")[0])
+				ping_output[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
+				if packet_loss != 0:
+					ping_output_failed[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
 
-	if len(ping_output_failed) == 0:
-		check_result = 'SUCCESSFUL'
-		check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
-		check_action = None
-	else:
-		check_result = 'Failed'
-		check_analysis = 'Intercluster connectivity issues found'
-		check_action = 'Review network used between cluster members, and resolve any connectivity issues before upgrade process '
-	return ping_output, ping_output_failed,check_result,check_analysis,check_action 
+		if len(ping_output_failed) == 0:
+			check_result = 'SUCCESSFUL'
+			check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
+			check_action = None
+		else:
+			check_result = 'Failed'
+			check_analysis = 'Intercluster connectivity issues found'
+			check_action = 'Review network used between cluster members, and resolve any connectivity issues before upgrade process '
+		return ping_output, ping_output_failed,check_result,check_analysis,check_action 
+	except Exception as e:
+		log_file_logger.exception(e)
 
 
 def threaded(f, daemon=False):
@@ -1073,34 +1072,36 @@ def threaded(f, daemon=False):
 	
 
 @threaded 
-def criticalCheckseventeen(cluster_health_data, system_ip):
+def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
+	try:
+		ping_output = {}
+		ping_output_failed = {}
 
-	ping_output = {}
-	ping_output_failed = {}
+		for device in cluster_health_data['data'][0]['data']:
+			vmanage_system_ip = device['configJson']['system-ip']
+			vmanage_cluster_ip = device['configJson']['deviceIP']
+			vmanage_host_name = device['configJson']['host-name']
+			if vmanage_system_ip != system_ip:
+				output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
+				output = output.split('\n')[-3:]
+				xmit_stats = output[0].split(",")
+				timing_stats = xmit_stats[3]
+				packet_loss = float(xmit_stats[2].split("%")[0])
+				ping_output[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
+				if packet_loss != 0:
+					ping_output_failed[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
 
-	for device in cluster_health_data['data'][0]['data']:
-		vmanage_system_ip = device['configJson']['system-ip']
-		vmanage_cluster_ip = device['configJson']['deviceIP']
-		vmanage_host_name = device['configJson']['host-name']
-		if vmanage_system_ip != system_ip:
-			output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
-			output = output.split('\n')[-3:]
-			xmit_stats = output[0].split(",")
-			timing_stats = xmit_stats[3]
-			packet_loss = float(xmit_stats[2].split("%")[0])
-			ping_output[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
-			if packet_loss != 0:
-				ping_output_failed[vmanage_host_name] = vmanage_cluster_ip, packet_loss, timing_stats
-
-	if len(ping_output_failed) == 0:
-		check_result = 'SUCCESSFUL'
-		check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
-		check_action = None
-	else:
-		check_result = 'Failed'
-		check_analysis = 'Intercluster connectivity issues found'
-		check_action = 'Review network used between cluster members, and resolve any connectivity issues before upgrade process '
-	return ping_output, ping_output_failed,check_result,check_analysis,check_action 
+		if len(ping_output_failed) == 0:
+			check_result = 'SUCCESSFUL'
+			check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
+			check_action = None
+		else:
+			check_result = 'Failed'
+			check_analysis = 'Intercluster connectivity issues found'
+			check_action = 'Review network used between cluster members, and resolve any connectivity issues before upgrade process '
+		return ping_output, ping_output_failed,check_result,check_analysis,check_action 
+	except Exception as e:
+		log_file_logger.exception(e)
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1479,7 +1480,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID ')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port) 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 			#Preliminary Data
@@ -1528,7 +1529,7 @@ if __name__ == "__main__":
 				total_devices = len(controllers_info) + vedge_count
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 			print('*Starting Checks, this may take several minutes')
@@ -1543,9 +1544,9 @@ if __name__ == "__main__":
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:    
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/list', args.vmanage_port))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 				
 			#01:Check:vManage:Validate current version
 			print(' Critical Check:#01')
@@ -1575,7 +1576,7 @@ if __name__ == "__main__":
 				   
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:vManage sever disk space
 			print(' Critical Check:#02')
@@ -1605,7 +1606,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			
 
@@ -1638,7 +1639,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			#04:Check:vManage:CPU Count
@@ -1666,7 +1667,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#05:Check:vManage:ElasticSearch Indices status
 			print(' Critical Check:#05')
@@ -1705,7 +1706,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#06:Check:vManage:Look for any neo4j exception errors
 			print(' Critical Check:#06')
@@ -1732,7 +1733,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#07:Check:vManage:Validate all services are up
 			print(' Critical Check:#07')
@@ -1762,7 +1763,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#08:Check:vManage:Elasticsearch Indices version
 			print(' Critical Check:#08')
@@ -1789,7 +1790,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#09:Check:vManage:Evaluate incoming DPI data size
 			print(' Critical Check:#09')
@@ -1818,7 +1819,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#10:Check:vManage:NTP status across network
 			print(' Critical Check:#10')
@@ -1845,7 +1846,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
@@ -1888,7 +1889,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -1920,7 +1921,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			#13:Check:vManage:Network Card type
@@ -1949,7 +1950,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			#14:Check:vManage:Backup status
@@ -1977,7 +1978,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#15:Check:vManage:Evaluate Neo4j performance
 			print(' Warning Check:#15')
@@ -2003,7 +2004,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#16:Check:vManage:Confirm there are no pending tasks
 			print(' Warning Check:#16')
@@ -2030,7 +2031,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#17:Check:vManage:Validate there are no empty password users
 			print(' Warning Check:#17')
@@ -2056,7 +2057,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#18:Check:Controllers:Controller versions
 			print(' Warning Check:#18')
@@ -2082,7 +2083,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
 			print(' Warning Check:#19')
@@ -2109,7 +2110,7 @@ if __name__ == "__main__":
 				 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#20:Check:Controllers:vEdge list sync
 			print(' Warning Check:#20')
@@ -2135,7 +2136,7 @@ if __name__ == "__main__":
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#21:Check:Controllers: Confirm control connections
 			print(' Warning Check:#21')
@@ -2162,7 +2163,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 		  
 			#Informational Checks
@@ -2195,7 +2196,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
 			print(' Informational Check:#23')
@@ -2226,7 +2227,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#24:Check:Controllers:Validate all controllers are reachable
 			print(' Informational Check:#24')
@@ -2253,7 +2254,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
 				cluster_checks = {}
@@ -2287,7 +2288,7 @@ if __name__ == "__main__":
 						
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#26:Check:Cluster:Cluster health
@@ -2317,7 +2318,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#27:Check:Cluster:Cluster ConfigDB topology
@@ -2347,7 +2348,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#28:Check:Cluster:Messaging server
 				print(' Cluster Check:#28')
@@ -2375,7 +2376,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#29:Check:Cluster:DR replication status
 				print(' Cluster Check:#29')
@@ -2403,7 +2404,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#30:Check:Cluster:Intercluster communication
 				print(' Cluster Check:#30')
@@ -2411,30 +2412,32 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 
 				try:
-					criticalCheckseventeen.join()
-			
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_analysis))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_analysis))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -2449,14 +2452,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFToken(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			#Preliminary data
@@ -2506,7 +2509,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -2516,13 +2519,13 @@ if __name__ == "__main__":
 			print('\n**** Performing Critical checks\n')
 
 			#Begining #30:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid,  'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			critical_checks = {}
 			log_file_logger.info('*** Performing Critical Checks\n')
@@ -2555,7 +2558,7 @@ if __name__ == "__main__":
 			
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			print(' Critical Check:#02')
@@ -2585,7 +2588,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#03:Check:vManage:Memory size
 			print(' Critical Check:#03')
@@ -2617,7 +2620,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 	 
 			#04:Check:vManage:CPU Count
 			print(' Critical Check:#04')
@@ -2645,7 +2648,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -2687,7 +2690,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#06:Check:vManage:Look for any neo4j exception errors
 			print(' Critical Check:#06')
@@ -2713,7 +2716,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -2743,7 +2746,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -2771,7 +2774,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#09:Check:vManage:Evaluate incoming DPI data size
@@ -2801,7 +2804,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#10:Check:vManage:NTP status across network
 			print(' Critical Check:#10')
@@ -2828,7 +2831,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
@@ -2872,7 +2875,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -2904,7 +2907,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#13:Check:vManage:Network Card type
 			print(' Warning Check:#13')
@@ -2931,7 +2934,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#14:Check:vManage:Backup status
 			print(' Warning Check:#14')
@@ -2959,7 +2962,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -2987,7 +2990,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#16:Check:vManage:Confirm there are no pending tasks
@@ -3016,7 +3019,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -3044,7 +3047,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#18:Check:Controllers:Controller versions
 			print(' Warning Check:#18')
@@ -3070,7 +3073,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
 			print(' Warning Check:#19')
@@ -3097,7 +3100,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#20:Check:Controllers:vEdge list sync
@@ -3125,7 +3128,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -3153,7 +3156,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 		  
 			#Informational Checks
@@ -3187,7 +3190,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
@@ -3218,7 +3221,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#24:Check:Controllers:Validate all controllers are reachable
@@ -3247,7 +3250,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			if cluster_size>1:
@@ -3282,7 +3285,7 @@ if __name__ == "__main__":
 					   
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#26:Check:Cluster:Cluster health
@@ -3312,7 +3315,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#27:Check:Cluster:Cluster ConfigDB topology
 				print(' Cluster Check:#27')
@@ -3341,7 +3344,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#28:Check:Cluster:Messaging server
 				print(' Cluster Check:#28')
@@ -3370,7 +3373,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 				
 				#29:Check:Cluster:DR replication status
 				print(' Cluster Check:#29')
@@ -3398,7 +3401,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 					
 				#30:Check:Cluster:Intercluster communication
 				print(' Cluster Check:#30')
@@ -3406,31 +3409,32 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:    
-			
-					criticalCheckseventeen.join()
-				
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
 						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -3445,7 +3449,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionIDpy3(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 
@@ -3453,7 +3457,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFTokenpy3(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 
@@ -3505,7 +3509,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -3517,13 +3521,13 @@ if __name__ == "__main__":
 
 
 			#Begining #30Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:    
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			critical_checks = {}
 			log_file_logger.info('*** Performing Critical Checks\n')
@@ -3556,7 +3560,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			print(' Critical Check:#02')
@@ -3586,7 +3590,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#03:Check:vManage:Memory size
 			print(' Critical Check:#03')
@@ -3618,7 +3622,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 	 
 			#04:Check:vManage:CPU Count
@@ -3647,7 +3651,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#05:Check:vManage:ElasticSearch Indices status
 			print(' Critical Check:#05')
@@ -3688,7 +3692,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#06:Check:vManage:Look for any neo4j exception errors
 			print(' Critical Check:#06')
@@ -3715,7 +3719,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#07:Check:vManage:Validate all services are up
 			print(' Critical Check:#07')
@@ -3745,7 +3749,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#08:Check:vManage:Elasticsearch Indices version
 			print(' Critical Check:#08')
@@ -3772,7 +3776,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#09:Check:vManage:Evaluate incoming DPI data size
 			print(' Critical Check:#09')
@@ -3801,7 +3805,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -3829,7 +3833,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error perforiming #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
 			print(' Critical Check:#11')
@@ -3871,7 +3875,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -3903,7 +3907,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#13:Check:vManage:Network Card type
@@ -3932,7 +3936,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#14:Check:vManage:Backup status
 			print(' Warning Check:#14')
@@ -3960,7 +3964,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#15:Check:vManage:Evaluate Neo4j performance
 			print(' Warning Check:#15')
@@ -3986,7 +3990,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#16:Check:vManage:Confirm there are no pending tasks
 			print(' Warning Check:#16')
@@ -4015,7 +4019,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -4043,7 +4047,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -4070,7 +4074,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
 			print(' Warning Check:#19')
@@ -4098,7 +4102,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#20:Check:Controllers:vEdge list sync
 			print(' Warning Check:#20')
@@ -4125,7 +4129,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -4153,7 +4157,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 	  
 			#Informational Checks
@@ -4187,7 +4191,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
 			print(' Informational Check:#23')
@@ -4217,7 +4221,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#24:Check:Controllers:Validate all controllers are reachable
@@ -4246,7 +4250,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
 				cluster_checks = {}
@@ -4279,7 +4283,7 @@ if __name__ == "__main__":
 						
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#26:Check:Cluster:Cluster health
 				print(' Cluster Check:#26')
@@ -4307,7 +4311,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#27:Check:Cluster:Cluster ConfigDB topology
 				print(' Cluster Check:#27')
@@ -4336,7 +4340,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#28:Check:Cluster:Messaging server
@@ -4365,7 +4369,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#29:Check:Cluster:DR replication status
 				print(' Cluster Check:#29')
@@ -4393,7 +4397,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#30:Check:Cluster:Intercluster communication
 				print(' Cluster Check:#30')
@@ -4401,29 +4405,31 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
-			
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if criticalCheckseventeenpy3.isAlive():
+						criticalCheckseventeenpy3.join(10)
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+					if not criticalCheckseventeenpy3.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeenpy3.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 					
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -4445,7 +4451,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password. If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port) 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 
@@ -4496,7 +4502,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -4507,13 +4513,13 @@ if __name__ == "__main__":
 			log_file_logger.info('*** Performing Critical Checks\n')
 
 			#Begining #30:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid,'clusterManagement/list', args.vmanage_port))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#01:Check:vManage:Validate current version
@@ -4543,7 +4549,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			log_file_logger.info('#02:Check:vManage:At minimum 20%  server disk space should be available')
@@ -4574,7 +4580,7 @@ if __name__ == "__main__":
 				   
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#03:Check:vManage:Memory size
 			log_file_logger.info('#03:Check:vManage:Memory size')
@@ -4605,7 +4611,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			#04:Check:vManage:CPU Count
@@ -4632,7 +4638,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -4673,7 +4679,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#06:Check:vManage:Look for any neo4j exception errors
@@ -4698,7 +4704,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -4728,7 +4734,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -4755,7 +4761,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#09:Check:vManage:Evaluate incoming DPI data size
@@ -4784,7 +4790,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -4812,7 +4818,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
 				log_file_logger.info('#11:Check:Controllers:Validate vSmart/vBond CPU count for scale')
@@ -4853,7 +4859,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 				
 			#Warning Checks
 			warning_checks = {}
@@ -4883,7 +4889,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#13:Check:vManage:Network Card type
 			log_file_logger.info('#13:Check:vManage:Network Card type')
@@ -4909,7 +4915,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#14:Check:vManage:Backup status
 			log_file_logger.info('#14:Check:vManage:Backup status')
@@ -4935,7 +4941,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -4961,7 +4967,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#16:Check:vManage:Confirm there are no pending tasks
@@ -4988,7 +4994,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -5015,7 +5021,7 @@ if __name__ == "__main__":
 			
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -5041,7 +5047,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
 			log_file_logger.info('#19:Check:Controllers:Confirm Certificate Expiration Dates')
@@ -5066,7 +5072,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#20:Check:Controllers:vEdge list sync
@@ -5093,7 +5099,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -5120,7 +5126,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 		 
 			#Informational Checks
@@ -5151,7 +5157,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
@@ -5181,7 +5187,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#24:Check:Controllers:Validate all controllers are reachable
@@ -5208,7 +5214,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			if cluster_size>1:
@@ -5240,7 +5246,7 @@ if __name__ == "__main__":
 						
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#26:Check:Cluster:Cluster health
 				log_file_logger.info('#26:Check:Cluster:Cluster health')
@@ -5267,7 +5273,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#27:Check:Cluster:Cluster ConfigDB topology
 				log_file_logger.info('#27:Check:Cluster:Cluster ConfigDB topology')
@@ -5295,7 +5301,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#28:Check:Cluster:Messaging server
 				log_file_logger.info('#28:Check:Cluster:Messaging server')
@@ -5322,7 +5328,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 				
 				#29:Check:Cluster:DR replication status
 				log_file_logger.info('#29:Check:Cluster:DR replication status')
@@ -5349,36 +5355,38 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#30:Check:Cluster:Intercluster communication
 				log_file_logger.info('#30:Check:Cluster:Intercluster communication')
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
-				
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#Logging out of the Session using jsessionid
@@ -5393,14 +5401,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFToken(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 			#Preliminary data
@@ -5451,7 +5459,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -5462,13 +5470,13 @@ if __name__ == "__main__":
 			log_file_logger.info('*** Performing Critical Checks\n')
 
 			#Begining #30:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#01:Check:vManage:Validate current version
 			log_file_logger.info('#01:Check:vManage:Validate current version')
@@ -5497,7 +5505,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
@@ -5527,7 +5535,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -5560,7 +5568,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size \033[0;0m. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 		 
 			#04:Check:vManage:CPU Count
 			log_file_logger.info('#04:Check:vManage:CPU Count')
@@ -5587,7 +5595,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count \033[0;0m. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -5629,7 +5637,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#06:Check:vManage:Look for any neo4j exception errors
@@ -5656,7 +5664,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -5685,7 +5693,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -5712,7 +5720,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#09:Check:vManage:Evaluate incoming DPI data size
 			log_file_logger.info('#09:Check:vManage:Evaluate incoming DPI data size')
@@ -5740,7 +5748,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -5767,7 +5775,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
@@ -5809,7 +5817,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#Warning Checks
@@ -5840,7 +5848,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#13:Check:vManage:Network Card type
 			log_file_logger.info('#13:Check:vManage:Network Card type')
@@ -5867,7 +5875,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#14:Check:vManage:Backup status
 			log_file_logger.info('#14:Check:vManage:Backup status')
@@ -5894,7 +5902,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -5920,7 +5928,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#16:Check:vManage:Confirm there are no pending tasks
@@ -5948,7 +5956,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -5974,7 +5982,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -6001,7 +6009,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
 			log_file_logger.info('#19:Check:Controllers:Confirm Certificate Expiration Dates')
@@ -6026,7 +6034,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#20:Check:Controllers:vEdge list sync
@@ -6053,7 +6061,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#21:Check:Controllers: Confirm control connections
 			log_file_logger.info('#21:Check:Controllers: Confirm control connections')
@@ -6079,7 +6087,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 		  
 			#Informational Checks
@@ -6110,7 +6118,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
@@ -6141,7 +6149,7 @@ if __name__ == "__main__":
 				   
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -6170,10 +6178,10 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
-			if cluster_size >1:
+			if cluster_size>1:
 				cluster_checks = {}
 				log_file_logger.info('*** Performing Cluster Checks')
 				#25:Check:Cluster:Version consistency
@@ -6201,7 +6209,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#26:Check:Cluster:Cluster health
@@ -6229,7 +6237,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#27:Check:Cluster:Cluster ConfigDB topology
@@ -6258,7 +6266,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#28:Check:Cluster:Messaging server
 				log_file_logger.info('#28:Check:Cluster:Messaging server')
@@ -6285,7 +6293,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				
 				#29:Check:Cluster:DR replication status
@@ -6313,37 +6321,39 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#30:Check:Cluster:Intercluster communication
 				log_file_logger.info('#30:Check:Cluster:Intercluster communication')
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
-	
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
-						log_file_logger.error('#30: Check result: {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+							log_file_logger.error('#30: Check result: {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					else:
-						log_file_logger.info('#30: Check result: {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+						else:
+							log_file_logger.info('#30: Check result: {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#Logging out of the Session using jsessionid
@@ -6357,14 +6367,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionIDpy3(vmanage_lo_ip, args.username, password, args.vmanage_port)   
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFTokenpy3(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 
@@ -6415,7 +6425,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -6427,13 +6437,13 @@ if __name__ == "__main__":
 			log_file_logger.info('*** Performing Critical Checks\n')
 
 			#Begining #30:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#01:Check:vManage:Validate current version
@@ -6463,7 +6473,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			log_file_logger.info('#02:Check:vManage:At minimum 20%  server disk space should be available')
@@ -6491,7 +6501,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#03:Check:vManage:Memory size
@@ -6522,7 +6532,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing 03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 	 
 			#04:Check:vManage:CPU Count
@@ -6549,7 +6559,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#05:Check:vManage:ElasticSearch Indices status
 			log_file_logger.info('#05:Check:vManage:ElasticSearch Indices status')
@@ -6589,7 +6599,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#06:Check:vManage:Look for any neo4j exception errors
 			log_file_logger.info('#06:Check:vManage:Look for any neo4j exception errors')
@@ -6613,7 +6623,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -6642,7 +6652,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#08:Check:vManage:Elasticsearch Indices version
 			log_file_logger.info('#08:Check:vManage:Elasticsearch Indices version')
@@ -6668,7 +6678,7 @@ if __name__ == "__main__":
 			
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#09:Check:vManage:Evaluate incoming DPI data size
 			log_file_logger.info('#09:Check:vManage:Evaluate incoming DPI data size')
@@ -6696,7 +6706,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#10:Check:vManage:NTP status across network
 			log_file_logger.info('#10:Check:vManage:NTP status across network')
@@ -6724,7 +6734,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error perforiming #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
@@ -6766,7 +6776,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			#Warning Checks
@@ -6797,7 +6807,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#13:Check:vManage:Network Card type
@@ -6824,7 +6834,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#14:Check:vManage:Backup status
@@ -6851,7 +6861,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#15:Check:vManage:Evaluate Neo4j performance
 			log_file_logger.info('#15:Check:vManage:Evaluate Neo4j performance')
@@ -6876,7 +6886,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#16:Check:vManage:Confirm there are no pending tasks
 			log_file_logger.info('#16:Check:vManage:Confirm there are no pending tasks')
@@ -6902,7 +6912,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -6928,7 +6938,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#18:Check:Controllers:Controller versions
 			log_file_logger.info('#18:Check:Controllers:Controller versions')
@@ -6953,7 +6963,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
@@ -6979,7 +6989,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))   
+				log_file_logger.exception('{}\n'.format(e))   
 
 			#20:Check:Controllers:vEdge list sync
 			log_file_logger.info('#20:Check:Controllers:vEdge list sync')
@@ -7005,7 +7015,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n. If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -7034,7 +7044,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n. If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -7066,7 +7076,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n. If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
 			log_file_logger.info('#23:Check:Controllers:Validate there is at minimum vBond, vSmart present')
@@ -7097,7 +7107,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#24:Check:Controllers:Validate all controllers are reachable
@@ -7125,9 +7135,9 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
-			if cluster_size >1:
+			if cluster_size>1:
 				cluster_checks = {}
 				log_file_logger.info('*** Performing Cluster Checks')
 
@@ -7156,7 +7166,7 @@ if __name__ == "__main__":
 						
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#26:Check:Cluster:Cluster health
 				log_file_logger.info('#26:Check:Cluster:Cluster health')
@@ -7182,7 +7192,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#27:Check:Cluster:Cluster ConfigDB topology
@@ -7211,7 +7221,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#28:Check:Cluster:Messaging server
@@ -7239,7 +7249,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				
 				#29:Check:Cluster:DR replication status
@@ -7267,37 +7277,39 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#30:Check:Cluster:Intercluster communication
 				log_file_logger.info('#30:Check:Cluster:Intercluster communication')
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 					
 				try:
-					criticalCheckseventeen.join()
+					if criticalCheckseventeenpy3.isAlive():
+						criticalCheckseventeenpy3.join(10)
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if not criticalCheckseventeenpy3.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeenpy3.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -7317,7 +7329,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port) 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			
@@ -7370,7 +7382,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -7386,9 +7398,9 @@ if __name__ == "__main__":
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/list', args.vmanage_port))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#01:Check:vManage:Validate current version
 			print('  #01:Checking:vManage:Validate current version')
@@ -7418,7 +7430,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			print('  #02:Checking:vManage:vManage sever disk space')
@@ -7448,7 +7460,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				
 
 			#03:Check:vManage:Memory size
@@ -7480,7 +7492,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#04:Check:vManage:CPU Count
 			print('  #04:Checking:vManage:CPU Count')
@@ -7507,7 +7519,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -7549,7 +7561,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#06:Check:vManage:Look for any neo4j exception errors
@@ -7576,7 +7588,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#07:Check:vManage:Validate all services are up
 			print('  #07:Checking:vManage:Validate all services are up')
@@ -7605,7 +7617,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -7633,7 +7645,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#09:Check:vManage:Evaluate incoming DPI data size
@@ -7663,7 +7675,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -7692,7 +7704,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -7737,7 +7749,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -7770,7 +7782,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#13:Check:vManage:Network Card type
@@ -7798,7 +7810,7 @@ if __name__ == "__main__":
 		   
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#14:Check:vManage:Backup status
@@ -7826,7 +7838,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -7854,7 +7866,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#16:Check:vManage:Confirm there are no pending tasks
 			print('  #16:Checking:vManage:Confirm there are no pending tasks')
@@ -7882,7 +7894,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -7909,7 +7921,7 @@ if __name__ == "__main__":
 				
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -7937,7 +7949,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
@@ -7964,7 +7976,7 @@ if __name__ == "__main__":
 				   
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#20:Check:Controllers:vEdge list sync
@@ -7992,7 +8004,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -8020,7 +8032,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#Informational Checks
@@ -8053,7 +8065,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
@@ -8084,7 +8096,7 @@ if __name__ == "__main__":
 				 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#24:Check:Controllers:Validate all controllers are reachable
 			print('  #24:Check:Controllers:Validate all controllers are reachable')
@@ -8112,10 +8124,10 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
-			if cluster_size >1:
+			if cluster_size>1:
 				cluster_checks = {}
 
 				log_file_logger.info('*** Performing Cluster Checks')
@@ -8147,7 +8159,7 @@ if __name__ == "__main__":
 						
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#26:Check:Cluster:Cluster health
@@ -8176,7 +8188,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#27:Check:Cluster:Cluster ConfigDB topology
 				print('  #27:Checking:Cluster:Cluster ConfigDB topology')
@@ -8205,7 +8217,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#28:Check:Cluster:Messaging server
@@ -8235,7 +8247,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#29:Check:Cluster:DR replication status
@@ -8264,7 +8276,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#30:Check:Cluster:Intercluster communication
@@ -8273,31 +8285,32 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 					
 				try:
-					criticalCheckseventeen.join()
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
-
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#Logging out of the Session using jsessionid
@@ -8312,14 +8325,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFToken(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 			#Preliminary data
@@ -8369,7 +8382,7 @@ if __name__ == "__main__":
 				total_devices = len(controllers_info.keys()) + vedge_count
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 			print('*Starting Checks, this may take several minutes\n\n')
@@ -8379,13 +8392,13 @@ if __name__ == "__main__":
 			log_file_logger.info('*** Performing Critical Checks\n')
 			
 			#Begining #30:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid,'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#01:Check:vManage:Validate current version
 			print('  #01:Checking:vManage:Validate current version')
@@ -8415,7 +8428,7 @@ if __name__ == "__main__":
 				   
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			print('  #02:Checking:vManage:vManage sever disk space')
@@ -8445,7 +8458,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#03:Check:vManage:Memory size
 			print('  #03:Checking:vManage:Memory size')
@@ -8477,7 +8490,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 	 
 			#04:Check:vManage:CPU Count
 			print('  #04:Checking:vManage:CPU Count')
@@ -8505,7 +8518,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -8547,7 +8560,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#06:Check:vManage:Look for any neo4j exception errors
@@ -8575,7 +8588,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -8606,7 +8619,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -8634,7 +8647,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#09:Check:vManage:Evaluate incoming DPI data size
@@ -8664,7 +8677,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -8693,7 +8706,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -8737,7 +8750,7 @@ if __name__ == "__main__":
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#Warning Checks
@@ -8770,7 +8783,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#13:Check:vManage:Network Card type
@@ -8798,7 +8811,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#14:Check:vManage:Backup status
@@ -8827,7 +8840,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -8855,7 +8868,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#16:Check:vManage:Confirm there are no pending tasks
@@ -8883,7 +8896,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -8910,7 +8923,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -8938,7 +8951,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
@@ -8967,7 +8980,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -8997,7 +9010,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -9026,7 +9039,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 		 
@@ -9060,7 +9073,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
@@ -9091,7 +9104,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -9122,7 +9135,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			if cluster_size>1:
@@ -9158,7 +9171,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#26:Check:Cluster:Cluster health
 				print('  #26:Checking:Cluster:Cluster health')
@@ -9187,7 +9200,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -9218,7 +9231,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing  #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#28:Check:Cluster:Messaging server
@@ -9248,7 +9261,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 				
 				#29:Check:Cluster:DR replication status
 				print('  #29:Checking:Cluster:DR replication status')
@@ -9276,7 +9289,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#30:Check:Cluster:Intercluster communication
@@ -9285,31 +9298,32 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
-
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -9322,14 +9336,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionIDpy3(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFTokenpy3(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 			#Preliminary data
@@ -9381,7 +9395,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -9392,13 +9406,13 @@ if __name__ == "__main__":
 			log_file_logger.info('*** Performing Critical Checks\n')
 			
 			#Begining #30:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#01:Check:vManage:Validate current version
@@ -9428,7 +9442,7 @@ if __name__ == "__main__":
 					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:vAt minimum 20%  server disk space should be available
 			print('  #02:Checking:vManage:vManage sever disk space')
@@ -9457,7 +9471,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#03:Check:vManage:Memory size
@@ -9490,7 +9504,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 	 
 			#04:Check:vManage:CPU Count
@@ -9518,7 +9532,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#05:Check:vManage:ElasticSearch Indices status
 			print('  #05:Checking:vManage:ElasticSearch Indices status')
@@ -9559,7 +9573,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#06:Check:vManage:Look for any neo4j exception errors
 			print('  #06:Checking:vManage:Look for any neo4j exception errors')
@@ -9585,7 +9599,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -9615,7 +9629,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#08:Check:vManage:Elasticsearch Indices version
 			print('  #08:Checking:vManage:Elasticsearch Indices version')
@@ -9642,7 +9656,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#09:Check:vManage:Evaluate incoming DPI data size
 			print('  #09:Checking:vManage:Evaluate incoming DPI data size')
@@ -9671,7 +9685,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -9699,7 +9713,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error perforiming #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
 			print('  #11:Checking:Controllers:Validate vSmart/vBond CPU count for scale')
@@ -9741,7 +9755,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.\033[0;0m')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#Warning Checks
@@ -9775,7 +9789,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#13:Check:vManage:Network Card type
@@ -9804,7 +9818,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#14:Check:vManage:Backup status
@@ -9833,7 +9847,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#15:Check:vManage:Evaluate Neo4j performance
 			print('  #15:Checking:vManage:Evaluate Neo4j performance')
@@ -9860,7 +9874,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#16:Check:vManage:Confirm there are no pending tasks
 			print('  #16:Checking:vManage:Confirm there are no pending tasks')
@@ -9887,7 +9901,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -9914,7 +9928,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -9942,7 +9956,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
@@ -9970,7 +9984,7 @@ if __name__ == "__main__":
 				  
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#20:Check:Controllers:vEdge list sync
 			print('  #20:Checking:Controllers:vEdge list sync')
@@ -9997,7 +10011,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -10025,7 +10039,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#Informational Checks
@@ -10058,7 +10072,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
 			print('  #23:Check:Controllers:Validate there is at minimum vBond, vSmart present ')
@@ -10089,7 +10103,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#24:Check:Controllers:Validate all controllers are reachable
@@ -10118,7 +10132,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 				
 			if cluster_size>1:
@@ -10153,7 +10167,7 @@ if __name__ == "__main__":
 						
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#26:Check:Cluster:Cluster health
 				print('  #26:Checking:Cluster:Cluster health')
@@ -10182,7 +10196,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#27:Check:Cluster:Cluster ConfigDB topology
@@ -10212,7 +10226,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#28:Check:Cluster:Messaging server
 				print('  #28:Checking:Cluster:Messaging server')
@@ -10241,7 +10255,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing  #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			
 				#29:Check:Cluster:DR replication status
@@ -10270,7 +10284,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#30:Check:Cluster:Intercluster communication
@@ -10279,31 +10293,32 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
-		
+					if criticalCheckseventeenpy3.isAlive():
+						criticalCheckseventeenpy3.join(10)
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ check_analysis, check_action]
+					if not criticalCheckseventeenpy3.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeenpy3.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ check_analysis, check_action]
 
-						log_file_logger.error('#30: Check result:   {}'.format(check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+							log_file_logger.error('#30: Check result:   {}'.format(check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -10321,7 +10336,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port) 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 
@@ -10373,7 +10388,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 			print('*Starting Checks, this may take several minutes\n\n')
@@ -10387,9 +10402,9 @@ if __name__ == "__main__":
 				log_file_logger.info('Beginging #`31:Check:Cluster:Intercluster communication  in the background')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#01:Check:vManage:Validate current version
@@ -10424,7 +10439,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Checking:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
@@ -10459,7 +10474,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#03:Check:vManage:Memory size
 			print(' #03:Checking:vManage:Memory size')
@@ -10494,7 +10509,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#04:Check:vManage:CPU Count
@@ -10526,7 +10541,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -10575,7 +10590,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#06:Check:vManage:Look for any neo4j exception errors
@@ -10605,7 +10620,7 @@ if __name__ == "__main__":
 					print(' INFO:{}\n\n'.format(check_analysis))
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -10639,7 +10654,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -10672,7 +10687,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#09:Check:vManage:Evaluate incoming DPI data size
@@ -10706,7 +10721,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -10738,7 +10753,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -10786,7 +10801,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#Warning Checks
 			print('\n**** Performing Warning checks\n') 
@@ -10822,7 +10837,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#13:Check:vManage:Network Card type
 			print(' #13:Checking:vManage:Network Card type')
@@ -10854,7 +10869,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#14:Check:vManage:Backup status
 			print(' #14:Checking:vManage:Backup status')
@@ -10885,7 +10900,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -10916,7 +10931,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#16:Check:vManage:Confirm there are no pending tasks
@@ -10949,7 +10964,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#17:Check:vManage:Validate there are no empty password users
@@ -10979,7 +10994,7 @@ if __name__ == "__main__":
 					print(' INFO:{}\n\n'.format(check_analysis))
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 			
 			#18:Check:Controllers:Controller versions
 			print(' #18:Checking:Controllers:Controller versions')
@@ -11009,7 +11024,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
 			print(' #19:Checking:Controllers:Confirm Certificate Expiration Dates')
@@ -11039,7 +11054,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#20:Check:Controllers:vEdge list sync
 			print(' #20:Checking:Controllers:vEdge list sync')
@@ -11070,7 +11085,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -11102,7 +11117,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Informational Checks
 			print('\n**** Performing Informational checks\n' )
@@ -11138,7 +11153,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
@@ -11173,7 +11188,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#24:Check:Controllers:Validate all controllers are reachable
 			print(' #24:Check:Controllers:Validate all controllers are reachable')
@@ -11205,7 +11220,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			if cluster_size>1:
@@ -11244,7 +11259,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#26:Check:Cluster:Cluster health
@@ -11277,7 +11292,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -11312,7 +11327,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#28:Check:Cluster:Messaging server
@@ -11346,7 +11361,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 					
 				#29:Check:Cluster:DR replication status
@@ -11379,7 +11394,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#30:Check:Cluster:Intercluster communication
@@ -11388,33 +11403,35 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-						log_file_logger.error('#30:Check result: {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+							log_file_logger.error('#30:Check result: {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+							print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
-					else:
-						log_file_logger.info('#30:Check result: {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						else:
+							log_file_logger.info('#30:Check result: {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
-						print(' INFO:{}\n\n'.format(ping_check_analysis))
+							print(' INFO:{}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#Logging out of the Session using jsessionid
@@ -11428,14 +11445,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFToken(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 
@@ -11488,7 +11505,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -11498,13 +11515,13 @@ if __name__ == "__main__":
 			print('\n**** Performing Critical checks\n')
 
 			#Begining 17:Check:Cluster:Intercluster communication  in the background
-			if cluster_size > 1:
+			if cluster_size>1:
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeen(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			critical_checks = {}
 			log_file_logger.info('*** Performing Critical Checks\n')
@@ -11542,7 +11559,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
@@ -11577,7 +11594,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#03:Check:vManage:Memory size
@@ -11614,7 +11631,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#04:Check:vManage:CPU Count
@@ -11646,7 +11663,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#05:Check:vManage:ElasticSearch Indices status
@@ -11694,7 +11711,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#06:Check:vManage:Look for any neo4j exception errors
@@ -11725,7 +11742,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#07:Check:vManage:Validate all services are up
@@ -11759,7 +11776,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#08:Check:vManage:Elasticsearch Indices version
@@ -11791,7 +11808,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#09:Check:vManage:Evaluate incoming DPI data size
@@ -11825,7 +11842,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -11858,7 +11875,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
@@ -11905,7 +11922,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			
 			#Warning Checks
@@ -11942,7 +11959,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#13:Check:vManage:Network Card type
@@ -11974,7 +11991,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#14:Check:vManage:Backup status
@@ -12006,7 +12023,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#15:Check:vManage:Evaluate Neo4j performance
@@ -12037,7 +12054,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#16:Check:vManage:Confirm there are no pending tasks
@@ -12070,7 +12087,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -12102,7 +12119,7 @@ if __name__ == "__main__":
 				
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -12133,7 +12150,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
@@ -12164,7 +12181,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#20:Check:Controllers:vEdge list sync
@@ -12196,7 +12213,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -12229,7 +12246,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 		 
@@ -12267,7 +12284,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
 			print(' #23:Check:Controllers:Validate there is at minimum vBond, vSmart present ')
@@ -12301,7 +12318,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#24:Check:Controllers:Validate all controllers are reachable
@@ -12333,7 +12350,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			if cluster_size>1:
@@ -12372,7 +12389,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#26:Check:Cluster:Cluster health
@@ -12405,7 +12422,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#27:Check:Cluster:Cluster ConfigDB topology
@@ -12439,7 +12456,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#28:Check:Cluster:Messaging server
 				print(' #28:Checking:Cluster:Messaging server')
@@ -12471,7 +12488,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#29:Check:Cluster:DR replication status
@@ -12504,7 +12521,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 
@@ -12514,35 +12531,36 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 					
 				try:
-					criticalCheckseventeen.join()
-				
+					if criticalCheckseventeen.isAlive():
+						criticalCheckseventeen.join(10)
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if not criticalCheckseventeen.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(ping_check_analysis))
+							print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(ping_check_analysis))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
-						print(' INFO:{}\n\n'.format(ping_check_analysis))
+							print(' INFO:{}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 			#Logging out of the Session using jsessionid
@@ -12558,14 +12576,14 @@ if __name__ == "__main__":
 				log_file_logger.info('Generating a JSessionID, possible wrong username or password')
 				jsessionid = generateSessionIDpy3(vmanage_lo_ip, args.username, password, args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating JSessionID, make sure that the username and password entered is correct. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
 
 			try:
 				log_file_logger.info('Generating CSRF Token')
 				tokenid = CSRFTokenpy3(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n')
 
 			#Preliminary data
@@ -12616,7 +12634,7 @@ if __name__ == "__main__":
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 
 			except Exception as e:
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				
 
@@ -12631,9 +12649,9 @@ if __name__ == "__main__":
 				log_file_logger.info('Beginging #30:Check:Cluster:Intercluster communication  in the background\n')
 				try:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-					criticalCheckseventeen =  criticalCheckseventeenpy3(vmanage_info,  system_ip)
+					criticalCheckseventeen =  criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger)
 				except Exception as e:
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			critical_checks = {}
 			log_file_logger.info('*** Performing Critical Checks\n')
@@ -12669,7 +12687,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #01:Check:vManage:Validate current version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#02:Check:vManage:At minimum 20%  server disk space should be available
 			print(' #02:Checking:vManage:vManage sever disk space')
@@ -12702,7 +12720,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #02:Check:vManage:At minimum 20%  server disk space should be available. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#03:Check:vManage:Memory size
@@ -12738,7 +12756,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #03:Check:vManage:Memory size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 	 
 			#04:Check:vManage:CPU Count
@@ -12769,7 +12787,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #04:Check:vManage:CPU Count. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#05:Check:vManage:ElasticSearch Indices status
 			print(' #05:Checking:vManage:ElasticSearch Indices status')
@@ -12816,7 +12834,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #05:Check:vManage:ElasticSearch Indices status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#06:Check:vManage:Look for any neo4j exception errors
 			print(' #06:Checking:vManage:Look for any neo4j exception errors')
@@ -12845,7 +12863,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #06:Check:vManage:Look for any neo4j exception errors. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#07:Check:vManage:Validate all services are up
 			print(' #07:Checking:vManage:Validate all services are up')
@@ -12878,7 +12896,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #07:Check:vManage:Validate all services are up. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#08:Check:vManage:Elasticsearch Indices version
 			print(' #08:Checking:vManage:Elasticsearch Indices version')
@@ -12909,7 +12927,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #08:Check:vManage:Elasticsearch Indices version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#09:Check:vManage:Evaluate incoming DPI data size
 			print(' #09:Checking:vManage:Evaluate incoming DPI data size')
@@ -12942,7 +12960,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #09:Check:vManage:Evaluate incoming DPI data size. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#10:Check:vManage:NTP status across network
@@ -12974,7 +12992,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error perforiming #10:Check:vManage:NTP status across network. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#11:Check:Controllers:Validate vSmart/vBond CPU count for scale
 			print(' #11:Checking:Controllers:Validate vSmart/vBond CPU count for scale')
@@ -13020,7 +13038,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #11:Check:Controllers:Validate vSmart/vBond CPU count for scale. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
 			print('\n**** Performing Warning checks\n') 
@@ -13057,7 +13075,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #12:Check:vManage:CPU Speed. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.failed_vsmarts \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#13:Check:vManage:Network Card type
 			print(' #13:Checking:vManage:Network Card type')
@@ -13088,7 +13106,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #13:Check:vManage:Network Card type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#14:Check:vManage:Backup status
@@ -13120,7 +13138,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #14:Check:vManage:Backup status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#15:Check:vManage:Evaluate Neo4j performance
 			print(' #15:Checking:vManage:Evaluate Neo4j performance')
@@ -13150,7 +13168,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #15:Check:vManage:Evaluate Neo4j performance. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#16:Check:vManage:Confirm there are no pending tasks
 			print(' #16:Checking:vManage:Confirm there are no pending tasks')
@@ -13181,7 +13199,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #16:Check:vManage:Confirm there are no pending tasks. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#17:Check:vManage:Validate there are no empty password users
 			print(' #17:Checking:vManage:Validate there are no empty password users')
@@ -13212,7 +13230,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #17:Check:vManage:Validate there are no empty password users. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#18:Check:Controllers:Controller versions
@@ -13243,7 +13261,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #18:Check:Controllers:Controller versions. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#19:Check:Controllers:Confirm Certificate Expiration Dates
@@ -13274,7 +13292,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #19:Check:Controllers:Confirm Certificate Expiration Dates. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#20:Check:Controllers:vEdge list sync
 			print(' #20:Checking:Controllers:vEdge list sync')
@@ -13305,7 +13323,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #20:Check:Controllers:vEdge list sync. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#21:Check:Controllers: Confirm control connections
@@ -13337,7 +13355,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #21:Check:Controllers: Confirm control connections. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 
 			#Informational Checks
@@ -13375,7 +13393,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #22:Check:vManage:Disk controller type. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#23:Check:Controllers:Validate there is at minimum vBond, vSmart present
 			print(' #23:Check:Controllers:Validate there is at minimum vBond, vSmart present')
@@ -13409,7 +13427,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #23:Check:Controllers:Validate there is at minimum vBond, vSmart present. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#24:Check:Controllers:Validate all controllers are reachable
 			print(' #24:Check:Controllers:Validate all controllers are reachable')
@@ -13441,7 +13459,7 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #24:Check:Controllers:Validate all controllers are reachable. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-				log_file_logger.error('{}\n'.format(e))
+				log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
 				cluster_checks = {}
@@ -13479,7 +13497,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #25:Check:Cluster:Version consistency. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#26:Check:Cluster:Cluster health
 				print(' #26:Checking:Cluster:Cluster health')
@@ -13511,7 +13529,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #26:Check:Cluster:Cluster health. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n ')
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#27:Check:Cluster:Cluster ConfigDB topology
@@ -13545,7 +13563,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #27:Check:Cluster:Cluster ConfigDB topology. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#28:Check:Cluster:Messaging server
@@ -13578,7 +13596,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #28:Check:Cluster:Messaging server. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 				#29:Check:Cluster:DR replication status
 				print(' #29:Checking:Cluster:DR replication status')
@@ -13610,7 +13628,7 @@ if __name__ == "__main__":
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #29:Check:Cluster:DR replication status. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(log_file_path))
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 
 				#30:Check:Cluster:Intercluster communication
@@ -13619,34 +13637,36 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					criticalCheckseventeen.join()
+					if criticalCheckseventeenpy3.isAlive():
+						criticalCheckseventeenpy3.join(10)
 
-					ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeen.result_queue.get()
-					if ping_check_result == 'Failed':
-						cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
+					if not criticalCheckseventeenpy3.result_queue.empty():
+						ping_output, ping_output_failed, ping_check_result, ping_check_analysis, ping_check_action = criticalCheckseventeenpy3.result_queue.get()
+						if ping_check_result == 'Failed':
+							cluster_checks['#30:Check:Cluster:Intercluster communication'] = [ ping_check_analysis, ping_check_action]
 
-						log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
+							log_file_logger.error('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.error('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.error('#30: Cluster nodes with ping failure: {}\n'.format(ping_output_failed))
 
-					
-						writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
-						writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
+						
+							writeFile(report_file, 'Result: ERROR - {}\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Action: {}\n\n'.format(ping_check_action))
 
-						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(ping_check_analysis))
+							print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(ping_check_analysis))
 
-					else:
-						log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
-						log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
-						log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
+						else:
+							log_file_logger.info('#30: Check result:   {}'.format(ping_check_result))
+							log_file_logger.info('#30: Check Analysis: {}'.format(ping_check_analysis))
+							log_file_logger.info('#30: Cluster nodes details: {}\n'.format(ping_output))
 
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
+							writeFile(report_file, 'Result: INFO - {}\n\n'.format(ping_check_analysis))
 
-						print(' INFO:{}\n\n'.format(ping_check_analysis))
+							print(' INFO:{}\n\n'.format(ping_check_analysis))
 
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing #30:Check:Cluster:Intercluster communication. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n')
-					log_file_logger.error('{}\n'.format(e))
+					log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -13666,7 +13686,7 @@ if __name__ == "__main__":
 		final_eval = 'Critical issues found that need to be resolved before an upgrade'
 
 	#Failed Check Count
-	if cluster_size > 1:
+	if cluster_size>1:
 		checks_failed = len(critical_checks) + len(cluster_checks)
 		checks_passed = 30 - checks_failed
 	else:
@@ -13685,7 +13705,7 @@ if __name__ == "__main__":
 				check_failed_lst.append('\n')
 
 
-	if cluster_size > 1 and len(cluster_checks) != 0:
+	if cluster_size>1 and len(cluster_checks) != 0:
 		for i in sorted (cluster_checks.keys()):
 			check_failed_lst.append(i + '\n\n')
 			check_failed_lst.append('Result: ERROR - '+ cluster_checks[i][0] + '\n')
@@ -13726,7 +13746,7 @@ if __name__ == "__main__":
 	report_file.writelines(Lines)
 	report_file.close()
 	
-	if cluster_size > 1:
+	if cluster_size>1:
 		critical_checks_count = len(critical_checks) + len(cluster_checks)
 	else:
 		critical_checks_count = len(critical_checks)

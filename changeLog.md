@@ -6,7 +6,11 @@
 
   	- Deleting the cookies.txt file at the end of script execution
 
-  	- Cosmetic Changes 
+  	- Cosmetic Changes to display SURE Version
+
+  	- Logging exceptions using logger.exceptions() instead of logger.error()
+
+  	- Thread error handling
 	
  - v1.0.2
   	- Minor cosmetic changes
