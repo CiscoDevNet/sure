@@ -1,4 +1,12 @@
 ## Change Log
+ - v1.0.4
+  	- Error handling for thread execution
+  	- Added version notice on script run
+  	- Improved message at the end of run
+  	- Improved error reporting, exception data collection
+  	- Cookie file is deleted
+  	- Other cosmetic changes
+  	
  - v1.0.3
   	- Added handler for python import error in 20.5/20.6
 	
