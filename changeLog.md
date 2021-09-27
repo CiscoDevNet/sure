@@ -1,6 +1,7 @@
 ## Change Log
  - v1.0.5 
  	- Authentication successful using passwords with special characters. Exclamation marks ('!'), only work from 20.3 due to vManage software dependencies to support that character
+ 	- Collects controller information only if "deviceState": "READY".
 
  - v1.0.4
   	- Error handling for thread execution

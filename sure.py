@@ -323,7 +323,8 @@ def getLoip():
 def controllersInfo(controllers):
 	controllers_info = {}
 	for device in controllers['data']:
-		controllers_info[(device['host-name'])] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList']) ] 
+		if (device['deviceState']) == 'READY':
+			controllers_info[(device['host-name'])] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList']) ] 
 	return (controllers_info)
 
 #CPU Clock Speed
