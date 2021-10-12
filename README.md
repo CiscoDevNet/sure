@@ -81,7 +81,7 @@ python3 ./jamun/sure.py
 ```sh
 usage: sure.py [-h] [-q] [-v] [-d] -u USERNAME 
 
-SURE - SDWAN Uprade Readiness Engine - v1.0.4
+SURE - SDWAN Uprade Readiness Engine - v1.0.5
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -144,7 +144,7 @@ CLI Output on executing the script in normal mode.
 vmanage-cluster1:~$ python sure.py -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         SURE – Version 1.0.5                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -167,7 +167,7 @@ In the quiet execution mode it quietly performs all the checks and on completion
 vmanage-cluster1:~$ python sure.py -q -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         SURE – Version 1.0.5                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -186,7 +186,7 @@ In this mode the progress of the checks being performed can be monitored from th
 vmanage-cluster1:~$ python sure.py -v -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         SURE – Version 1.0.5                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -209,7 +209,7 @@ vManage Password:
 vmanage-cluster1:~$ python sure.py -d -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         SURE – Version 1.0.5                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
