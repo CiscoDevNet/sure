@@ -1,5 +1,5 @@
-# SDWAN-SURE 
-Cisco SDWAN SURE Command Line tool performs a total of 30 checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
+# AURA-SDWAN (SURE)
+Cisco AURA-SDWAN (SURE) Command Line tool performs a total of 30 checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
 
 The objective is to execute without impact the performance of the vManage or other devices.
 
