@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python
 
-__sure_version =  "1.0.5"
+__sure_version =  "1.0.6"
 
 #Common Imports
 import os 
@@ -199,11 +199,12 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 
 def generateSessionID(vManageIP,Username,Password,Port):
 	if Port==None:
-		command = 'curl --connect-timeout 3 -k -g -s -i -c cookies.txt -X POST -H "Content-Type: application/x-www-form-urlencoded" --data-urlencode "j_username={}" --data-urlencode "j_password={}" https://{}:8443/j_security_check'.format(Username, Password,vManageIP)
+		command = "curl --insecure -i -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'j_username={}' --data-urlencode 'j_password={}' https://{}:8443/j_security_check".format(Username, Password,vManageIP)
 		login = executeCommand(command)
 	else:
-		command = 'curl --connect-timeout 3 -k  -s -i -c cookies.txt -X POST -H "Content-Type: application/x-www-form-urlencoded" "--data-urlencode "j_username={}" --data-urlencode "j_password={}" https://{}:{}/j_security_check'.format(Username, Password,vManageIP, Port)
-		login = executeCommand(command)   
+		command = "curl --insecure -i -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'j_username={}' --data-urlencode 'j_password={}' https://{}:{}/j_security_check".format(Username, Password,vManageIP, Port)
+		login = executeCommand(command)  
+	 
 	login = login.split(' ')
 	if int(login[1]) == 200:
 		jsessionid = (login[3].split('=')[1][0:-1])
@@ -212,15 +213,14 @@ def generateSessionID(vManageIP,Username,Password,Port):
 		print('Error creating JsessionID, verify if  the information provided is correct')
 
 
-def CSRFToken (vManageIP,JSessionID,Port):
+def CSRFToken(vManageIP,JSessionID,Port):
 	if Port==None:
-		command = 'curl --connect-timeout 3 -k -s -b ~/cookies.txt  https://{}:8443/dataservice/client/token?json=true'.format(vManageIP)
+		command = 'curl --insecure -s https://{}:8443/dataservice/client/token?json=true -H "Cookie: JSESSIONID={}"'.format(vManageIP, JSessionID)
 		tokenid= executeCommand(command)
 
 	else:
-		command = 'curl --connect-timeout 3 -k -s -b ~/cookies.txt  https://{}:{}/dataservice/client/token?json=true'.format(vManageIP, Port)
+		command = 'curl --insecure -s https://{}:{}/dataservice/client/token?json=true -H "Cookie: JSESSIONID={}"'.format(vManageIP, Port, JSessionID)
 		tokenid= executeCommand(command)
-		
 	tokenid = json.loads(tokenid)
 	tokenid = tokenid["token"]
 	return tokenid
@@ -229,17 +229,17 @@ def CSRFToken (vManageIP,JSessionID,Port):
 def getRequest(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenID = None):
 	if version_tuple[0:2] < ('19','2'):
 		if Port==None:
-			command = 'curl  -k -s "https://{}:8443/dataservice/{}" -b ~/cookies.txt '.format(vManageIP, mount_point )
+			command = 'curl -s --insecure "https://{}:8443/dataservice/{}" -H "Cookie: JSESSIONID={}" '.format(vManageIP, mount_point,JSessionID )
 			data = executeCommand(command)    
 		else:
-			command = 'curl -k -s "https://{}:{}/dataservice/{}" -b ~/cookies.txt '.format(vManageIP,Port,mount_point )
+			command = 'curl -s --insecure "https://{}:{}/dataservice/{}" -H "Cookie: JSESSIONID={}"'.format(vManageIP,Port,mount_point,JSessionID )
 			data = executeCommand(command)
 	else:
 		if Port==None:
-			command = 'curl -k -s "https://{}:8443/dataservice/{}" -b ~/cookies.txt -H "X-XSRF-TOKEN:{}"'.format(vManageIP,mount_point, tokenid)
+			command = 'curl -s "https://{}:8443/dataservice/{}" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP,mount_point,JSessionID, tokenID)
 			data = executeCommand(command)
 		else:
-			command = 'curl  -k -s "https://{}:{}/dataservice/{}" -b ~/cookies.txt -H "X-XSRF-TOKEN:{}"'.format(vManageIP,Port, mount_point, tokenid)
+			command = 'curl -s "https://{}:{}/dataservice/{}" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP,Port, mount_point,JSessionID, tokenID)
 			data = executeCommand(command)
 	return data
 
@@ -249,17 +249,17 @@ def getRequest(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenID =
 def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
 	if version_tuple[0:2] < ('19','2'):
 		if Port==None:
-			command = 'curl  -k -s "https://{}:8443/logout" -b ~/cookies.txt'.format(vManageIP)
+			command = 'curl --insecure -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP,JSessionID )
 			executeCommand(command)
 		else:
-			command = 'curl  -k -s "https://{}:{}/logout" -b ~/cookies.txt'.format(vManageIP)
+			command = 'curl --insecure -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP, Port, JSessionID)
 			executeCommand(command)   
 	else:
 		if Port==None:
-			command = 'curl  -k -s "https://{}:8443/logout" -b ~/cookies.txt  -H "X-XSRF-TOKEN:{}"'.format(vManageIP, tokenid)
+			command = 'curl -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, JSessionID, tokenid)
 			executeCommand(command) 
 		else:
-			command = 'curl  -k -s "https://{}:{}/logout" -b ~/cookies.txt  -H "X-XSRF-TOKEN:{}"'.format(vManageIP,Port, tokenid)
+			command = 'curl -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, Port, JSessionID, tokenid)
 			executeCommand(command)
 
 
@@ -323,7 +323,8 @@ def getLoip():
 def controllersInfo(controllers):
 	controllers_info = {}
 	for device in controllers['data']:
-		controllers_info[(device['host-name'])] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList']) ] 
+		if device['deviceState'] == 'READY':
+			controllers_info[(device['host-name'])] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList']) ] 
 	return (controllers_info)
 
 #CPU Clock Speed
@@ -594,15 +595,20 @@ def criticalChecksix():
 			neo4j_out_data = neo4j_out.readlines()
 		count = 0
 		for line in neo4j_out_data:
-			if 'ERROR' in line or 'WARN' in line:
-				count +=1
+			if 'ERROR' in line:
+			    last_14day_date_time = datetime.now() - timedelta(days = 14)
+			    match = re.findall(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})',  line)
+			    date_time = datetime.strptime(match1[0], '%Y-%m-%d %H:%M:%S')
+			    if date_time > last_14day_date_time:
+			        count +=1
+
 		if count == 0:
 			check_result = 'SUCCESSFUL'
-			check_analysis = 'No Errors messaged or Warnings found in /var/log/nms/neo4j-out.log'
+			check_analysis = 'No Error messaged found in /var/log/nms/neo4j-out.log'
 			check_action = None
 		else:
 			check_result = 'Failed'
-			check_analysis = '{} Errors/Warning messages found in /var/log/nms/neo4j-out.log'.format(count)
+			check_analysis = '{} Error messages found in /var/log/nms/neo4j-out.log'.format(count)
 			check_action = 'There are errors reported in configDB log file. It is advisable to contact TAC to investigate any issues before an upgrade'
 	
 	return check_result, check_analysis, check_action
@@ -1502,7 +1508,11 @@ if __name__ == "__main__":
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 
+				out = getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port)
 
+				print(out)
+				print(type(out))
+				print(json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port)))
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
 				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
@@ -13684,7 +13694,6 @@ if __name__ == "__main__":
 
 	report_file.close()
 
-	executeCommand('rm cookies.txt')
 
 	end_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
@@ -13767,29 +13776,4 @@ if __name__ == "__main__":
 	print ('    -- Full Results Report: {} '.format(report_file_path))
 	print ('    -- Logs: {}\n'.format(log_file_path))
 	print('Reach out to sure-tool@cisco.com if you have any questions or feedback\n')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
- 
-	
-	
-	
-	
-
-
 
