@@ -45,7 +45,7 @@ except NameError:
 #Argument Parsing anf Validation 
 
 def argumentParser():
-	parser = ArgumentParser(description='SURE - SDWAN Uprade Readiness Engine - v'+ __sure_version )
+	parser = ArgumentParser(description='AURA - SDWAN (SURE) Audit & Upgrade Readiness - v'+ __sure_version )
 
 
 	parser.add_argument('-q', '--quiet',
@@ -1419,7 +1419,7 @@ if __name__ == "__main__":
 		raise SystemExit('\033[1;31m \n\n ERROR: Failed to identify if the server you are currently executing the script on is a vManage server, verify if you are running the script on a vManage server. \033[0;0m \n\n')
 	
 	if is_vmanage == False:
-		raise SystemExit('\033[1;31m \n\n ERROR: The server on which you are currently executing the script is not a vManage server, SURE tool is specifically for vManage servers. \033[0;0m \n\n')
+		raise SystemExit('\033[1;31m \n\n ERROR: The server on which you are currently executing the script is not a vManage server, AURA tool is specifically for vManage servers. \033[0;0m \n\n')
 
 	#Parsing the arguments and validating the flag
 	try:
@@ -1471,8 +1471,8 @@ if __name__ == "__main__":
 		raise SystemExit('\033[1;31m ERROR: Error creating Report file and Log file. \033[0;0m \n\n')
 
 
-	writeFile(report_file, 'Cisco SDWAN SURE v{} Report\n\n'.format(__sure_version))
-	writeFile(report_file,	'''Cisco SDWAN SURE command line tool performed a total of 32 checks at different levels of the SDWAN overlay.
+	writeFile(report_file, 'Cisco SDWAN AURA v{} Report\n\n'.format(__sure_version))
+	writeFile(report_file,	'''Cisco SDWAN AURA command line tool performed a total of 32 checks at different levels of the SDWAN overlay.
 							 \nReach out to sure-tool@cisco.com  if you have any questions or feedback\n\n''')
 	writeFile(report_file, 'Summary of the Results:\n')
 	writeFile(report_file, '-----------------------------------------------------------------------------------------------------------------\n\n\n')
@@ -1480,9 +1480,9 @@ if __name__ == "__main__":
 	
 
 	print('#########################################################')
-	print('###   		  SURE - Version {}                ###'.format(__sure_version))
+	print('###   	AURA SDWAN (SURE) - Version {}               ###'.format(__sure_version))
 	print('#########################################################')
-	print('###     Performing SD-WAN Upgrade Readiness Check     ###')
+	print('###    Performing SD-WAN Audit & Upgrade Readiness    ###')
 	print('#########################################################\n\n')
 
 
@@ -13733,7 +13733,7 @@ if __name__ == "__main__":
 				check_failed_lst.append('\n')
 
 	meta_data = [
-	'SDWAN SURE Version:         {}\n\n'.format(__sure_version),
+	'AURA SDWAN Version:         {}\n\n'.format(__sure_version),
 	'vManage Details:\n',
 	'        Software Version:    {}'.format(version),
 	'        System IP Address:   {}\n\n'.format(system_ip),
@@ -13771,7 +13771,7 @@ if __name__ == "__main__":
 	warning_checks_count = len(warning_checks) 
 
 
-	print('\n******\nCisco SDWAN SURE tool execution completed.\n')
+	print('\n******\nCisco AURA SDWAN tool execution completed.\n')
 	print('Overall Assessment: {} Critical errors, {} Warnings, please check report for details.'.format(critical_checks_count,warning_checks_count ))
 	print ('    -- Full Results Report: {} '.format(report_file_path))
 	print ('    -- Logs: {}\n'.format(log_file_path))
