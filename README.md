@@ -1,5 +1,5 @@
-# AURA-SDWAN (SURE)
-Cisco AURA-SDWAN (SURE) Command Line tool performs a total of 30 checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
+# SDWAN-AURA 
+Cisco SDWAN Audit & Upgrade Readiness (AURA) Command Line tool performs a total of 30 checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
 
 The objective is to execute without impact the performance of the vManage or other devices.
 
@@ -81,7 +81,7 @@ python3 ./jamun/sure.py
 ```sh
 usage: sure.py [-h] [-q] [-v] [-d] -u USERNAME 
 
-SURE - SDWAN Uprade Readiness Engine - v1.0.4
+AURA - SDWAN Audit & Upgrade Readiness - v1.0.6
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -144,9 +144,9 @@ CLI Output on executing the script in normal mode.
 vmanage-cluster1:~$ python sure.py -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         AURA – Version 1.0.6                      ###
 #########################################################
-###     Performing SD-WAN Upgrade Readiness Check     ###
+###    Performing SD-WAN Audit & Upgrade Readiness    ###
 #########################################################
 
 
@@ -167,9 +167,9 @@ In the quiet execution mode it quietly performs all the checks and on completion
 vmanage-cluster1:~$ python sure.py -q -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         AURA – Version 1.0.6                      ###
 #########################################################
-###     Performing SD-WAN Upgrade Readiness Check     ###
+###    Performing SD-WAN Audit & Upgrade Readiness    ###
 #########################################################
 
 
@@ -177,7 +177,7 @@ vManage Password:
 *Starting Checks, this may take several minutes
 
 ******
-Cisco SDWAN SURE tool execution completed. 
+Cisco SDWAN AURA tool execution completed. 
 ```
 
 **Verbose Execution mode**<br>
@@ -186,9 +186,9 @@ In this mode the progress of the checks being performed can be monitored from th
 vmanage-cluster1:~$ python sure.py -v -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         AURA – Version 1.0.6                      ###
 #########################################################
-###     Performing SD-WAN Upgrade Readiness Check     ###
+###    Performing SD-WAN Audit & Upgrade Readiness    ###
 #########################################################
 
 
@@ -209,9 +209,9 @@ vManage Password:
 vmanage-cluster1:~$ python sure.py -d -u username 
 vManage Password:
 #########################################################
-###         SURE – Version 1.0.3                      ###
+###         AURA – Version 1.0.6                      ###
 #########################################################
-###     Performing SD-WAN Upgrade Readiness Check     ###
+###    Performing SD-WAN Audit & Upgrade Readiness    ###
 #########################################################
 
 
@@ -233,7 +233,7 @@ vManage Password:
 
 ```sh
 ******
-Cisco SDWAN SURE tool execution completed.
+Cisco SDWAN AURA tool execution completed.
 
 Overall Assessment: 4 Critical errors, 2 Warnings, please check report for details.
     -- Full Results Report: sdwan_sure/sure_report_03_09_2021_11_35_56.txt 

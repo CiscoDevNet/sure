@@ -1,4 +1,11 @@
 ## Change Log
+
+ - v1.0.6 (22nd October 2021)
+ 	- Check #06: Scan only errors(not warnings) within last 14 days in neo4j output file.
+ 	- CSRF Token generation failure, not storing the cookies in a file.
+ 	- Preliminary Data: Skip controllers if deviceState not READY.
+ 	- Changed the name from SURE TO AURA
+
  - v1.0.5 
  	- Authentication successful using passwords with special characters. Exclamation marks ('!'), only work from 20.3 due to vManage software dependencies to support that character
 
