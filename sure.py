@@ -1480,7 +1480,7 @@ if __name__ == "__main__":
 	
 
 	print('#########################################################')
-	print('###   	AURA SDWAN (SURE) - Version {}               ###'.format(__sure_version))
+	print('###   	AURA SDWAN (SURE) - Version {}            ###'.format(__sure_version))
 	print('#########################################################')
 	print('###    Performing SD-WAN Audit & Upgrade Readiness    ###')
 	print('#########################################################\n\n')
