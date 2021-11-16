@@ -246,17 +246,17 @@ Reach out to sure-tool@cisco.com if you have any questions or feedback
 
 ## The tool retrieves data using the following resources:
 - **GET API Calls**
-    1.  https://{vManage_localip}:{Port}/dataservice/system/device/controllers
-    2.  https://{vManage_localip}:{Port}//dataservice system/device/vedges
-    3.  https://{vManage_localip}:{Port}//dataservice statistics/settings/status
-    4.  https://{vManage_localip}:{Port}/dataservice/management/elasticsearch/index/size/estimate
-    5.  https://{vManage_localip}:{Port}/dataservice device/system/synced/status?deviceId={}
-    6.  https://{vManage_localip}:{Port}/dataservice clusterManagement/list
-    7.  https://{vManage_localip}:{Port}/dataservice disasterrecovery/details
-    8.  https://{vManage_localip}:{Port/dataservice device/action/status/tasks
+    1. https://{vManage_localip}:{Port}/dataservice/system/device/controllers
+    2. https://{vManage_localip}:{Port}/dataservice/system/device/vedges
+    3. https://{vManage_localip}:{Port}/dataservice/statistics/settings/status
+    4. https://{vManage_localip}:{Port}/dataservice/management/elasticsearch/index/size/estimate
+    5. https://{vManage_localip}:{Port}/dataservice/device/system/synced/status?deviceId={}
+    6. https://{vManage_localip}:{Port}/dataservice/clusterManagement/list
+    7. https://{vManage_localip}:{Port}/dataservice/disasterrecovery/details
+    8. https://{vManage_localip}:{Port}/dataservice/device/action/status/tasks
 - **show/shell commands**
 
-## Performs the following checks :
+## Performs the following checks:
 
 **_Checks with severity level: CRITICAL_**<br>
 \#01:Check:vManage:Validate current version <br>
@@ -295,6 +295,3 @@ Reach out to sure-tool@cisco.com if you have any questions or feedback
 \#28:Check:Cluster:Messaging server<br>
 \#29:Check:Cluster:DR replication status<br>
 \#30:Check:Cluster:Intercluster communication<br>
-
-
-
