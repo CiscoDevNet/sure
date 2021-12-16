@@ -1,6 +1,9 @@
 ## Change Log
 
- - v1.0.6 (22nd October 2021)
+- v1.0.7 (22nd October 2021)
+ 	- Check #05: Exception if index was on failed state caused by typo in code
+ 	- 
+- v1.0.6 (22nd October 2021)
  	- Check #06: Scan only errors(not warnings) within last 14 days in neo4j output file.
  	- CSRF Token generation failure, not storing the cookies in a file.
  	- Preliminary Data: Skip controllers if deviceState not READY.
