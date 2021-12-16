@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python
 
-__sure_version =  "1.0.6"
+__sure_version =  "1.0.7"
 
 #Common Imports
 import os 
@@ -570,7 +570,7 @@ def criticalCheckfive(es_indexes):
 	es_index_red = []
 	for index in es_indexes['data']:
 		if index['status'] != 'GREEN':
-			es_index_red.appened(es_indexes['indexName'])
+			es_index_red.append(es_indexes['indexName'])
 
 	if len(es_index_red) != 0:
 		check_result = 'Failed'
