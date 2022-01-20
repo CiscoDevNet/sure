@@ -2,7 +2,7 @@
 
 #!/usr/bin/env python
 
-__sure_version =  "1.0.7"
+__sure_version =  "1.0.8"
 
 #Common Imports
 import os 
@@ -402,7 +402,9 @@ def vbondvmartInfo(controllers_info):
 			vsmart_info[key] = controllers_info[key]
 		elif controllers_info[key][0]  == 'vbond':
 			vbond_info[key] = controllers_info[key]
+
 	return vbond_info, vsmart_info
+	
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -1341,8 +1343,14 @@ def warningCheckten(vsmart_count, vbond_count):
 	control_sum_tab = showCommand('show control summary | tab')
 	discrepancy = []
 	for instance in control_sum_json['data']["viptela-security:control"]["summary"]:
-		if (instance['vbond_counts']) != vbond_count or (instance['vsmart_counts']) != vsmart_count:
-			discrepancy.append(instance)
+		#only check vsmart count in first instance, and vbonds in all
+		if (instance['instance'] ==0):
+			if (instance['vbond_counts']) != vbond_count or (instance['vsmart_counts']) != vsmart_count:
+				discrepancy.append(instance)
+		else:
+			if (instance['vbond_counts']) != vbond_count :
+				discrepancy.append(instance)
+		
 	if len(discrepancy) != 0:
 		check_result = 'Failed'
 		check_analysis = 'The vbond and vsmart count on API call does not match the currently control connected devices.'
@@ -1480,7 +1488,7 @@ if __name__ == "__main__":
 	
 
 	print('#########################################################')
-	print('###   	AURA SDWAN (SURE) - Version {}            ###'.format(__sure_version))
+	print('###   	AURA SDWAN (SURE) - Version {}             ###'.format(__sure_version))
 	print('#########################################################')
 	print('###    Performing SD-WAN Audit & Upgrade Readiness    ###')
 	print('#########################################################\n\n')
