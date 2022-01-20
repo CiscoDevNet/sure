@@ -1,5 +1,8 @@
 ## Change Log
 
+- v1.0.8 (20 January 22)
+ 	- Check #21: Incorrect validation of vSmart count
+ 	- 
 - v1.0.7 (22nd October 2021)
  	- Check #05: Exception if index was on failed state caused by typo in code
  	- 
