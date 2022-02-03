@@ -19,23 +19,12 @@ The objective is to execute without impact the performance of the vManage or oth
 ## To Download the script on vManage
 This script needs to be downloaded onto Cisco vManage.  <br>
 
-**Option 1. git clone direct** <br>
-First ssh to vManage. <br>
->ssh {user}@{ManageIP}
-
-The next step is to get the script onto Cisco vManage.  <br>
-Depending on access from vManage to the internet <br>
-
-If you have access to the internet from vManage, can clone the repository (containing the executable) <br>
-> git clone https://github.com/CiscoDevNet/sure.git<br>
-
-
-**Option 2. Isolated environment.** <br>
-You will need to clone (using method 1) to an intermediate machine and copy to vManage, using scp. <br>
+**Option 1. Isolated environment.** <br>
+Obtain file content from this site, then copy via SCP to the server. <br>
 
 >scp source_file.py {user}@{vManageIP}:/home/{user}<br>
 
-**Option 3. Paste Method.** <br>
+**Option 2. Paste Method.** <br>
 
 * Open sure_script.py file, select all and copy to clipboard
 * SSH to the vManage, and do vshell command
