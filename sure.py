@@ -2441,7 +2441,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -3438,7 +3438,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:    
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -4433,7 +4433,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeenpy3.isAlive():
+					if criticalCheckseventeenpy3.is_alive():
 						criticalCheckseventeenpy3.join(10)
 
 					if not criticalCheckseventeenpy3.result_queue.empty():
@@ -5389,7 +5389,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -6355,7 +6355,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -7311,7 +7311,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 					
 				try:
-					if criticalCheckseventeenpy3.isAlive():
+					if criticalCheckseventeenpy3.is_alive():
 						criticalCheckseventeenpy3.join(10)
 
 					if not criticalCheckseventeenpy3.result_queue.empty():
@@ -8312,7 +8312,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 					
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -9325,7 +9325,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -10320,7 +10320,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeenpy3.isAlive():
+					if criticalCheckseventeenpy3.is_alive():
 						criticalCheckseventeenpy3.join(10)
 
 					if not criticalCheckseventeenpy3.result_queue.empty():
@@ -11430,7 +11430,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -12558,7 +12558,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 					
 				try:
-					if criticalCheckseventeen.isAlive():
+					if criticalCheckseventeen.is_alive():
 						criticalCheckseventeen.join(10)
 
 					if not criticalCheckseventeen.result_queue.empty():
@@ -13664,7 +13664,7 @@ if __name__ == "__main__":
 				writeFile(report_file, '#30:Check:Cluster:Intercluster communication\n\n')
 				
 				try:
-					if criticalCheckseventeenpy3.isAlive():
+					if criticalCheckseventeenpy3.is_alive():
 						criticalCheckseventeenpy3.join(10)
 
 					if not criticalCheckseventeenpy3.result_queue.empty():
