@@ -1,5 +1,5 @@
 # AURA-SDWAN (SURE)
-Cisco AURA-SDWAN (SURE) Command Line tool performs a total of 31 checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
+Cisco AURA-SDWAN (SURE) Command Line tool performs a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
 
 The objective is to execute without impact the performance of the vManage or other devices.
 
@@ -7,7 +7,7 @@ The objective is to execute without impact the performance of the vManage or oth
 
 - Simple and straighfroward, uses default python modules that are already available on the vManage server 
 - Automatically generates TXT report.
-- Only requires – vManage username and password.
+- Only requires – vManage <username> and password.
 - To Execute, simply copy the file to the vManage and run it on the server.
 - Not Intrusive
 - Run Time - usually less than 60 seconds, depending on your deployment size
@@ -18,6 +18,7 @@ The objective is to execute without impact the performance of the vManage or oth
 
 ## To Download the script on vManage
 This script needs to be downloaded onto Cisco vManage.  <br>
+**Note: The application can be downloaded under any desired directory, typically it is downloaded under the user home directory.**
 
 **Option 1. Isolated environment.** <br>
 Obtain file content from this site, then copy via SCP to the server. <br>
@@ -77,12 +78,12 @@ optional arguments:
   -q, --quiet           Quiet execution of the script
   -v, --verbose         Verbose execution of the script
   -d, --debug           Debug execution of the script
-  -u USERNAME, --username USERNAME
+  -u USERNAME, --<username> USERNAME
                         vManage Username
   -vp VMANAGE_PORT, --vmanage_port VMANAGE_PORT
                         vManage Password
 ```
-##  REQUIRED: You must provide the vManage username.<br>
+##  REQUIRED: You must provide the vManage <username>.<br>
 **- OPTIONAL: Enter the vManage Port.**<br>
 
 - -p --vmanage_port (Optional): <br>
@@ -121,7 +122,7 @@ python3 sure.py -d -u <vManageUsername>  -vp <vManagePort>
 ### Step3 :vManagae Password <br>
 After executing the python/python3 command, there will be a input prompt to enter the vManage Password. 
 ```sh 
-vmanage-cluster1:~$ python sure.py -u admin
+vmanage-cluster1:~$ python sure.py -u <username>
 vManage Password:
 ```
 User can be operator/readonly,  no special privileges required
@@ -130,7 +131,7 @@ User can be operator/readonly,  no special privileges required
 **Normal Execution:**<br>
 CLI Output on executing the script in normal mode.
 ```sh
-vmanage-cluster1:~$ python sure.py -u username 
+vmanage-cluster1:~$ python sure.py -u <username> 
 vManage Password:
 #########################################################
 ###         SURE – Version 2.0.0                      ###
@@ -153,7 +154,7 @@ vManage Password:
 **Quiet Execution mode**<br>
 In the quiet execution mode it quietly performs all the checks and on completion it provides the locations of the report and logs files that were generated. 
 ```sh
-vmanage-cluster1:~$ python sure.py -q -u username 
+vmanage-cluster1:~$ python sure.py -q -u <username> 
 vManage Password:
 #########################################################
 ###         SURE – Version 2.0.0                      ###
@@ -172,7 +173,7 @@ Cisco SDWAN SURE tool execution completed.
 **Verbose Execution mode**<br>
 In this mode the progress of the checks being performed can be monitored from the cli. 
 ```sh
-vmanage-cluster1:~$ python sure.py -v -u username 
+vmanage-cluster1:~$ python sure.py -v -u <username> 
 vManage Password:
 #########################################################
 ###         SURE – Version 2.0.0                      ###
@@ -195,7 +196,7 @@ vManage Password:
  **3. Debug Execution mode**<br>
  In the debug mode you can monitor the check performed and check analysis from the cli. 
 ```sh
-vmanage-cluster1:~$ python sure.py -d -u username 
+vmanage-cluster1:~$ python sure.py -d -u <username> 
 vManage Password:
 #########################################################
 ###         SURE – Version 2.0.0                      ###
@@ -224,6 +225,7 @@ vManage Password:
 ******
 Cisco SDWAN SURE tool execution completed.
 
+Total Checks Performed: 32
 Overall Assessment: 4 Critical errors, 2 Warnings, please check report for details.
     -- Full Results Report: sdwan_sure/sure_report_03_09_2021_11_35_56.txt 
     -- Logs: sdwan_sure/sure_logs_03_09_2021_11_35_56.log
@@ -234,16 +236,20 @@ Reach out to sure-tool@cisco.com if you have any questions or feedback
 
 ```
 
+criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_devices, dpi_status)
+
 ## The tool retrieves data using the following resources:
 - **GET API Calls**
-    1. https://{vManage_localip}:{Port}/dataservice/system/device/controllers
-    2. https://{vManage_localip}:{Port}/dataservice/system/device/vedges
-    3. https://{vManage_localip}:{Port}/dataservice/statistics/settings/status
-    4. https://{vManage_localip}:{Port}/dataservice/management/elasticsearch/index/size/estimate
-    5. https://{vManage_localip}:{Port}/dataservice/device/system/synced/status?deviceId={}
-    6. https://{vManage_localip}:{Port}/dataservice/clusterManagement/list
-    7. https://{vManage_localip}:{Port}/dataservice/disasterrecovery/details
-    8. https://{vManage_localip}:{Port}/dataservice/device/action/status/tasks
+    1.  https://{vManage_localip}:{Port}/dataservice/system/device/controllers
+    2.  https://{vManage_localip}:{Port}/dataservice/system/device/vedges
+    3.  https://{vManage_localip}:{Port}/dataservice/statistics/settings/status
+    4.  https://{vManage_localip}:{Port}/dataservice/management/elasticsearch/index/size/estimate
+    5.  https://{vManage_localip}:{Port}/dataservice/device/system/synced/status?deviceId={}
+    6.  https://{vManage_localip}:{Port}/dataservice/clusterManagement/list
+    7.  https://{vManage_localip}:{Port}/dataservice/disasterrecovery/details
+    8.  https://{vManage_localip}:{Port}/dataservice/device/action/status/tasks
+    9.  https://{vManage_localip}:{Port}/dataservice/device/vmanage
+    10. https://{vManage_localip}:{Port}/dataservice/device/ntp/associations?deviceId={deviceIP}
 - **show/shell commands**
 
 ## Performs the following checks:
@@ -260,32 +266,30 @@ Reach out to sure-tool@cisco.com if you have any questions or feedback
 \#09:Check:vManage:Evaluate incoming DPI data size<br>
 \#10:Check:vManage:NTP status across network<br>
 \#11:Check:vManage:Validate Neo4j Store version<br>
-\#12:Check:Controllers:Validate vSmart/vBond CPU count for scale<br>
+\#12:Check:vManage:Validate ConfigDB Size is less than 5GB<br>
+\#13:Check:Controllers:Validate vSmart/vBond CPU count for scale<br>
 
 **_Checks with severity level: WARNING_**<br>
-\#13:Check:vManage:CPU Speed<br>
-\#14:Check:vManage:Network Card type<br>
-\#15:Check:vManage:Backup status<br>
-\#16:Check:vManage:Evaluate Neo4j performance<br>
-\#17:Check:vManage:Confirm there are no pending tasks<br>
-\#18:Check:vManage:Validate there are no empty password users<br>
-\#19:Check:Controllers:Controller versions<br>
-\#20:Check:Controllers:Confirm Certificate Expiration Dates<br>
-\#21:Check:Controllers:vEdge list sync<br>
+\#14:Check:vManage:CPU Speed<br>
+\#15:Check:vManage:Network Card type<br>
+\#16:Check:vManage:Backup status<br>
+\#17:Check:vManage:Evaluate Neo4j performance<br>
+\#18:Check:vManage:Confirm there are no pending tasks<br>
+\#19:Check:vManage:Validate there are no empty password users<br>
+\#20:Check:Controllers:Controller versions<br>
+\#21:Check:Controllers:Confirm Certificate Expiration Dates<br>
+\#22:Check:Controllers:vEdge list sync<br>
 \#22:Check:Controllers: Confirm control connections<br>
 
 **_Checks with severity level: INFORMATIONAL_**<br>
-\#23:Check:vManage:Disk controller type<br>
-\#24:Check:Controllers:Validate there is at minimum vBond, vSmart present<br> 
-\#25:Check:Controllers:Validate all controllers are reachable<br>
+\#24:Check:vManage:Disk controller type<br>
+\#25:Check:Controllers:Validate there is at minimum vBond, vSmart present<br> 
+\#26:Check:Controllers:Validate all controllers are reachable<br>
 
 **_Cluster Checks with severity level: CRITICAL_**<br>
-\#26:Check:Cluster:Version consistency<br>
-\#27:Check:Cluster:Cluster health<br>
-\#28:Check:Cluster:Cluster ConfigDB topology<br>
-\#29:Check:Cluster:Messaging server<br>
-\#30:Check:Cluster:DR replication status<br>
-\#31:Check:Cluster:Intercluster communication<br>
-
-
-
+\#27:Check:Cluster:Version consistency<br>
+\#28:Check:Cluster:Cluster health<br>
+\#29:Check:Cluster:Cluster ConfigDB topology<br>
+\#30:Check:Cluster:Messaging server<br>
+\#31:Check:Cluster:DR replication status<br>
+\#32:Check:Cluster:Intercluster communication<br>
