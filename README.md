@@ -78,7 +78,7 @@ optional arguments:
   -q, --quiet           Quiet execution of the script
   -v, --verbose         Verbose execution of the script
   -d, --debug           Debug execution of the script
-  -u USERNAME, --<username> USERNAME
+  -u USERNAME, --username USERNAME
                         vManage Username
   -vp VMANAGE_PORT, --vmanage_port VMANAGE_PORT
                         vManage Password
