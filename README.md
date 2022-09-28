@@ -33,12 +33,6 @@ Obtain file content from this site, then copy via SCP to the server. <br>
 * Press Esc, :wq (symbol : and letters w,q) to save it
 
 
-## To get the latest version
-We are adding new features regularly. If you have downloaded an older version, it is very easy to get the latest. If you used option #1, you can simply change directory into the sure directory and use git pull, to update to latest
-
->$ cd ./sure<br>
->$ git pull<br>
-
 ## How to Run
 
 
