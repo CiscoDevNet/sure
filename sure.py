@@ -2,6 +2,16 @@
 
 #!/usr/bin/env python
 
+"""
+------------------------------------------------------------------
+
+April 2022, Rugvedi Kapse, Javier Contreras 
+
+Copyright (c) 2022 by Cisco Systems, Inc.
+All rights reserved.
+------------------------------------------------------------------
+"""
+
 __sure_version =  "2.0.0"
 
 #Common Imports
