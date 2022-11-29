@@ -1374,23 +1374,36 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 		log_file_logger.exception(e)
 
 def criticalCheckTwentyone():
-        found = []
-        if os.path.exists('./vmanage-runutils.jar') :
-                result = executeCommand('/usr/bin/java -jar vmanage-runutils.jar checkconfigdb')
-                found = re.findall('Failed', result, re.M)
+    result = ''
+    check_result = ''
 
-        if len(found) < 1 :
-                check_result = 'SUCCESS'
-                check_analysis = 'No issues found in config-DB '
-                check_action = None
-        else:
-                f = open('configdb_status.log', 'w')
-                f.write(result)
-                f.close()
-                check_result = 'Failed'
-                check_analysis = 'Some issues are observed in config-DB'
-                check_action = 'Please check the configdb_status.log file and correct the issue found in the config-db'
-        return  check_result, check_analysis, check_action
+    if os.path.exists('./vmanage-runutils.jar') :
+        cmd = '/usr/bin/java -jar vmanage-runutils.jar checkconfigdb'
+        sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = sub.communicate()
+        encoding = 'utf-8'
+        result = str(err, encoding)
+        val = input("configuration-DB checks are completed. Do you want to remove the vmanage-runutils.jar file?(Y/N)")
+        if val.lower() == 'y' :
+            os.remove('./vmanage-runutils.jar')
+    else :
+        check_result = "vmanage-runutils.jar file is missing. Some configuration-DB checks are skipped"
+
+
+    if len(result) > 1 :
+        if 'Failed' in result :
+            f = open('configdb_status.log', 'w')
+            f.write(result)
+            f.close()
+            check_result = 'Failed'
+            check_analysis = 'Some issues are observed in config-DB'
+            check_action = 'Please check the configdb_status.log file and correct the issue found in the configuration-DB'
+            return  check_result, check_analysis, check_action
+
+    check_result = check_result + 'SUCCESS'
+    check_analysis = 'No issues found in configuration-DB '
+    check_action = None
+    return check_result, check_analysis, check_action
 
 
 
