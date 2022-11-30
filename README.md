@@ -262,6 +262,8 @@ criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_de
 \#11:Check:vManage:Validate Neo4j Store version<br>
 \#12:Check:vManage:Validate ConfigDB Size is less than 5GB<br>
 \#13:Check:Controllers:Validate vSmart/vBond CPU count for scale<br>
+\#17:Check:Communication:Pings to cluster nodes
+\#21:Check:vManage:Configuration-DB checks (via Jar file)
 
 **_Checks with severity level: WARNING_**<br>
 \#14:Check:vManage:CPU Speed<br>
