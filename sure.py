@@ -418,7 +418,8 @@ def  dpiStatus(dpi_stats):
 #Server type: onprem/cloud
 def serverType():
 	server_type = str(executeCommand('cat /sys/devices/virtual/dmi/id/sys_vendor'))
-	if 'VMware' in server_type or 'Red Hat' in server_type:
+
+	if 'VMware' in server_type or 'Red Hat' in server_type:   #add red hat kvm type
 		return 'on-prem'
 	elif 'Amazon'in server_type or 'Microsoft' in server_type:
 		return 'on-cloud'
