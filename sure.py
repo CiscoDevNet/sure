@@ -2,6 +2,16 @@
 
 #!/usr/bin/env python
 
+"""
+------------------------------------------------------------------
+
+April 2022, Rugvedi Kapse, Javier Contreras 
+
+Copyright (c) 2022 by Cisco Systems, Inc.
+All rights reserved.
+------------------------------------------------------------------
+"""
+
 __sure_version =  "2.0.0"
 
 #Common Imports
@@ -1404,6 +1414,8 @@ def criticalCheckTwentyone():
     check_analysis = 'No issues found in configuration-DB '
     check_action = None
     return check_result, check_analysis, check_action
+
+
 
 
 
@@ -3361,6 +3373,60 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+			#Check:vManage:Validate Neo4j Store version
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Critical Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate Neo4j Store version'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				nodestore_version, check_result, check_analysis, check_action = criticalCheckeighteen(version_tuple)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.error('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'result': '{}'.format(check_analysis),
+															 'action': '{}'.format(check_action),
+															 'status': '{}'.format(check_result),
+															 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing #{}:Check:vManage:Validate Neo4j Store version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+			#Check:vManage:Validate ConfigDB Size is less than 5GB
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Critical Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate ConfigDB Size is less than 5GB'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				db_size, check_result, check_analysis, check_action = criticalChecknineteen()
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.error('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
 			# Check:vManage:Validate ConfigDB overall status
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
@@ -4454,6 +4520,7 @@ if __name__ == "__main__":
 			except Exception as e:			
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))	
+
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
@@ -12850,6 +12917,63 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+			#Check:vManage:Validate Neo4j Store version
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print('  #{}:Checking:vManage:Validate Neo4j Store version'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate Neo4j Store version'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				nodestore_version, check_result, check_analysis, check_action = criticalCheckeighteen(version_tuple)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.error('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
+					check_error_report(check_analysis,check_action)
+					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+					print(' INFO:{}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'result': '{}'.format(check_analysis),
+															 'action': '{}'.format(check_action),
+															 'status': '{}'.format(check_result),
+															 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+			#Check:vManage:Validate ConfigDB Size is less than 5GB
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print('  #{}:Checking:vManage:Validate ConfigDB Size is less than 5GB'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate ConfigDB Size is less than 5GB'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				db_size, check_result, check_analysis, check_action = criticalChecknineteen()
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.error('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
+					check_error_report(check_analysis,check_action)
+					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+					print(' INFO:{}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
