@@ -423,11 +423,6 @@ def serverType():
 	elif 'Amazon'in server_type or 'Microsoft' in server_type:
 		return 'on-cloud'
 
-#Persona type: COMPUTE/DATA/COMPUTE_AND_DATA
-def personaType():
-	persona_type = re.findall('"([^"]*)"',str(executeCommand('cat /opt/web-app/etc/persona')))[1]
-	return persona_type
-
 #vManage migration issue checks
 def validatenmsBringup():
     success = False
@@ -1411,8 +1406,6 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 
 #20:Check:vManage:Validate NMS Bringup file
 def criticalChecktwenty(version):
-	#vmanage version
-	vmanage_version = float('.'.join((version.split('.'))[0:2]))
 	success = validatenmsBringup()
 	if not success:
 		check_result = 'Failed'
@@ -1743,16 +1736,26 @@ def infoChecktthree(controllers_info):
 		check_action = None
 	return unreach_controllers,check_result, check_analysis, check_action
 
-#04:Check:vManage:Persona type
+#04:Check:vManage:Persona type: COMPUTE/DATA/COMPUTE_AND_DATA
 def infoCheckfour(version):
 	#vmanage version
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
 	if vmanage_version >= 20.6:
-		#print('20.6')
+		if os.path.isfile('/opt/web-app/etc/persona') == False:
+			check_result = 'Failed'
+			check_analysis = '/opt/web-app/etc/persona file not found'
+			check_action = 'Persona file was not found. It is advisable to contact TAC to investigate why the /opt/web-app/etc/persona is missing'
+
+		elif os.path.isfile('/opt/web-app/etc/persona') == True:
+			persona_type = re.findall('"([^"]*)"',str(executeCommand('cat /opt/web-app/etc/persona')))[1]
+			check_result = 'SUCCESS'
+			check_analysis = 'Current vManage persona type is {}.'.format(persona_type)
+			check_action = None
+	else:
 		check_result = 'SUCCESS'
-		persona_type = personaType()
-		check_analysis = 'Current vManage persona type is {}.'.format(persona_type)
+		check_analysis = 'Check is not required for the current version'
 		check_action = None
+
 	return check_result, check_analysis, check_action, persona_type
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -3417,7 +3420,7 @@ if __name__ == "__main__":
             #Check:vManage:Validate nms bringup file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Critical Check:#{}'.format(check_count_zfill))git checkout -b
 			check_name = '#{}:Check:vManage:Validate nms bringup file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
