@@ -33,6 +33,7 @@ import threading
 import sys
 import platform
 import getpass
+import csv
 
 try:
 	#python3 Imports
@@ -427,7 +428,7 @@ def serverType():
 def validatenmsBringup():
     success = False
     nms_bringup_file = '/opt/web-app/etc/nms_bringup'
-    try:
+    if os.path.isfile('/opt/web-app/etc/nms_bringup') == True:
         with open(nms_bringup_file, 'r') as csv_file:
             total_line_num = len(csv_file.readlines())
         with open(nms_bringup_file, 'r') as csvfile:
@@ -437,12 +438,14 @@ def validatenmsBringup():
                 line_count += 1
             if line_count < total_line_num:
                 success = False
+                check_analysis = "Validate the nms_bringup file at /opt/web-app/etc for drconsul service before upgrade to avoid migration issues."
             else:
                 success = True
-    except Exception as e:
-        log_file_logger.exception(e)
+                check_analysis = None
+    elif os.path.isfile('/opt/web-app/etc/nms_bringup') == False:
+        check_analysis = "/opt/web-app/etc/nms_bringup file not found."
 
-    return success
+    return success, check_analysis
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
@@ -1406,11 +1409,11 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 
 #20:Check:vManage:Validate NMS Bringup file
 def criticalChecktwenty(version):
-	success = validatenmsBringup()
+	success, analysis = validatenmsBringup()
 	if not success:
 		check_result = 'Failed'
 		check_analysis = 'Current incorrect nms_bringup file at /opt/web-app/etc will cause migration issues when upgraded.'
-		check_action = 'Validate the nms_bringup file at /opt/web-app/etc for drconsul service before upgrade to avoid migration issues.'
+		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
 		check_analysis = 'Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues and upgrade is possible.'
@@ -3420,7 +3423,7 @@ if __name__ == "__main__":
             #Check:vManage:Validate nms bringup file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))git checkout -b
+			print(' Critical Check:#{}'.format(check_count_zfill))
 			check_name = '#{}:Check:vManage:Validate nms bringup file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
