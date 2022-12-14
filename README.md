@@ -234,6 +234,7 @@ criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_de
 
 ## The tool retrieves data using the following resources:
 - **GET API Calls**
+
     1.  https://{vManage_localip}:{Port}/dataservice/system/device/controllers
     2.  https://{vManage_localip}:{Port}/dataservice/system/device/vedges
     3.  https://{vManage_localip}:{Port}/dataservice/statistics/settings/status
@@ -244,6 +245,7 @@ criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_de
     8.  https://{vManage_localip}:{Port}/dataservice/device/action/status/tasks
     9.  https://{vManage_localip}:{Port}/dataservice/device/vmanage
     10. https://{vManage_localip}:{Port}/dataservice/device/ntp/associations?deviceId={deviceIP}
+
 - **show/shell commands**
 
 ## Performs the following checks:

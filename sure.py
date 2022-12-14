@@ -31,6 +31,7 @@ import threading
 import sys
 import platform
 import getpass
+import csv
 
 try:
 	#python3 Imports
@@ -416,10 +417,34 @@ def  dpiStatus(dpi_stats):
 #Server type: onprem/cloud
 def serverType():
 	server_type = str(executeCommand('cat /sys/devices/virtual/dmi/id/sys_vendor'))
-	if 'VMware' in server_type or 'Red Hat' in server_type:
+
+	if 'VMware' in server_type or 'Red Hat' in server_type:   #add red hat kvm type
 		return 'on-prem'
 	elif 'Amazon'in server_type or 'Microsoft' in server_type:
 		return 'on-cloud'
+
+#vManage migration issue checks
+def validatenmsBringup():
+    success = False
+    nms_bringup_file = '/opt/web-app/etc/nms_bringup'
+    if os.path.isfile('/opt/web-app/etc/nms_bringup') == True:
+        with open(nms_bringup_file, 'r') as csv_file:
+            total_line_num = len(csv_file.readlines())
+        with open(nms_bringup_file, 'r') as csvfile:
+            csv_reader = csv.reader(csvfile)
+            line_count = 0
+            for row in csv_reader:
+                line_count += 1
+            if line_count < total_line_num:
+                success = False
+                check_analysis = "Validate the nms_bringup file at /opt/web-app/etc for drconsul service before upgrade to avoid migration issues."
+            else:
+                success = True
+                check_analysis = None
+    elif os.path.isfile('/opt/web-app/etc/nms_bringup') == False:
+        check_analysis = "/opt/web-app/etc/nms_bringup file not found."
+
+    return success, check_analysis
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
@@ -1381,6 +1406,23 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 	except Exception as e:
 		log_file_logger.exception(e)
 
+#20:Check:vManage:Validate NMS Bringup file
+def criticalChecktwenty(version):
+	success, analysis = validatenmsBringup()
+	if not success:
+		check_result = 'Failed'
+		check_analysis = 'Current incorrect nms_bringup file at /opt/web-app/etc will cause migration issues when upgraded.'
+		check_action = '{}'.format(analysis)
+	else:
+		check_result = 'SUCCESS'
+		check_analysis = 'Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues and upgrade is possible.'
+		check_action = None
+		log_file_logger.info('Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues.')
+
+
+	return  check_result, check_analysis, check_action
+
+#21:Check:vManage:Validate ConfigDB overall status 
 def criticalCheckTwentyone():
     result = ''
     check_result = ''
@@ -1411,9 +1453,7 @@ def criticalCheckTwentyone():
     check_result = check_result + 'SUCCESS'
     check_analysis = 'No issues found in configuration-DB '
     check_action = None
-    return check_result, check_analysis, check_action
-
-
+    return check_result, check_analysis, check_action  
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
@@ -1731,6 +1771,28 @@ def infoChecktthree(controllers_info):
 		check_analysis = 'All the controllers are reachable'
 		check_action = None
 	return unreach_controllers,check_result, check_analysis, check_action
+
+#04:Check:vManage:Persona type: COMPUTE/DATA/COMPUTE_AND_DATA
+def infoCheckfour(version):
+	#vmanage version
+	vmanage_version = float('.'.join((version.split('.'))[0:2]))
+	if vmanage_version >= 20.6:
+		if os.path.isfile('/opt/web-app/etc/persona') == False:
+			check_result = 'Failed'
+			check_analysis = '/opt/web-app/etc/persona file not found'
+			check_action = 'Persona file was not found. It is advisable to contact TAC to investigate why the /opt/web-app/etc/persona is missing'
+
+		elif os.path.isfile('/opt/web-app/etc/persona') == True:
+			persona_type = re.findall('"([^"]*)"',str(executeCommand('cat /opt/web-app/etc/persona')))[1]
+			check_result = 'SUCCESS'
+			check_analysis = 'Current vManage persona type is {}.'.format(persona_type)
+			check_action = None
+	else:
+		check_result = 'SUCCESS'
+		check_analysis = 'Check is not required for the current version'
+		check_action = None
+
+	return check_result, check_analysis, check_action, persona_type
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -3447,6 +3509,32 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+            #Check:vManage:Validate nms bringup file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Critical Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate nms bringup file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwenty(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
 			warning_checks = {}
@@ -4864,6 +4952,33 @@ if __name__ == "__main__":
 															 'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+            #Check:vManage:Persona type
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Informational Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
+				if check_result == 'Failed':
+					warning_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Informational'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+
+			except Exception as e:
+				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
@@ -6535,6 +6650,30 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+            #Check:vManage:Validate nms bringup file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			check_name = '#{}:Check:vManage:Validate nms bringup file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwenty(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
 			warning_checks = {}
@@ -7889,6 +8028,32 @@ if __name__ == "__main__":
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+           #Check:vManage:Persona type
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
+				if check_result == 'Failed':
+					warning_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Informational'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+
+			except Exception as e:
+				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
@@ -9640,6 +9805,31 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+           #Check:vManage:Validate nms bringup file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print('  #{}:Checking:vManage:Validate nms bringup file'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate nms bringup file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwenty(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -11056,6 +11246,33 @@ if __name__ == "__main__":
 															 'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+           #Check:vManage:Persona type
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' #{}:Check:vManage:Persona type'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
+				if check_result == 'Failed':
+					warning_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Informational'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+
+			except Exception as e:
+				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
 
@@ -12908,6 +13125,33 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+            #Check:vManage:Validate nms bringup file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' #{}:Checking:vManage:Validate nms bringup file'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate nms bringup file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwenty(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+					print(' INFO:{}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -14404,6 +14648,35 @@ if __name__ == "__main__":
 															 'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+           #Check:vManage:Persona type
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' #{}:Check:vManage:Persona type'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
+				if check_result == 'Failed':
+					warning_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+					print(' INFO:{}\n\n'.format(check_analysis))
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Informational'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+
+			except Exception as e:
+				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
