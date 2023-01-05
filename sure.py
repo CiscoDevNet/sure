@@ -469,9 +469,9 @@ def validateServerConfigsUUID():
                     check_analysis = None
             except:
                 success = False
-                check_analysis = "Failed to validate server configs file"
+                check_analysis = "Failed to validate cluster state for uuid from server configs file."
     elif os.path.isfile(server_configs_file) == False :
-        check_analysis = server_configs_file + "file not found."
+        check_analysis = server_configs_file + " file not found."
 
     return success, check_analysis
 
@@ -1455,13 +1455,13 @@ def criticalChecktwentyone(version):
 	success, analysis = validateServerConfigsUUID()
 	if not success:
 		check_result = 'Failed'
-		check_analysis = 'Current incorrect server_config.json file at /opt/web-app/etc will cause migration issues when upgraded.'
+		check_analysis = 'Failed to validate cluster state for uuid from server configs file.'
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
-		check_analysis = 'Validated the server_config.json file at /opt/web-app/etc to avoid migration issues and upgrade is possible.'
+		check_analysis = 'Validated the cluster state for uuid from server configs file.'
 		check_action = None
-		log_file_logger.info('Validated the server_config.json file at /opt/web-app/etc to avoid clustering upgrade issues.')
+		log_file_logger.info('Validated the cluster state for uuid from server configs file.')
 
 	return  check_result, check_analysis, check_action
 
@@ -3493,7 +3493,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate server configs file.'.format(check_count_zfill)
+			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
@@ -6632,7 +6632,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate server configs file.'.format(check_count_zfill)
+			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
@@ -9787,7 +9787,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate server configs file.'.format(check_count_zfill)
+			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
@@ -13106,7 +13106,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate server configs file.'.format(check_count_zfill)
+			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
