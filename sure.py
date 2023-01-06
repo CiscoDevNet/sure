@@ -3492,7 +3492,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            #Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
@@ -6631,7 +6631,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            #Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
@@ -9785,7 +9785,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            #Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print('  #{}:Checking:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill))
@@ -13104,7 +13104,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            #Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' #{}:Checking:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill))
