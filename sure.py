@@ -450,11 +450,11 @@ def validatenmsBringup():
 
 def validateServerConfigsUUID():
     success = False
-    server_configs_file = '/opt/web-app/etc/server_config.json'
+    server_configs_file = '/opt/web-app/etc/server_configs.json'
     uuid_file = '/etc/viptela/uuid'
     if os.path.isfile(uuid_file) == True:
         with open(uuid_file) as uuid_f:
-            uuid_val = uuid_f.read()
+            uuid_val = uuid_f.read().strip()
     elif os.path.isfile(uuid_file) == False:
         check_analysis = uuid_file + " file not found."
         return success, check_analysis
@@ -467,6 +467,9 @@ def validateServerConfigsUUID():
                 if uuid == uuid_val:
                     success = True
                     check_analysis = None
+                else:
+                    success = False
+                    check_analysis = "Failed to validate cluster state for uuid from server configs file."
             except:
                 success = False
                 check_analysis = "Failed to validate cluster state for uuid from server configs file."
@@ -6631,7 +6634,6 @@ if __name__ == "__main__":
             #Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
 			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
@@ -9786,7 +9788,7 @@ if __name__ == "__main__":
             #Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print('  #{}:Checking:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill))
 			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
@@ -13105,7 +13107,7 @@ if __name__ == "__main__":
             #Check:vManage:Validate server configs file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' #{}:Checking:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill))
 			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
