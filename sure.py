@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #!/usr/bin/env python
-
+gi
 """
 ------------------------------------------------------------------
 
@@ -477,6 +477,30 @@ def validateServerConfigsUUID():
         check_analysis = server_configs_file + " file not found."
 
     return success, check_analysis
+
+def _parse_local_server_config() -> Dict[str, str]:
+    server_configs_file = '/opt/web-app/etc/server_configs.json'
+    if os.path.isfile(server_configs_file) == True:
+        try:
+            with open(server_configs_file, 'r') as server_configs_data:
+                data_dict = json.load(server_configs_data)
+            log.debug("Server config json re-read: " + str(data_dict))
+
+            services_data_dict = data_dict["services"]
+            services = ["nats","neo4j","elasticsearch"]
+            if "application-server" in services_data_dict:
+                key = "application-server"
+            application_server_dict = services_data_dict[key]
+            return application_server_dict["hosts"]
+            cluster_size = len()
+            if cluster_size < 2:
+                log_file_logger.info( "cluster size is $member_size")
+                log_file_logger.info( "Not a cluster")
+        except Exception:
+            log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+    elif os.path.isfile(server_configs_file) == False :
+        check_analysis = server_configs_file + " file not found."
+
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
@@ -1467,6 +1491,105 @@ def criticalChecktwentyone(version):
 		log_file_logger.info('Validated the cluster state for uuid from server configs file.')
 
 	return  check_result, check_analysis, check_action
+
+#22:Check:Cluster:Messaging server
+def criticalChecktwentytwo(vmanage_service_details, cluster_size):
+	cluster_msdown = []
+	'''
+	for device in cluster_health_data['data'][0]['data']:
+		for service in device['configJson']:
+			if (service == 'messaging-server') and device['configJson'][service]['status'] != 'normal' and device['configJson'][service]['status'] != 'disabled':
+				cluster_msdown.append('vManageID: {}, Host-name: {}'.format(device['vmanageID'],device['configJson']['host-name']))
+	'''
+	if vmanage_service_details:
+		for vmanage_cluster_ip, service_details in vmanage_service_details.items():
+			for service in service_details:
+				if 'messaging server' in service['service'] and service['enabled'] == "true" and 'running' in service['status']:
+					cluster_msdown.append('vManage device IP: {}'.format(vmanage_cluster_ip))
+				else:
+					continue
+	else:
+		cluster_msdown = 'unknown'
+
+	if cluster_msdown == 'unkown':
+		check_result = 'Failed'
+		check_analysis = 'Error retrieving the NMS Messaging server information'
+		check_action = 'Investigate why the API is not returning vManage Messaging server information'
+	if len(cluster_msdown) < cluster_size:
+		check_result = 'Failed'
+		check_analysis = 'All the servers in the cluster dont have message-service running'
+		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
+	elif len(cluster_msdown) == cluster_size:
+		check_result = 'SUCCESS'
+		check_analysis = 'All the servers in the cluster have message-service running'
+		check_action = None
+	return cluster_msdown,check_result,check_analysis, check_action
+
+#22:Check:Cluster:Configuration db
+def criticalChecktwentytwo(vmanage_service_details, cluster_size):
+	cluster_msdown = []
+	'''
+	for device in cluster_health_data['data'][0]['data']:
+		for service in device['configJson']:
+			if (service == 'messaging-server') and device['configJson'][service]['status'] != 'normal' and device['configJson'][service]['status'] != 'disabled':
+				cluster_msdown.append('vManageID: {}, Host-name: {}'.format(device['vmanageID'],device['configJson']['host-name']))
+	'''
+	if vmanage_service_details:
+		for vmanage_cluster_ip, service_details in vmanage_service_details.items():
+			for service in service_details:
+				if 'messaging server' in service['service'] and service['enabled'] == "true" and 'running' in service['status']:
+					cluster_msdown.append('vManage device IP: {}'.format(vmanage_cluster_ip))
+				else:
+					continue
+	else:
+		cluster_msdown = 'unknown'
+
+	if cluster_msdown == 'unkown':
+		check_result = 'Failed'
+		check_analysis = 'Error retrieving the NMS Messaging server information'
+		check_action = 'Investigate why the API is not returning vManage Messaging server information'
+	if len(cluster_msdown) < cluster_size:
+		check_result = 'Failed'
+		check_analysis = 'All the servers in the cluster dont have message-service running'
+		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
+	elif len(cluster_msdown) == cluster_size:
+		check_result = 'SUCCESS'
+		check_analysis = 'All the servers in the cluster have message-service running'
+		check_action = None
+	return cluster_msdown,check_result,check_analysis, check_action
+
+#22:Check:Cluster:Elasticsearch
+def criticalChecktwentytwo(vmanage_service_details, cluster_size):
+	cluster_msdown = []
+	'''
+	for device in cluster_health_data['data'][0]['data']:
+		for service in device['configJson']:
+			if (service == 'messaging-server') and device['configJson'][service]['status'] != 'normal' and device['configJson'][service]['status'] != 'disabled':
+				cluster_msdown.append('vManageID: {}, Host-name: {}'.format(device['vmanageID'],device['configJson']['host-name']))
+	'''
+	if vmanage_service_details:
+		for vmanage_cluster_ip, service_details in vmanage_service_details.items():
+			for service in service_details:
+				if 'messaging server' in service['service'] and service['enabled'] == "true" and 'running' in service['status']:
+					cluster_msdown.append('vManage device IP: {}'.format(vmanage_cluster_ip))
+				else:
+					continue
+	else:
+		cluster_msdown = 'unknown'
+
+	if cluster_msdown == 'unkown':
+		check_result = 'Failed'
+		check_analysis = 'Error retrieving the NMS Messaging server information'
+		check_action = 'Investigate why the API is not returning vManage Messaging server information'
+	if len(cluster_msdown) < cluster_size:
+		check_result = 'Failed'
+		check_analysis = 'All the servers in the cluster dont have message-service running'
+		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
+	elif len(cluster_msdown) == cluster_size:
+		check_result = 'SUCCESS'
+		check_analysis = 'All the servers in the cluster have message-service running'
+		check_action = None
+	return cluster_msdown,check_result,check_analysis, check_action
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
