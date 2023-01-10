@@ -448,6 +448,36 @@ def validatenmsBringup():
 
     return success, check_analysis
 
+def validateServerConfigsUUID():
+    success = False
+    server_configs_file = '/opt/web-app/etc/server_configs.json'
+    uuid_file = '/etc/viptela/uuid'
+    if os.path.isfile(uuid_file) == True:
+        with open(uuid_file) as uuid_f:
+            uuid_val = uuid_f.read().strip()
+    elif os.path.isfile(uuid_file) == False:
+        check_analysis = uuid_file + " file not found."
+        return success, check_analysis
+
+    if os.path.isfile(server_configs_file) == True:
+        with open(server_configs_file, 'r') as config_file:
+            try:
+                configs = json.load(config_file)
+                uuid = configs['cluster']
+                if uuid == uuid_val:
+                    success = True
+                    check_analysis = None
+                else:
+                    success = False
+                    check_analysis = "Failed to validate uuid from server configs file."
+            except:
+                success = False
+                check_analysis = "Failed to validate uuid from server configs file."
+    elif os.path.isfile(server_configs_file) == False :
+        check_analysis = server_configs_file + " file not found."
+
+    return success, check_analysis
+
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
 	vsmart_info = {}
@@ -1420,6 +1450,21 @@ def criticalChecktwenty(version):
 		check_analysis = 'Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues and upgrade is possible.'
 		check_action = None
 		log_file_logger.info('Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues.')
+
+	return  check_result, check_analysis, check_action
+
+#21:Check:vManage:Validate Server Configs file
+def criticalChecktwentyone(version):
+	success, analysis = validateServerConfigsUUID()
+	if not success:
+		check_result = 'Failed'
+		check_analysis = 'Failed to validate uuid from server configs file.'
+		check_action = '{}'.format(analysis)
+	else:
+		check_result = 'SUCCESS'
+		check_analysis = 'Validated the uuid from server configs file.'
+		check_action = None
+		log_file_logger.info('Validated the uuid from server configs file.')
 
 	return  check_result, check_analysis, check_action
 
@@ -3429,6 +3474,32 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwenty(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+            		#Check:vManage:Validate server configs file - uuid
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Critical Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentyone(version)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -6560,6 +6631,32 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+            		#Check:vManage:Validate server configs file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentyone(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+
 			#Warning Checks
 			warning_checks = {}
 			log_file_logger.info('*** Performing Warning Checks')
@@ -9670,6 +9767,32 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwenty(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+            		#Check:vManage:Validate server configs file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print('  #{}:Checking:vManage:Validate uuid from server configs file.'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentyone(version)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -12970,6 +13093,32 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 					print(' INFO:{}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+            		#Check:vManage:Validate server configs file
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' #{}:Checking:vManage:Validate uuid from server configs file.'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentyone(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 																 'log type': '{}'.format(result_log['Critical'][check_result]),
