@@ -478,6 +478,7 @@ def validateServerConfigsUUID():
 
     return success, check_analysis
 
+
 def _parse_local_server_config() -> Dict[str, str]:
     server_configs_file = '/opt/web-app/etc/server_configs.json'
     if os.path.isfile(server_configs_file) == True:
@@ -487,15 +488,16 @@ def _parse_local_server_config() -> Dict[str, str]:
             log.debug("Server config json re-read: " + str(data_dict))
 
             services_data_dict = data_dict["services"]
-            services = ["nats","neo4j","elasticsearch"]
-            if "application-server" in services_data_dict:
-                key = "application-server"
-            application_server_dict = services_data_dict[key]
-            return application_server_dict["hosts"]
-            cluster_size = len()
-            if cluster_size < 2:
-                log_file_logger.info( "cluster size is $member_size")
-                log_file_logger.info( "Not a cluster")
+            print(services_data_dict)
+            services = ["nats", "neo4j", "elasticsearch"]
+            for service in services:
+                if services_data_dict[service]["standalone"] == False and len(services_data_dict[service]["clients"]) >1:
+                    log_file_logger.info(service + " has all the cluster members.")
+                    server_host_dict[service] = services_data_dict[service]["clients"].values()
+                else:
+                    log_file_logger.info(service + " is not a cluster.")
+            print(server_host_dict)
+            return server_host_dict
         except Exception:
             log_file_logger.error("Unable to read server_configs.json. Exiting now.")
     elif os.path.isfile(server_configs_file) == False :
