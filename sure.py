@@ -485,10 +485,7 @@ def _parse_local_server_config() -> Dict[str, str]:
         try:
             with open(server_configs_file, 'r') as server_configs_data:
                 data_dict = json.load(server_configs_data)
-                log.debug("Server config json re-read: " + str(data_dict))
-
                 services_data_dict = data_dict["services"]
-                print(services_data_dict)
                 services = ["nats", "neo4j", "elasticsearch"]
                 for service in services:
                     if services_data_dict[service]["standalone"] == False and len(services_data_dict[service]["clients"]) >1:
@@ -496,45 +493,53 @@ def _parse_local_server_config() -> Dict[str, str]:
                         server_host_dict[service] = services_data_dict[service]["hosts"]
                     else:
                         log_file_logger.info(service + " is not a cluster.")
-                return server_host_dict
+                success = True
+                check_analysis = None
         except Exception:
+            success = False
+            check_analysis = "Unable to read server_configs.json."
             log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+
     elif os.path.isfile(server_configs_file) == False :
+        success = False
         check_analysis = server_configs_file + " file not found."
 
-def validateServerConfigsReachability():
-    server_host_dict = _parse_local_server_config()
-    for service_name in server_host_dict.keys():
-        service_host = [node.split(":")[0] for node in server_host_dict[service].values()]
-        try:
-            log_file_logger.info("Service (%s) IP address : (%s)", service_name, service_host)
-            if not service_host:
-                log_file_logger.info("Service (%s) is not up due to the container host is empty", service_name)
-                success = False
-                check_analysis = "Failed to validate cluster state for uuid from server configs file."
+    return server_host_dict, success, check_analysis
 
-            elif service_name=='messaging-server':
-                is_messaging_server_up = check_messaging_server_up(service_host)
-                if not is_messaging_server_up:
+def validateServerConfigsReachability():
+    server_host_dict, success, check_analysis = _parse_local_server_config()
+    if success and server_host_dict:
+        for service_name in server_host_dict.keys():
+            service_host = [node.split(":")[0] for node in server_host_dict[service].values()]
+            try:
+                log_file_logger.info("Service (%s) IP address : (%s)", service_name, service_host)
+                if not service_host:
+                    log_file_logger.info("Service (%s) is not up due to the container host is empty", service_name)
                     success = False
-                else:
-                    success = True
-            elif service_name=='statistics-db':
-                is_stat_db_up = check_stats_db_up(service_host)
-                if not is_stat_db_up:
-                    success = False
-                else:
-                    success = True
-            elif service_name=='configuration-db':
-                is_config_db_up = check_config_db_up(service_host)
-                if not is_config_db_up:
-                    success = False
-                else:
-                    success = True
-        except Exception as error:
-            log_file_logger.error("Error while checking service component(%s), error(%s)", service_name, str(error))
-            success = False
-            check_analysis = "Failed to validate cluster state for services from server configs file."
+                    check_analysis = "Failed to validate cluster state for uuid from server configs file."
+
+                elif service_name=='messaging-server':
+                    is_messaging_server_up = check_messaging_server_up(service_host)
+                    if not is_messaging_server_up:
+                        success = False
+                    else:
+                        success = True
+                elif service_name=='statistics-db':
+                    is_stat_db_up = check_stats_db_up(service_host)
+                    if not is_stat_db_up:
+                        success = False
+                    else:
+                        success = True
+                elif service_name=='configuration-db':
+                    is_config_db_up = check_config_db_up(service_host)
+                    if not is_config_db_up:
+                        success = False
+                    else:
+                        success = True
+            except Exception as error:
+                log_file_logger.error("Error while checking service component(%s), error(%s)", service_name, str(error))
+                success = False
+                check_analysis = "Failed to validate cluster state for services from server configs file."
 
     if success == True:
         check_analysis = None
