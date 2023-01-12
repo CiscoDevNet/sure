@@ -518,19 +518,19 @@ def validateServerConfigsReachability():
                     success = False
                     check_analysis = "Failed to validate cluster state for uuid from server configs file."
 
-                elif service_name=='messaging-server':
+                elif service_name=='nats':
                     is_messaging_server_up = check_messaging_server_up(service_host)
                     if not is_messaging_server_up:
                         success = False
                     else:
                         success = True
-                elif service_name=='statistics-db':
+                elif service_name=='elasticsearch':
                     is_stat_db_up = check_stats_db_up(service_host)
                     if not is_stat_db_up:
                         success = False
                     else:
                         success = True
-                elif service_name=='configuration-db':
+                elif service_name=='neo4j':
                     is_config_db_up = check_config_db_up(service_host)
                     if not is_config_db_up:
                         success = False
