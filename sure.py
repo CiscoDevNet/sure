@@ -485,24 +485,114 @@ def _parse_local_server_config() -> Dict[str, str]:
         try:
             with open(server_configs_file, 'r') as server_configs_data:
                 data_dict = json.load(server_configs_data)
-            log.debug("Server config json re-read: " + str(data_dict))
+                log.debug("Server config json re-read: " + str(data_dict))
 
-            services_data_dict = data_dict["services"]
-            print(services_data_dict)
-            services = ["nats", "neo4j", "elasticsearch"]
-            for service in services:
-                if services_data_dict[service]["standalone"] == False and len(services_data_dict[service]["clients"]) >1:
-                    log_file_logger.info(service + " has all the cluster members.")
-                    server_host_dict[service] = services_data_dict[service]["clients"].values()
-                else:
-                    log_file_logger.info(service + " is not a cluster.")
-            print(server_host_dict)
-            return server_host_dict
+                services_data_dict = data_dict["services"]
+                print(services_data_dict)
+                services = ["nats", "neo4j", "elasticsearch"]
+                for service in services:
+                    if services_data_dict[service]["standalone"] == False and len(services_data_dict[service]["clients"]) >1:
+                        log_file_logger.info(service + " has all the cluster members.")
+                        server_host_dict[service] = services_data_dict[service]["hosts"]
+                    else:
+                        log_file_logger.info(service + " is not a cluster.")
+                return server_host_dict
         except Exception:
             log_file_logger.error("Unable to read server_configs.json. Exiting now.")
     elif os.path.isfile(server_configs_file) == False :
         check_analysis = server_configs_file + " file not found."
 
+def validateServerConfigsReachability():
+    server_host_dict = _parse_local_server_config()
+    for service_name in server_host_dict.keys():
+        service_host = [node.split(":")[0] for node in server_host_dict[service].values()]
+        try:
+            log_file_logger.info("Service (%s) IP address : (%s)", service_name, service_host)
+            if not service_host:
+                log_file_logger.info("Service (%s) is not up due to the container host is empty", service_name)
+                success = False
+                check_analysis = "Failed to validate cluster state for uuid from server configs file."
+
+            elif service_name=='messaging-server':
+                is_messaging_server_up = check_messaging_server_up(service_host)
+                if not is_messaging_server_up:
+                    success = False
+                else:
+                    success = True
+            elif service_name=='statistics-db':
+                is_stat_db_up = check_stats_db_up(service_host)
+                if not is_stat_db_up:
+                    success = False
+                else:
+                    success = True
+            elif service_name=='configuration-db':
+                is_config_db_up = check_config_db_up(service_host)
+                if not is_config_db_up:
+                    success = False
+                else:
+                    success = True
+        except Exception as error:
+            log_file_logger.error("Error while checking service component(%s), error(%s)", service_name, str(error))
+            success = False
+            check_analysis = "Failed to validate cluster state for services from server configs file."
+
+    if success == True:
+        check_analysis = None
+    else:
+        check_analysis = "Failed to validate cluster state for services from server configs file."
+
+    return success, check_analysis
+
+def check_stats_db_up(stat_db_servers:list) -> bool:
+    for server in stat_db_servers:
+        log.info("Checking for statistics-db service on (%s)", server)
+        cipher_suite = Fernet(b'5Mv1-iPXPEMpZx9Simi2JPrksCGAD44p_Rc5mX-l4EM=')
+        elasticsearchPwdEncrpt=b'gAAAAABjSPNiu8FQHrTOJhu2WN2jtlQrzqUJFJeEc6ojNQRqo0M1poosDZZEzB_Wmcr9Fc-jCyQbPFlAc_wNmEBskkjVAdaXKoISzJ1K4fHiMZ6NMeySqqw='
+        elasticSearchPwd = cipher_suite.decrypt(elasticsearchPwdEncrpt)
+        try:
+            req = requests.get('http://'+server+':9200/',
+                               auth =HTTPBasicAuth('elasticsearch', elasticSearchPwd) )
+            if req.status_code != 200:
+                log.info("Statistics-db service is NOT ready on (%s)", server )
+                return False
+            else:
+                log.info("Statistics-db service on (%s) is UP", server )
+        except requests.ConnectionError as error:
+            log.info("Error while checking container component (%s), error (%s)", "statistics-db", str(error))
+            return False
+    return True
+
+
+def check_messaging_server_up(messaging_servers:list) -> bool:
+    for server in messaging_servers:
+        log.info("Checking for messaging service on (%s)", server)
+        #invoke http call
+        try:
+            req = requests.get('http://'+server+':8222/streaming/serverz')
+            messaging_server_state = req.json()['state']
+            if messaging_server_state not in ['STANDALONE', 'CLUSTERED']:
+                log.info("Messaging service is NOT ready on (%s)", server)
+                return False
+            log.info("Messaging service on (%s) is up", server)
+        except requests.ConnectionError as error:
+            log.info("Error while checking container component (%s), error (%s)", "messaging-server", str(error))
+            return False
+    return True
+
+def check_config_db_up(config_db_servers:list) -> bool:
+    for server in config_db_servers:
+        log.info("Checking for configuration-db service on (%s)", server)
+        try:
+            req = requests.get('http://'+server+':7474')
+            if req.status_code != 200:
+                log.info("configuration-db service is NOT ready on (%s)", server )
+                return False
+            else:
+                log.info("configuration-db service on (%s) is UP", server )
+        except requests.ConnectionError as error:
+            log.info("Error while checking container component (%s), error (%s)", "configuration-db", str(error))
+            return False
+    return True
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
@@ -1479,7 +1569,7 @@ def criticalChecktwenty(version):
 
 	return  check_result, check_analysis, check_action
 
-#21:Check:vManage:Validate Server Configs file
+#21:Check:vManage:Validate Server Configs file - uuid
 def criticalChecktwentyone(version):
 	success, analysis = validateServerConfigsUUID()
 	if not success:
@@ -1494,104 +1584,21 @@ def criticalChecktwentyone(version):
 
 	return  check_result, check_analysis, check_action
 
-#22:Check:Cluster:Messaging server
+#22:Check:Cluster:Validate Server Configs file - services
 def criticalChecktwentytwo(vmanage_service_details, cluster_size):
-	cluster_msdown = []
-	'''
-	for device in cluster_health_data['data'][0]['data']:
-		for service in device['configJson']:
-			if (service == 'messaging-server') and device['configJson'][service]['status'] != 'normal' and device['configJson'][service]['status'] != 'disabled':
-				cluster_msdown.append('vManageID: {}, Host-name: {}'.format(device['vmanageID'],device['configJson']['host-name']))
-	'''
-	if vmanage_service_details:
-		for vmanage_cluster_ip, service_details in vmanage_service_details.items():
-			for service in service_details:
-				if 'messaging server' in service['service'] and service['enabled'] == "true" and 'running' in service['status']:
-					cluster_msdown.append('vManage device IP: {}'.format(vmanage_cluster_ip))
-				else:
-					continue
+	success, analysis = validateServerConfigsReachability()
+	if not success:
+		check_result = 'Failed'
+		check_analysis = 'Failed to validate cluster state for services from server configs file.'
+		check_action = '{}'.format(analysis)
 	else:
-		cluster_msdown = 'unknown'
-
-	if cluster_msdown == 'unkown':
-		check_result = 'Failed'
-		check_analysis = 'Error retrieving the NMS Messaging server information'
-		check_action = 'Investigate why the API is not returning vManage Messaging server information'
-	if len(cluster_msdown) < cluster_size:
-		check_result = 'Failed'
-		check_analysis = 'All the servers in the cluster dont have message-service running'
-		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
-	elif len(cluster_msdown) == cluster_size:
 		check_result = 'SUCCESS'
-		check_analysis = 'All the servers in the cluster have message-service running'
+		check_analysis = 'Validated the cluster state for services from server configs file.'
 		check_action = None
-	return cluster_msdown,check_result,check_analysis, check_action
+		log_file_logger.info('Validated the cluster state for services from server configs file.')
 
-#22:Check:Cluster:Configuration db
-def criticalChecktwentytwo(vmanage_service_details, cluster_size):
-	cluster_msdown = []
-	'''
-	for device in cluster_health_data['data'][0]['data']:
-		for service in device['configJson']:
-			if (service == 'messaging-server') and device['configJson'][service]['status'] != 'normal' and device['configJson'][service]['status'] != 'disabled':
-				cluster_msdown.append('vManageID: {}, Host-name: {}'.format(device['vmanageID'],device['configJson']['host-name']))
-	'''
-	if vmanage_service_details:
-		for vmanage_cluster_ip, service_details in vmanage_service_details.items():
-			for service in service_details:
-				if 'messaging server' in service['service'] and service['enabled'] == "true" and 'running' in service['status']:
-					cluster_msdown.append('vManage device IP: {}'.format(vmanage_cluster_ip))
-				else:
-					continue
-	else:
-		cluster_msdown = 'unknown'
+	return  check_result, check_analysis, check_action
 
-	if cluster_msdown == 'unkown':
-		check_result = 'Failed'
-		check_analysis = 'Error retrieving the NMS Messaging server information'
-		check_action = 'Investigate why the API is not returning vManage Messaging server information'
-	if len(cluster_msdown) < cluster_size:
-		check_result = 'Failed'
-		check_analysis = 'All the servers in the cluster dont have message-service running'
-		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
-	elif len(cluster_msdown) == cluster_size:
-		check_result = 'SUCCESS'
-		check_analysis = 'All the servers in the cluster have message-service running'
-		check_action = None
-	return cluster_msdown,check_result,check_analysis, check_action
-
-#22:Check:Cluster:Elasticsearch
-def criticalChecktwentytwo(vmanage_service_details, cluster_size):
-	cluster_msdown = []
-	'''
-	for device in cluster_health_data['data'][0]['data']:
-		for service in device['configJson']:
-			if (service == 'messaging-server') and device['configJson'][service]['status'] != 'normal' and device['configJson'][service]['status'] != 'disabled':
-				cluster_msdown.append('vManageID: {}, Host-name: {}'.format(device['vmanageID'],device['configJson']['host-name']))
-	'''
-	if vmanage_service_details:
-		for vmanage_cluster_ip, service_details in vmanage_service_details.items():
-			for service in service_details:
-				if 'messaging server' in service['service'] and service['enabled'] == "true" and 'running' in service['status']:
-					cluster_msdown.append('vManage device IP: {}'.format(vmanage_cluster_ip))
-				else:
-					continue
-	else:
-		cluster_msdown = 'unknown'
-
-	if cluster_msdown == 'unkown':
-		check_result = 'Failed'
-		check_analysis = 'Error retrieving the NMS Messaging server information'
-		check_action = 'Investigate why the API is not returning vManage Messaging server information'
-	if len(cluster_msdown) < cluster_size:
-		check_result = 'Failed'
-		check_analysis = 'All the servers in the cluster dont have message-service running'
-		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
-	elif len(cluster_msdown) == cluster_size:
-		check_result = 'SUCCESS'
-		check_analysis = 'All the servers in the cluster have message-service running'
-		check_action = None
-	return cluster_msdown,check_result,check_analysis, check_action
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
