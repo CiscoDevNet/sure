@@ -7359,6 +7359,7 @@ if __name__ == "__main__":
 			sessionLogout(vmanage_lo_ip, jsessionid, args.vmanage_port)
 			log_file_logger.info('Successfully closed the connection')
 
+
 		#version equal to or above 20.5
 		elif version_tuple[0:2] >= ('20','5'):
 			try:
