@@ -34,6 +34,7 @@ import sys
 import platform
 import getpass
 import csv
+from requests.auth import HTTPBasicAuth
 
 try:
 	#python3 Imports
@@ -481,18 +482,15 @@ def validateServerConfigsUUID():
 
 def _parse_local_server_config():
     server_configs_file = '/opt/web-app/etc/server_configs.json'
+    server_host_dict = {}
     if os.path.isfile(server_configs_file) == True:
         try:
             with open(server_configs_file, 'r') as server_configs_data:
                 data_dict = json.load(server_configs_data)
                 services_data_dict = data_dict["services"]
-                services = ["nats", "neo4j"]
+                services = ["nats", "neo4j","elasticsearch"]
                 for service in services:
-                    if services_data_dict[service]["standalone"] == False and len(services_data_dict[service]["clients"]) >1:
-                        log_file_logger.info(service + " has all the cluster members.")
-                        server_host_dict[service] = services_data_dict[service]["hosts"]
-                    else:
-                        log_file_logger.info(service + " is not a cluster.")
+                    server_host_dict[service] = services_data_dict[service]["hosts"]
                 success = True
                 check_analysis = None
         except Exception:
@@ -510,7 +508,7 @@ def validateServerConfigsReachability():
     server_host_dict, success, check_analysis = _parse_local_server_config()
     if success and server_host_dict:
         for service_name in server_host_dict.keys():
-            service_host = [node.split(":")[0] for node in server_host_dict[service].values()]
+            service_host = [node.split(":")[0] for node in server_host_dict[service_name].values()]
             try:
                 log_file_logger.info("Service (%s) IP address : (%s)", service_name, service_host)
                 if not service_host:
@@ -550,52 +548,49 @@ def validateServerConfigsReachability():
 
 def check_stats_db_up(stat_db_servers):
     for server in stat_db_servers:
-        log.info("Checking for statistics-db service on (%s)", server)
-        cipher_suite = Fernet(b'5Mv1-iPXPEMpZx9Simi2JPrksCGAD44p_Rc5mX-l4EM=')
-        elasticsearchPwdEncrpt=b'gAAAAABjSPNiu8FQHrTOJhu2WN2jtlQrzqUJFJeEc6ojNQRqo0M1poosDZZEzB_Wmcr9Fc-jCyQbPFlAc_wNmEBskkjVAdaXKoISzJ1K4fHiMZ6NMeySqqw='
-        elasticSearchPwd = cipher_suite.decrypt(elasticsearchPwdEncrpt)
+        log_file_logger.info("Checking for statistics-db service on (%s)", server)
         try:
             req = requests.get('http://'+server+':9200/',
-                               auth =HTTPBasicAuth('elasticsearch', elasticSearchPwd) )
+                               auth =HTTPBasicAuth('elasticsearch', 's3cureElast1cPass') )
             if req.status_code != 200:
-                log.info("Statistics-db service is NOT ready on (%s)", server )
+                log_file_logger.info("Statistics-db service is NOT ready on (%s)", server )
                 return False
             else:
-                log.info("Statistics-db service on (%s) is UP", server )
+                log_file_logger.info("Statistics-db service on (%s) is UP", server )
         except requests.ConnectionError as error:
-            log.info("Error while checking container component (%s), error (%s)", "statistics-db", str(error))
+            log_file_logger.info("Error while checking container component (%s), error (%s)", "statistics-db", str(error))
             return False
     return True
 
 
 def check_messaging_server_up(messaging_servers):
     for server in messaging_servers:
-        log.info("Checking for messaging service on (%s)", server)
+        log_file_logger.info("Checking for messaging service on (%s)", server)
         #invoke http call
         try:
             req = requests.get('http://'+server+':8222/streaming/serverz')
             messaging_server_state = req.json()['state']
             if messaging_server_state not in ['STANDALONE', 'CLUSTERED']:
-                log.info("Messaging service is NOT ready on (%s)", server)
+                log_file_logger.info("Messaging service is NOT ready on (%s)", server)
                 return False
-            log.info("Messaging service on (%s) is up", server)
+            log_file_logger.info("Messaging service on (%s) is up", server)
         except requests.ConnectionError as error:
-            log.info("Error while checking container component (%s), error (%s)", "messaging-server", str(error))
+            log_file_logger.info("Error while checking container component (%s), error (%s)", "messaging-server", str(error))
             return False
     return True
 
 def check_config_db_up(config_db_servers):
     for server in config_db_servers:
-        log.info("Checking for configuration-db service on (%s)", server)
+        log_file_logger.info("Checking for configuration-db service on (%s)", server)
         try:
             req = requests.get('http://'+server+':7474')
             if req.status_code != 200:
-                log.info("configuration-db service is NOT ready on (%s)", server )
+                log_file_logger.info("configuration-db service is NOT ready on (%s)", server )
                 return False
             else:
-                log.info("configuration-db service on (%s) is UP", server )
+                log_file_logger.info("configuration-db service on (%s) is UP", server )
         except requests.ConnectionError as error:
-            log.info("Error while checking container component (%s), error (%s)", "configuration-db", str(error))
+            log_file_logger.info("Error while checking container component (%s), error (%s)", "configuration-db", str(error))
             return False
     return True
 
@@ -1590,7 +1585,7 @@ def criticalChecktwentyone(version):
 	return  check_result, check_analysis, check_action
 
 #22:Check:Cluster:Validate Server Configs file - reachability
-def criticalChecktwentytwo(vmanage_service_details, cluster_size):
+def criticalChecktwentytwo(version):
 	success, analysis = validateServerConfigsReachability()
 	if not success:
 		check_result = 'Failed'
@@ -3655,6 +3650,32 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+            		#Check:vManage:Validate server configs file - reachability
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Critical Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
 			warning_checks = {}
@@ -4189,32 +4210,6 @@ if __name__ == "__main__":
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 					log_file_logger.exception('{}\n'.format(e))
-
-            			#Check:Cluster:Validate server configs file - reachability
-			    	check_count += 1
-			    	check_count_zfill = zfill_converter(check_count)
-			    	print(' Cluster Check:#{}'.format(check_count_zfill))
-			    	check_name = '#{}:Check:Cluster:Validate cluster state for services from server configs file.'.format(check_count_zfill)
-			    	pre_check(log_file_logger, check_name)
-			    	try:
-				    	check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				    	if check_result == 'Failed':
-					    	critical_checks[check_name] = [ check_analysis, check_action]
-					    	check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	check_error_report(check_analysis,check_action)
-				    	else:
-					    	check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-
-				    	json_final_result['json_data_pdf']['description']['Cluster'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																    	'log type': '{}'.format(result_log['Critical'][check_result]),
-																    	'result': '{}'.format(check_analysis),
-																    	'action': '{}'.format(check_action),
-																    	'status': '{}'.format(check_result),
-																    	'document': ''})
-			    	except Exception as e:
-				    	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				    	log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -6794,13 +6789,38 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            		#Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file - uuid
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			check_name = '#{}:Check:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+            		#Check:vManage:Validate server configs file - reachability
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			check_name = '#{}:Check:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -7333,32 +7353,6 @@ if __name__ == "__main__":
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 					log_file_logger.exception('{}\n'.format(e))
-
-            			#Check:Cluster:Validate server configs file - reachability
-			    	check_count += 1
-			    	check_count_zfill = zfill_converter(check_count)
-			    	check_name = '#{}:Check:Cluster:Validate cluster state for services from server configs file.'.format(check_count_zfill)
-			    	pre_check(log_file_logger, check_name)
-			    	try:
-				    	check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				    	if check_result == 'Failed':
-					    	critical_checks[check_name] = [ check_analysis, check_action]
-					    	check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	check_error_report(check_analysis,check_action)
-				    	else:
-					    	check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-
-				    	json_final_result['json_data_pdf']['description']['Cluster'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																    	'log type': '{}'.format(result_log['Critical'][check_result]),
-																    	'result': '{}'.format(check_analysis),
-																    	'action': '{}'.format(check_action),
-																    	'status': '{}'.format(check_result),
-																    	'document': ''})
-			    	except Exception as e:
-				    	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				    	log_file_logger.exception('{}\n'.format(e))
-
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -9973,7 +9967,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            		#Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file - uuid
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print('  #{}:Checking:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill))
@@ -9981,6 +9975,32 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+            		#Check:vManage:Validate server configs file - reachability
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print('  #{}:Checking:vManage:Validate cluster state for reachability from server configs file.'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate cluster state for reachability  from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -10553,32 +10573,6 @@ if __name__ == "__main__":
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 					log_file_logger.exception('{}\n'.format(e))
-
-            			#Check:Cluster:Validate server configs file - reachability
-			    	check_count += 1
-			    	check_count_zfill = zfill_converter(check_count)
-			    	print('  #{}:Checking:Cluster:Validate cluster state for services from server configs file'.format(check_count_zfill))
-			    	check_name = '#{}:Check:Cluster:Validate cluster state for services from server configs file.'.format(check_count_zfill)
-			    	pre_check(log_file_logger, check_name)
-			    	try:
-				    	check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				    	if check_result == 'Failed':
-					    	critical_checks[check_name] = [ check_analysis, check_action]
-					    	check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	check_error_report(check_analysis,check_action)
-				    	else:
-					    	check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-
-				    	json_final_result['json_data_pdf']['description']['Cluster'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																    	'log type': '{}'.format(result_log['Critical'][check_result]),
-																    	'result': '{}'.format(check_analysis),
-																    	'action': '{}'.format(check_action),
-																    	'status': '{}'.format(check_result),
-																    	'document': ''})
-			    	except Exception as e:
-				    	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				    	log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
@@ -13318,7 +13312,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            		#Check:vManage:Validate server configs file
+            		#Check:vManage:Validate server configs file - uuid
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' #{}:Checking:vManage:Validate cluster state for uuid from server configs file.'.format(check_count_zfill))
@@ -13326,6 +13320,32 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentyone(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [ check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis,check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'result': '{}'.format(check_analysis),
+																 'action': '{}'.format(check_action),
+																 'status': '{}'.format(check_result),
+																 'document': ''})
+			except Exception as e:
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
+
+           		#Check:vManage:Validate server configs file - reachability
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' #{}:Checking:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -13923,32 +13943,6 @@ if __name__ == "__main__":
 				except Exception as e:
 					print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
 					log_file_logger.exception('{}\n'.format(e))
-
-            			#Check:Cluster:Validate server configs file - reachability
-			    	check_count += 1
-			    	check_count_zfill = zfill_converter(check_count)
-			    	print('  #{}:Checking:Cluster:Validate cluster state for services from server configs file'.format(check_count_zfill))
-			    	check_name = '#{}:Check:Cluster:Validate cluster state for services from server configs file.'.format(check_count_zfill)
-			    	pre_check(log_file_logger, check_name)
-			    	try:
-				    	check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				    	if check_result == 'Failed':
-					    	critical_checks[check_name] = [ check_analysis, check_action]
-					    	check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	check_error_report(check_analysis,check_action)
-				    	else:
-					    	check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					    	writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-
-				    	json_final_result['json_data_pdf']['description']['Cluster'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																    	'log type': '{}'.format(result_log['Critical'][check_result]),
-																    	'result': '{}'.format(check_analysis),
-																    	'action': '{}'.format(check_action),
-																    	'status': '{}'.format(check_result),
-																    	'document': ''})
-			    	except Exception as e:
-				    	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				    	log_file_logger.exception('{}\n'.format(e))
 
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
