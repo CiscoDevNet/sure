@@ -13944,6 +13944,7 @@ if __name__ == "__main__":
 					print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
 					log_file_logger.exception('{}\n'.format(e))
 
+
 			#Logging out of the Session using jsessionid
 			log_file_logger.info('Logging out of the Session')
 			sessionLogout(vmanage_lo_ip, jsessionid, args.vmanage_port)
