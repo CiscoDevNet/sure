@@ -520,18 +520,24 @@ def validateServerConfigsReachability():
                     is_messaging_server_up = check_messaging_server_up(service_host)
                     if not is_messaging_server_up:
                         success = False
+                        check_analysis = "Error while checking reachability of service component " + service_name
+                        break
                     else:
                         success = True
                 elif service_name=='elasticsearch':
                     is_stat_db_up = check_stats_db_up(deviceIP)
                     if not is_stat_db_up:
                         success = False
+                        check_analysis = "Error while checking service component " + service_name
+                        break
                     else:
                         success = True
                 elif service_name=='neo4j':
                     is_config_db_up = check_config_db_up(service_host)
                     if not is_config_db_up:
                         success = False
+                        check_analysis = "Error while checking service component " + service_name
+                        break
                     else:
                         success = True
             except Exception as error:
