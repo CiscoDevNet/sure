@@ -542,8 +542,6 @@ def validateServerConfigsReachability():
     return success, check_analysis
 
 def check_stats_db_up(server):
-    log_file_logger.info("Checking for statistics-db service on (%s)", server)
-
     try:
         req = requests.get('http://'+server+':9200/',
                             auth =HTTPBasicAuth('elasticsearch', 's3cureElast1cPass') )
@@ -552,7 +550,7 @@ def check_stats_db_up(server):
             return False
         else:
             log_file_logger.info("Statistics-db service is ready on (%s)", server )
-            log_file_logger.info("Overall cluster health state")
+            log_file_logger.info("Overall cluster health state.")
             req = requests.get('http://'+server+':9200/_cluster/health?pretty',
                             auth =HTTPBasicAuth('elasticsearch', 's3cureElast1cPass') )
             elasticsearch_cluster_status = req.json()['status']
@@ -571,7 +569,6 @@ def check_stats_db_up(server):
 
 def check_messaging_server_up(messaging_servers):
     for server in messaging_servers:
-        log_file_logger.info("Checking for messaging service on (%s)", server)
         try:
             req = requests.get('http://'+server+':8222/streaming/serverz')
             messaging_server_state = req.json()['state']
@@ -586,7 +583,6 @@ def check_messaging_server_up(messaging_servers):
 
 def check_config_db_up(config_db_servers):
     for server in config_db_servers:
-        log_file_logger.info("Checking for configuration-db service on (%s)", server)
         try:
             req = requests.get('http://'+server+':7474')
             if req.status_code != 200:
