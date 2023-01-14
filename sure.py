@@ -470,10 +470,10 @@ def validateServerConfigsUUID():
                     check_analysis = None
                 else:
                     success = False
-                    check_analysis = "Failed to validate cluster state for uuid from server configs file."
+                    check_analysis = "Failed to validate the uuid from server configs file."
             except:
                 success = False
-                check_analysis = "Failed to validate cluster state for uuid from server configs file."
+                check_analysis = "Failed to validate the uuid from server configs file."
     elif os.path.isfile(server_configs_file) == False :
         check_analysis = server_configs_file + " file not found."
 
@@ -491,6 +491,7 @@ def _parse_local_server_config():
                 services = ["nats", "neo4j","elasticsearch"]
                 for service in services:
                     server_host_dict[service] = services_data_dict[service]["hosts"]
+                    deviceIP = services_data_dict[service]["deviceIP"].split(":")[0]
                 success = True
                 check_analysis = None
         except Exception:
@@ -502,19 +503,18 @@ def _parse_local_server_config():
         success = False
         check_analysis = server_configs_file + " file not found."
 
-    return server_host_dict, success, check_analysis
+    return server_host_dict, success, check_analysis, deviceIP
 
 def validateServerConfigsReachability():
-    server_host_dict, success, check_analysis = _parse_local_server_config()
+    server_host_dict, success, check_analysis, deviceIP = _parse_local_server_config()
     if success and server_host_dict:
         for service_name in server_host_dict.keys():
             service_host = [node.split(":")[0] for node in server_host_dict[service_name].values()]
             try:
-                log_file_logger.info("Service (%s) IP address : (%s)", service_name, service_host)
                 if not service_host:
                     log_file_logger.info("Service (%s) is not up due to the container host is empty", service_name)
                     success = False
-                    check_analysis = "Failed to validate cluster state for uuid from server configs file."
+                    check_analysis = "Failed to validate the service reachability from server configs file."
 
                 elif service_name=='nats':
                     is_messaging_server_up = check_messaging_server_up(service_host)
@@ -523,7 +523,7 @@ def validateServerConfigsReachability():
                     else:
                         success = True
                 elif service_name=='elasticsearch':
-                    is_stat_db_up = check_stats_db_up(service_host)
+                    is_stat_db_up = check_stats_db_up(deviceIP)
                     if not is_stat_db_up:
                         success = False
                     else:
@@ -537,36 +537,41 @@ def validateServerConfigsReachability():
             except Exception as error:
                 log_file_logger.error("Error while checking service component(%s), error(%s)", service_name, str(error))
                 success = False
-                check_analysis = "Failed to validate cluster state for services from server configs file."
-
-    if success == True:
-        check_analysis = None
-    else:
-        check_analysis = "Failed to validate cluster state for services from server configs file."
+                check_analysis = "Failed to validate the service reachability from server configs file."
 
     return success, check_analysis
 
-def check_stats_db_up(stat_db_servers):
-    for server in stat_db_servers:
-        log_file_logger.info("Checking for statistics-db service on (%s)", server)
-        try:
-            req = requests.get('http://'+server+':9200/',
-                               auth =HTTPBasicAuth('elasticsearch', 's3cureElast1cPass') )
-            if req.status_code != 200:
-                log_file_logger.info("Statistics-db service is NOT ready on (%s)", server )
+def check_stats_db_up(server):
+    log_file_logger.info("Checking for statistics-db service on (%s)", server)
+
+    try:
+        req = requests.get('http://'+server+':9200/',
+                            auth =HTTPBasicAuth('elasticsearch', 's3cureElast1cPass') )
+        if req.status_code != 200:
+            log_file_logger.info("Statistics-db service is NOT ready on (%s)", server )
+            return False
+        else:
+            log_file_logger.info("Statistics-db service is ready on (%s)", server )
+            log_file_logger.info("Overall cluster health state")
+            req = requests.get('http://'+server+':9200/_cluster/health?pretty',
+                            auth =HTTPBasicAuth('elasticsearch', 's3cureElast1cPass') )
+            elasticsearch_cluster_status = req.json()['status']
+            if elasticsearch_cluster_status != "green":
+                log_file_logger.info("WARNING: Statistics-db's config & operational states are Inconsistent in Cluster.")
                 return False
             else:
-                log_file_logger.info("Statistics-db service on (%s) is UP", server )
-        except requests.ConnectionError as error:
-            log_file_logger.info("Error while checking container component (%s), error (%s)", "statistics-db", str(error))
-            return False
+                log_file_logger.info("status: Statistics-db's config & operational states are Consistent in Cluster.")
+
+    except requests.ConnectionError as error:
+        log_file_logger.info("Error while checking container component (%s), error (%s)", "statistics-db", str(error))
+        return False
+
     return True
 
 
 def check_messaging_server_up(messaging_servers):
     for server in messaging_servers:
         log_file_logger.info("Checking for messaging service on (%s)", server)
-        #invoke http call
         try:
             req = requests.get('http://'+server+':8222/streaming/serverz')
             messaging_server_state = req.json()['state']
@@ -1589,13 +1594,13 @@ def criticalChecktwentytwo(version):
 	success, analysis = validateServerConfigsReachability()
 	if not success:
 		check_result = 'Failed'
-		check_analysis = 'Failed to validate cluster state for services from server configs file.'
+		check_analysis = 'Failed to validate the service reachability from server configs file.'
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
-		check_analysis = 'Validated the cluster state for services from server configs file.'
+		check_analysis = 'Validated the serivce reachability from server configs file.'
 		check_action = None
-		log_file_logger.info('Validated the cluster state for services from server configs file.')
+		log_file_logger.info('Validated the serivce reachability from server configs file.')
 
 	return  check_result, check_analysis, check_action
 
