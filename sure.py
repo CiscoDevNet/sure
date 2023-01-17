@@ -466,12 +466,16 @@ def validateServerConfigsUUID():
                 configs = json.load(config_file)
                 uuid = configs['cluster']
                 vmanageID = configs['vmanageID']
-                if vmanageID == '0' and uuid == uuid_val:
-                    success = True
-                    check_analysis = None
+                if vmanageID == '0':
+                    if uuid == uuid_val:
+                        success = True
+                        check_analysis = None
+                    else:
+                        success = False
+                        check_analysis = "Failed to validate the uuid from server configs file."
                 else:
-                    success = False
-                    check_analysis = "Failed to validate the uuid from server configs file."
+                    success = True
+                    check_analysis = "Validation of uuid from server configs file does not apply."
             except:
                 success = False
                 check_analysis = "Failed to validate the uuid from server configs file."
