@@ -1590,7 +1590,7 @@ def criticalChecktwentyone(version):
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
-		check_analysis = 'Validated the cluster state for uuid from server configs file.'
+		check_analysis = 'Validated the cluster state for uuid from server configs file only if vmanageID is 0.'
 		check_action = None
 		log_file_logger.info('Validated the cluster state for uuid from server configs file.')
 
