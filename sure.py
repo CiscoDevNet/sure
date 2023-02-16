@@ -479,9 +479,9 @@ def validateServerConfigsUUID():
     return success, check_analysis
 
 def isValidUUID():
-    success = False
-    uuid_file = "/etc/viptela/uuid"
-    if os.path.isfile(uuid_file) == True:
+	success = False
+	uuid_file = "/etc/viptela/uuid"
+	if os.path.isfile(uuid_file) == True:
 		with open(uuid_file) as uuid_f:
 			uuid_val = uuid_f.read().strip()
 			regex = "^[{]?[0-9a-fA-F]{8}" + "-([0-9a-fA-F]{4}-)" + "{3}[0-9a-fA-F]{12}[}]?$"
@@ -492,10 +492,10 @@ def isValidUUID():
 			else:
 				success = False
 				check_analysis = "Failed to validate uuid."
-    elif os.path.isfile(uuid_file) == False:
+	elif os.path.isfile(uuid_file) == False:
 		check_analysis = uuid_file + " file not found."
 
-    return success, check_analysis
+	return success, check_analysis
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
