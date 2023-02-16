@@ -1492,11 +1492,11 @@ def criticalChecktwentytwo(version):
 	success, analysis = isValidUUID()
 	if not success:
 		check_result = 'Failed'
-		check_analysis = 'Failed to validate uuid.'
+		check_analysis = 'UUID is not valid.'
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
-		check_analysis = 'Validated the uuid.'
+		check_analysis = 'UUID is valid.'
 		check_action = None
 		log_file_logger.info('Validated the uuid at /etc/viptela/uuid.')
 
@@ -3559,8 +3559,7 @@ if __name__ == "__main__":
 				check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill)
 				pre_check(log_file_logger, check_name)
 				try:
-					check_result, check_analysis, check_action =
-					(version)
+					check_result, check_analysis, check_action = criticalChecktwentytwo(version)
 					if check_result == 'Failed':
 						critical_checks[check_name] = [check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
