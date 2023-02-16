@@ -480,9 +480,9 @@ def validateServerConfigsUUID():
 
 def isValidUUID():
     success = False
-    uuid_file = '/etc/viptela/uuid'
+    uuid_file = "/etc/viptela/uuid"
     if os.path.isfile(uuid_file) == True:
-        with open(uuid_file) as uuid_f:
+		with open(uuid_file) as uuid_f:
 			uuid_val = uuid_f.read().strip()
 			regex = "^[{]?[0-9a-fA-F]{8}" + "-([0-9a-fA-F]{4}-)" + "{3}[0-9a-fA-F]{12}[}]?$"
 			p = re.compile(regex)
@@ -493,7 +493,7 @@ def isValidUUID():
 				success = False
 				check_analysis = "Failed to validate uuid."
     elif os.path.isfile(uuid_file) == False:
-        check_analysis = uuid_file + " file not found."
+		check_analysis = uuid_file + " file not found."
 
     return success, check_analysis
 
@@ -3559,7 +3559,8 @@ if __name__ == "__main__":
 				check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill)
 				pre_check(log_file_logger, check_name)
 				try:
-					check_result, check_analysis, check_action = criticalChecktwentytwo(version)
+					check_result, check_analysis, check_action =
+					(version)
 					if check_result == 'Failed':
 						critical_checks[check_name] = [check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
