@@ -491,7 +491,7 @@ def isValidUUID():
 				check_analysis = None
 			else:
 				success = False
-				check_analysis = "UUID is not valid."
+				check_analysis = "Investigate why the UUID is not valid."
 	elif os.path.isfile(uuid_file) == False:
 		check_analysis = uuid_file + " file not found."
 
