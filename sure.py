@@ -493,11 +493,11 @@ def isValidUUID():
 			else:
 				success = False
 				check_analysis = "Investigate why the UUID is not valid."
-				test_status = True
+				test_failure = True
 	elif os.path.isfile(uuid_file) == False:
 		check_analysis = uuid_file + " file not found."
 
-	return success, check_analysis, test_status
+	return success, check_analysis, test_failure
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
