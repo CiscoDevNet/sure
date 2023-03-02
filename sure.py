@@ -480,7 +480,6 @@ def validateServerConfigsUUID():
 
 def isValidUUID():
 	success = False
-	test_failure = False
 	uuid_file = "/etc/viptela/uuid"
 	if os.path.isfile(uuid_file) == True:
 		with open(uuid_file) as uuid_f:
@@ -493,11 +492,10 @@ def isValidUUID():
 			else:
 				success = False
 				check_analysis = "Investigate why the UUID is not valid."
-				test_failure = True
 	elif os.path.isfile(uuid_file) == False:
 		check_analysis = uuid_file + " file not found."
 
-	return success, check_analysis, test_failure
+	return success, check_analysis
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
@@ -1491,18 +1489,13 @@ def criticalChecktwentyone(version):
 
 #22:Check:vManage:Validate UUID
 def criticalChecktwentytwo(version):
-	success, analysis, test_failure = isValidUUID()
+	success, analysis = isValidUUID()
 	if not success:
-		if test_failure:
-			check_result = 'Test Failed'
-			check_analysis = 'UUID is not valid.'
-			check_action = '{}'.format(analysis)
-		else:
-			check_result = 'Failed'
-			check_analysis = 'Failed to Perform the test.'
-			check_action = '{}'.format(analysis)
+		check_result = 'Failed'
+		check_analysis = 'Failed to validate UUID at /etc/viptela/uuid.'
+		check_action = '{}'.format(analysis)
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'UUID is valid.'
 		check_action = None
 		log_file_logger.info('Validated the uuid at /etc/viptela/uuid.')
@@ -3567,7 +3560,7 @@ if __name__ == "__main__":
 				pre_check(log_file_logger, check_name)
 				try:
 					check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-					if check_result == 'Failed' or check_result == 'Test Failed':
+					if check_result == 'Failed':
 						critical_checks[check_name] = [check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 						check_error_report(check_analysis, check_action)
@@ -4631,7 +4624,7 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				if check_result == 'Failed' or check_result == 'Test Failed':
+				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
@@ -6761,7 +6754,7 @@ if __name__ == "__main__":
 				pre_check(log_file_logger, check_name)
 				try:
 					check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-					if check_result == 'Failed' or check_result == 'Test Failed':
+					if check_result == 'Failed':
 						critical_checks[check_name] = [check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 						check_error_report(check_analysis, check_action)
@@ -7790,7 +7783,7 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				if check_result == 'Failed' or check_result == 'Test Failed':
+				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
@@ -9970,7 +9963,7 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				if check_result == 'Failed' or check_result == 'Test Failed':
+				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
@@ -11055,7 +11048,7 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				if check_result == 'Failed' or check_result == 'Test Failed':
+				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
@@ -13344,7 +13337,7 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				if check_result == 'Failed' or check_result == 'Test Failed':
+				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
@@ -14483,7 +14476,7 @@ if __name__ == "__main__":
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-				if check_result == 'Failed' or check_result == 'Test Failed':
+				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
