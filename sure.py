@@ -508,35 +508,33 @@ def validateServerConfigstenantMode():
                     check_analysis = None
                 else:
                     success = False
-<<<<<<< HEAD
                     check_analysis = "Failed to validate the tenant mode from server configs file."
             except:
                 success = False
                 check_analysis = "Failed to validate the tenant mode from server configs file."
-=======
-                    check_analysis = "Failed to validate uuid from server configs file."
-            except:
-                success = False
-                check_analysis = "Failed to validate uuid from server configs file."
->>>>>>> main
     elif os.path.isfile(server_configs_file) == False :
         check_analysis = server_configs_file + " file not found."
 
     return success, check_analysis
 
-<<<<<<< HEAD
 def _parse_local_server_config():
     server_configs_file = '/opt/web-app/etc/server_configs.json'
-    server_host_dict = {}
+    serviceToDeviceIpMap = {}
     if os.path.isfile(server_configs_file) == True:
         try:
             with open(server_configs_file, 'r') as server_configs_data:
                 data_dict = json.load(server_configs_data)
-                services_data_dict = data_dict["services"]
+                vmanageID = data_dict["vmanageID"]
+				services_data_dict = data_dict["services"]
                 services = ["nats", "neo4j","elasticsearch"]
                 for service in services:
-                    server_host_dict[service] = services_data_dict[service]["hosts"]
-                    deviceIP = services_data_dict[service]["deviceIP"].split(":")[0]
+					server_dict = {}
+                    serviceToDeviceIpMap[service] = services_data_dict[service]['hosts']
+                    server_dict['hosts'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
+				    serviceToDeviceIpMap[service] = services_data_dict[service]['clients']
+	                server_dict['clients'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
+	                server_dict['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
+					serviceToDeviceIpMap[service] = server_dict
                 success = True
                 check_analysis = None
         except Exception:
@@ -548,8 +546,45 @@ def _parse_local_server_config():
         success = False
         check_analysis = server_configs_file + " file not found."
 
-    return server_host_dict, success, check_analysis, deviceIP
+    return vmanageID,serviceToDeviceIpMap, success, check_analysis
 
+def validateIps(serviceToDeviceIp,vmanage_ips):
+	if len(serviceToDeviceIp) == len(vmanage_ips):
+		check = all(item in serviceToDeviceIp for item in vmanage_ips)
+		if check is True:
+			return True
+		else:
+			return False
+
+def validateServerConfigsFile():
+    vmanageID, serviceToDeviceIpMap, success, check_analysis  = _parse_local_server_config()
+	vmanage_ips, vmanage_ids = vmanage_service_list()
+	if success:
+		if vmanageID in vmanage_ids:
+			log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+		else:
+			success = False
+			check_analysis = "Failed to validate vmanage ID in server config file"
+			return success, check_analysis
+
+		if serviceToDeviceIpMap:
+			for service_name in serviceToDeviceIpMap.keys():
+				if validateIps(serviceToDeviceIpMap['hosts'],vmanage_hosts) and validateIps(serviceToDeviceIpMap['clients'],vmanage_hosts):
+					if deviceIP in vmanage_ips:
+						success = True
+						check_analysis = None
+					else:
+						success = False
+						check_analysis = "Failed to validate DeviceIp from server config file"
+						log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+				else:
+					success = False
+					check_analysis = "Failed to validate host/client IPs from server config file."
+					log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+
+	return success, check_analysis
+
+"""
 def validateServerConfigsReachability():
     server_host_dict, success, check_analysis, deviceIP = _parse_local_server_config()
     if success and server_host_dict:
@@ -645,7 +680,7 @@ def check_config_db_up(config_db_servers):
             log_file_logger.info("Error while checking container component (%s), error (%s)", "configuration-db", str(error))
             return False
     return True
-=======
+"""
 def isValidUUID():
 	success = False
 	uuid_file = "/etc/viptela/uuid"
@@ -664,7 +699,6 @@ def isValidUUID():
 		check_analysis = uuid_file + " file not found."
 
 	return success, check_analysis
->>>>>>> main
 
 #vSmart and vBond info
 def vbondvmartInfo(controllers_info):
@@ -709,6 +743,26 @@ def es_indices_details():
 		if match:
 			es_indices = executeCommand('curl --connect-timeout 6 --silent -XGET {}/_cat/indices/ -u elasticsearch:s3cureElast1cPass'.format(ip_add))
 	return es_indices
+
+#vManage service details for cluster checks
+def vmanage_service_list():
+	vmanage_service_list = {}
+	if version_tuple[0:2] < ('19','2'):
+		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port))
+	elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'):
+		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
+	elif version_tuple[0:2] > ('20','5'):
+		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
+	vmanage_service_list = service_details['data'][0]['data']
+	vmanageIPS,vmanageIDS = []
+	for vmanage in vmanage_service_list:
+		vmanageID = vmanage['vmanageID']
+		deviceIP = vmanage['configJson']['deviceIP']
+		vmanageIPS.append(deviceIP)
+		vmanageIDS.append(vmanageID)
+
+	# ['10.0.105.32', '10.0.105.38', '10.0.105.39']
+	return vmanageIDS, vmanageIPS
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -1687,6 +1741,21 @@ def criticalChecktwentytwo(version):
 		check_analysis = 'Validated the service reachability from server configs file.'
 		check_action = None
 		log_file_logger.info('Validated the service reachability from server configs file.')
+
+	return  check_result, check_analysis, check_action
+
+#22:Check:Cluster:Validate Server Configs file - rest API
+def criticalChecktwentytwo(version):
+	success, analysis = validateServerConfigsFile()
+	if not success:
+		check_result = 'Failed'
+		check_analysis = 'Failed to validate the server configs file.'
+		check_action = '{}'.format(analysis)
+	else:
+		check_result = 'SUCCESS'
+		check_analysis = 'Validated the server configs file.'
+		check_action = None
+		log_file_logger.info('Validated the server configs file.')
 
 	return  check_result, check_analysis, check_action
 
