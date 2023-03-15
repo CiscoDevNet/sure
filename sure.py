@@ -792,7 +792,7 @@ def criticalChecksix(version_tuple):
 				if 'ERROR' in line:
 					last_14day_date_time = datetime.now() - timedelta(days = 14)
 					match = re.findall(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})',  line)
-					date_time = datetime.strptime(match1[0], '%Y-%m-%d %H:%M:%S')
+					date_time = datetime.strptime(match[0], '%Y-%m-%d %H:%M:%S')
 					if date_time > last_14day_date_time:
 						count +=1
 
@@ -962,6 +962,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 					dpi_estimate_ondeday = None
 
 				elif index['index'] == 'Approute' and index['status'] != 'success':
+					dpi_estimate_ondeday = None
 					appr_estimate_ondeday = 0
 
 				elif index['index'] == 'DPI' and index['status'] == 'success':
@@ -976,6 +977,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 						dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])*(1024)
 
 				elif index['index'] == 'Approute' and index['status'] == 'success':
+					dpi_estimate_ondeday = None
 					appr_estimate_ondeday = index['estimation']['1 day   ']
 					if 'KB' in appr_estimate_ondeday:
 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
@@ -1495,7 +1497,7 @@ def criticalChecktwentytwo(version):
 		check_analysis = 'Failed to validate UUID at /etc/viptela/uuid.'
 		check_action = '{}'.format(analysis)
 	else:
-		check_result = 'SUCCESSFUL'
+		check_result = 'SUCCESS'
 		check_analysis = 'UUID is valid.'
 		check_action = None
 		log_file_logger.info('Validated the uuid at /etc/viptela/uuid.')
@@ -2744,7 +2746,7 @@ if __name__ == "__main__":
 					check_error_report(check_analysis,check_action)
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: Disk Controller type: {}\n'.format(disk_controller))
+					log_file_logger.info('#{}: Disk Controller type: {}\n'.format(check_count_zfill,disk_controller))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 																 'log type': '{}'.format(result_log['Informational'][check_result]),
@@ -3552,34 +3554,34 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-				# Check:vManage:Validate UUID
-				check_count += 1
-				check_count_zfill = zfill_converter(check_count)
-				print(' Critical Check:#{}'.format(check_count_zfill))
-				check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill)
-				pre_check(log_file_logger, check_name)
-				try:
-					check_result, check_analysis, check_action = criticalChecktwentytwo(version)
-					if check_result == 'Failed':
-						critical_checks[check_name] = [check_analysis, check_action]
-						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-						check_error_report(check_analysis, check_action)
-					else:
-						check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-						writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+			# Check:vManage:Validate UUID
+			check_count += 1
+			check_count_zfill = zfill_converter(check_count)
+			print(' Critical Check:#{}'.format(check_count_zfill))
+			check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill)
+			pre_check(log_file_logger, check_name)
+			try:
+				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
+				if check_result == 'Failed':
+					critical_checks[check_name] = [check_analysis, check_action]
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_report(check_analysis, check_action)
+				else:
+					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 
-					json_final_result['json_data_pdf']['description']['vManage'].append(
-						{'analysis type': '{}'.format(check_name.split(':')[-1]),
-						 'log type': '{}'.format(result_log['Critical'][check_result]),
-						 'result': '{}'.format(check_analysis),
-						 'action': '{}'.format(check_action),
-						 'status': '{}'.format(check_result),
-						 'document': ''})
-				except Exception as e:
-					print(
-						'\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
-							check_name, log_file_path))
-					log_file_logger.exception('{}\n'.format(e))
+				json_final_result['json_data_pdf']['description']['vManage'].append(
+					{'analysis type': '{}'.format(check_name.split(':')[-1]),
+						'log type': '{}'.format(result_log['Critical'][check_result]),
+						'result': '{}'.format(check_analysis),
+						'action': '{}'.format(check_action),
+						'status': '{}'.format(check_result),
+						'document': ''})
+			except Exception as e:
+				print(
+					'\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
+						check_name, log_file_path))
+				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
@@ -7661,7 +7663,7 @@ if __name__ == "__main__":
 				ntp_nonworking, check_result, check_analysis, check_action = criticalCheckten(version_tuple, controllers_info)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
-					lcheck_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Devices with invalid ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonworking))
 					check_error_report(check_analysis,check_action)
 				else:
@@ -9728,7 +9730,7 @@ if __name__ == "__main__":
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: List of indices with older versions  :\n{}\n'.format(check_count_zfill, version_list))
-					wcheck_error_report(check_analysis,check_action)
+					check_error_report(check_analysis,check_action)
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
@@ -10907,7 +10909,7 @@ if __name__ == "__main__":
 															 'status': '{}'.format(check_result),
 															 'document': ''})
 			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name,log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
 
@@ -14513,7 +14515,7 @@ if __name__ == "__main__":
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: CPU clock speed: {}\n'.format(cpu_speed))
+					log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
 					check_error_report(check_analysis,check_action)
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 
