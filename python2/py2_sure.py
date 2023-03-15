@@ -518,7 +518,8 @@ def criticalCheckTwo():
 #03:Check:vManage:Memory size
 def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, version_tuple):
 	if version_tuple[0:2] < ('20','5'):
-		memory_size_gb = executeCommand('free -g | grep Mem')
+		#memory_size_gb = executeCommand('free -g | grep Mem')
+		memory_size_gb = executeCommand('free --giga | grep Mem')
 	elif  version_tuple[0:2] >= ('20','5'):
 		memory_size_gb = executeCommand('free --giga | grep Mem')
 
@@ -854,7 +855,8 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 					dpi_estimate_ondeday = None
 
 				elif index['index'] == 'Approute' and index['status'] != 'success':
-					appr_estimate_ondeday = 0
+					appr_estimate_ondeday = None
+					dpi_estimate_ondeday = None
 
 				elif index['index'] == 'DPI' and index['status'] == 'success':
 					dpi_estimate_ondeday = index['estimation']['1 day   ']

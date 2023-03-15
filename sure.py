@@ -620,7 +620,8 @@ def criticalCheckTwo():
 #03:Check:vManage:Memory size
 def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, version_tuple):
 	if version_tuple[0:2] < ('20','5'):
-		memory_size_gb = executeCommand('free -g | grep Mem')
+		#memory_size_gb = executeCommand('free -g | grep Mem')
+		memory_size_gb = executeCommand('free --giga | grep Mem')
 	elif  version_tuple[0:2] >= ('20','5'):
 		memory_size_gb = executeCommand('free --giga | grep Mem')
 
