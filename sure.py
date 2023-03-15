@@ -519,22 +519,23 @@ def validateServerConfigstenantMode():
 
 def _parse_local_server_config():
     server_configs_file = '/opt/web-app/etc/server_configs.json'
-    serviceToDeviceIpMap = {}
+	server_config_dict = {}
     if os.path.isfile(server_configs_file) == True:
         try:
             with open(server_configs_file, 'r') as server_configs_data:
                 data_dict = json.load(server_configs_data)
-                vmanageID = data_dict["vmanageID"]
+                server_config_dict['vmanageID'] = data_dict['vmanageID']
+				server_config_dict['clusterUUID'] = data_dict['cluster']
 				services_data_dict = data_dict["services"]
                 services = ["nats", "neo4j","elasticsearch"]
                 for service in services:
-					server_dict = {}
-                    serviceToDeviceIpMap[service] = services_data_dict[service]['hosts']
-                    server_dict['hosts'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
-				    serviceToDeviceIpMap[service] = services_data_dict[service]['clients']
-	                server_dict['clients'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
-	                server_dict['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
-					serviceToDeviceIpMap[service] = server_dict
+					serviceToDeviceIpMap = {}
+                    server_config_dict[service] = services_data_dict[service]['hosts']
+                    serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
+				    server_config_dict[service] = services_data_dict[service]['clients']
+	                serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
+	                serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
+					server_config_dict[service] = serviceToDeviceIpMap
                 success = True
                 check_analysis = None
         except Exception:
@@ -546,7 +547,7 @@ def _parse_local_server_config():
         success = False
         check_analysis = server_configs_file + " file not found."
 
-    return vmanageID,serviceToDeviceIpMap, success, check_analysis
+    return server_config_dict, success, check_analysis
 
 def validateIps(serviceToDeviceIp,vmanage_ips):
 	if len(serviceToDeviceIp) == len(vmanage_ips):
@@ -557,17 +558,31 @@ def validateIps(serviceToDeviceIp,vmanage_ips):
 			return False
 
 def validateServerConfigsFile():
-    vmanageID, serviceToDeviceIpMap, success, check_analysis  = _parse_local_server_config()
-	vmanage_ips, vmanage_ids = vmanage_service_list()
+    server_config_dict, success, check_analysis  = _parse_local_server_config()
+	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
 	if success:
+		# Check vmanageID
+		vmanageID = server_config_dict['vmanageID']
 		if vmanageID in vmanage_ids:
 			log_file_logger.error("Unable to read server_configs.json. Exiting now.")
 		else:
 			success = False
 			check_analysis = "Failed to validate vmanage ID in server config file"
 			return success, check_analysis
+        # Check cluster
+		uuid = server_config_dict['clusterUUID']
+		if uuid in vmanage_uuids:
+			log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+		else:
+			success = False
+			check_analysis = "Failed to validate vmanage ID in server config file"
+			return success, check_analysis
+		# Check mode
 
-		if serviceToDeviceIpMap:
+
+		# Check services
+		services = ["nats", "neo4j", "elasticsearch"]
+		if server_config_dict[]:
 			for service_name in serviceToDeviceIpMap.keys():
 				if validateIps(serviceToDeviceIpMap['hosts'],vmanage_hosts) and validateIps(serviceToDeviceIpMap['clients'],vmanage_hosts):
 					if deviceIP in vmanage_ips:
@@ -754,15 +769,16 @@ def vmanage_service_list():
 	elif version_tuple[0:2] > ('20','5'):
 		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
 	vmanage_service_list = service_details['data'][0]['data']
-	vmanageIPS,vmanageIDS = []
+	vmanageIPS,vmanageIDS, vmanageUUID = []
 	for vmanage in vmanage_service_list:
 		vmanageID = vmanage['vmanageID']
 		deviceIP = vmanage['configJson']['deviceIP']
+		uuid = vmanage['configJson']['uuid']
 		vmanageIPS.append(deviceIP)
 		vmanageIDS.append(vmanageID)
+		vmanageUUID.append(uuid)
 
-	# ['10.0.105.32', '10.0.105.38', '10.0.105.39']
-	return vmanageIDS, vmanageIPS
+	return vmanageIDS, vmanageIPS, vmanageUUID
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
