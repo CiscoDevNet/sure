@@ -426,29 +426,7 @@ def serverType():
 	elif 'Amazon'in server_type or 'Microsoft' in server_type:
 		return 'on-cloud'
 
-#vManage migration issue checks
-def validatenmsBringup():
-    success = False
-    nms_bringup_file = '/opt/web-app/etc/nms_bringup'
-    if os.path.isfile('/opt/web-app/etc/nms_bringup') == True:
-        with open(nms_bringup_file, 'r') as csv_file:
-            total_line_num = len(csv_file.readlines())
-        with open(nms_bringup_file, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile)
-            line_count = 0
-            for row in csv_reader:
-                line_count += 1
-            if line_count < total_line_num:
-                success = False
-                check_analysis = "Validate the nms_bringup file at /opt/web-app/etc for drconsul service before upgrade to avoid migration issues."
-            else:
-                success = True
-                check_analysis = None
-    elif os.path.isfile('/opt/web-app/etc/nms_bringup') == False:
-        check_analysis = "/opt/web-app/etc/nms_bringup file not found."
-
-    return success, check_analysis
-
+#vManage: Validate server_configs.json
 def validateServerConfigsUUID():
     success = False
     server_configs_file = '/opt/web-app/etc/server_configs.json'
@@ -484,66 +462,33 @@ def validateServerConfigsUUID():
 
     return success, check_analysis
 
-
-def validateServerConfigstenantMode():
-    success = False
-    server_configs_file = '/opt/web-app/etc/server_configs.json'
-    deployment_file = '/opt/web-app/etc/deployment'
-    if os.path.isfile(deployment_file) == True:
-        with open(deployment_file) as uuid_f:
-             for line in deployment_file:
-                if "tenantmode" in line:
-                    tenant_mode = line.split("=")[1].rstrip()
-    elif os.path.isfile(deployment_file) == False:
-        check_analysis = deployment_file + " file not found."
-        return success, check_analysis
-
-    if os.path.isfile(server_configs_file) == True:
-        with open(server_configs_file, 'r') as config_file:
-            try:
-                configs = json.load(config_file)
-                mode = configs['mode']
-                if uuid == tenant_mode:
-                    success = True
-                    check_analysis = None
-                else:
-                    success = False
-                    check_analysis = "Failed to validate the tenant mode from server configs file."
-            except:
-                success = False
-                check_analysis = "Failed to validate the tenant mode from server configs file."
-    elif os.path.isfile(server_configs_file) == False :
-        check_analysis = server_configs_file + " file not found."
-
-    return success, check_analysis
-
+#vManage: Parse server_configs.json
 def _parse_local_server_config():
     server_configs_file = '/opt/web-app/etc/server_configs.json'
-	server_config_dict = {}
+    server_config_dict = {}
     if os.path.isfile(server_configs_file) == True:
         try:
-            with open(server_configs_file, 'r') as server_configs_data:
-                data_dict = json.load(server_configs_data)
-                server_config_dict['vmanageID'] = data_dict['vmanageID']
-				server_config_dict['clusterUUID'] = data_dict['cluster']
-				services_data_dict = data_dict["services"]
-                services = ["nats", "neo4j","elasticsearch"]
-                for service in services:
+			with open(server_configs_file, 'r') as data_dict:
+				server_configs_data = json.load(data_dict)
+				server_config_dict['vmanageID'] = server_configs_data['vmanageID']
+				server_config_dict['clusterUUID'] = server_configs_data['cluster']
+				server_config_dict['mode'] = server_configs_data['mode']
+				services_data_dict = server_configs_data["services"]
+				services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
+				for service in services:
 					serviceToDeviceIpMap = {}
-                    server_config_dict[service] = services_data_dict[service]['hosts']
-                    serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
-				    server_config_dict[service] = services_data_dict[service]['clients']
-	                serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in serviceToDeviceIpMap[service].values()]
-	                serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
+					serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in services_data_dict[service]['hosts'].values()]
+					serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in services_data_dict[service]['clients'].values()]
+					serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
 					server_config_dict[service] = serviceToDeviceIpMap
-                success = True
-                check_analysis = None
+				success = True
+				check_analysis = None
         except Exception:
             success = False
-            check_analysis = "Unable to read server_configs.json."
-            log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+            check_analysis = "Error while processing read server_configs.json."
+            log_file_logger.error("Error while processing read server_configs.json.")
 
-    elif os.path.isfile(server_configs_file) == False :
+    elif os.path.isfile(server_configs_file) == False:
         success = False
         check_analysis = server_configs_file + " file not found."
 
@@ -554,50 +499,60 @@ def validateIps(serviceToDeviceIp,vmanage_ips):
 		check = all(item in serviceToDeviceIp for item in vmanage_ips)
 		if check is True:
 			return True
-		else:
-			return False
 
+	return False
+
+#vManage: Validate server_configs.json
 def validateServerConfigsFile():
-    server_config_dict, success, check_analysis  = _parse_local_server_config()
-	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
-	if success:
-		# Check vmanageID
-		vmanageID = server_config_dict['vmanageID']
-		if vmanageID in vmanage_ids:
-			log_file_logger.error("Unable to read server_configs.json. Exiting now.")
-		else:
-			success = False
-			check_analysis = "Failed to validate vmanage ID in server config file"
-			return success, check_analysis
-        # Check cluster
-		uuid = server_config_dict['clusterUUID']
-		if uuid in vmanage_uuids:
-			log_file_logger.error("Unable to read server_configs.json. Exiting now.")
-		else:
-			success = False
-			check_analysis = "Failed to validate vmanage ID in server config file"
-			return success, check_analysis
-		# Check mode
+    server_config_dict, success, check_analysis = _parse_local_server_config()
+    vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
 
+    if success:
+		try:
+			# Check vmanageID
+			vmanageID = server_config_dict['vmanageID']
+			if vmanageID not in vmanage_ids:
+				success = False
+				check_analysis = "Failed to validate the vmanageID from server_configs.json."
+				check_action = "Check the correctness of vmanageID at server_configs.json."
+				return success, check_analysis, check_action
+			
+			# Check cluster
+			uuid = server_config_dict['clusterUUID']
+			if uuid not in vmanage_uuids:
+				success = False
+				check_analysis = "Failed to validate cluster from server_configs.json."
+				check_action = "Check the correctness of cluster at server_configs.json."
+				return success, check_analysis, check_action
+			
+		    # Check mode
+			mode = server_config_dict['mode']
+			tenant_mode = vmanage_tenancy_mode()
+			if mode != tenant_mode:
+				success = False
+				check_analysis = "Failed to validate the tenant mode from server_configs.json."
+				check_action = "Check the correctness of tenant mode at server_configs.json"
+				return success, check_analysis, check_action
 
-		# Check services
-		services = ["nats", "neo4j", "elasticsearch"]
-		if server_config_dict[]:
-			for service_name in serviceToDeviceIpMap.keys():
-				if validateIps(serviceToDeviceIpMap['hosts'],vmanage_hosts) and validateIps(serviceToDeviceIpMap['clients'],vmanage_hosts):
-					if deviceIP in vmanage_ips:
-						success = True
-						check_analysis = None
-					else:
-						success = False
-						check_analysis = "Failed to validate DeviceIp from server config file"
-						log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+			# Check services
+			services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
+			for service_name in services:
+				if (validateIps(server_config_dict[service_name]['hosts'], vmanage_ips) and validateIps(server_config_dict[service_name]['clients'], vmanage_ips) and server_config_dict[service_name]['deviceIP'] in vmanage_ips):
+					success = True
+					check_analysis = None
+					check_action = None
 				else:
 					success = False
-					check_analysis = "Failed to validate host/client IPs from server config file."
-					log_file_logger.error("Unable to read server_configs.json. Exiting now.")
+					check_analysis = "Failed to validate host/client/device IPs from server_configs.json for service_name:" + service_name
+					check_action = "Check the correctness of host/client/device IPs at server_configs.json for service_name:" + service_name
+					break
 
-	return success, check_analysis
+		except:
+			success = False
+			check_analysis = "Exception while validating server_configs.json."
+			check_action = "Check the correctness of host/client/device IPs at server_configs.json."
+
+    return success, check_analysis, check_action
 
 def isValidUUID():
 	success = False
@@ -664,24 +619,35 @@ def es_indices_details():
 
 #vManage service details for cluster checks
 def vmanage_service_list():
-	vmanage_service_list = {}
 	if version_tuple[0:2] < ('19','2'):
-		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port))
+		service_list = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port))
 	elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'):
-		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
+		service_list = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
 	elif version_tuple[0:2] > ('20','5'):
-		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-	vmanage_service_list = service_details['data'][0]['data']
-	vmanageIPS,vmanageIDS, vmanageUUID = []
+		service_list = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
+	vmanage_service_list = service_list['data'][0]['data']
+	vmanage_ips,vmanage_ids, vmanage_uuids = [], [], []
 	for vmanage in vmanage_service_list:
 		vmanageID = vmanage['vmanageID']
 		deviceIP = vmanage['configJson']['deviceIP']
 		uuid = vmanage['configJson']['uuid']
-		vmanageIPS.append(deviceIP)
-		vmanageIDS.append(vmanageID)
-		vmanageUUID.append(uuid)
+		vmanage_ips.append(deviceIP)
+		vmanage_ids.append(vmanageID)
+		vmanage_uuids.append(uuid)
 
-	return vmanageIDS, vmanageIPS, vmanageUUID
+	return vmanage_ips, vmanage_ids, vmanage_uuids
+
+#vManage tenancy mode
+def vmanage_tenancy_mode():
+	if version_tuple[0:2] < ('19','2'):
+		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port))
+	elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'):
+		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
+	elif version_tuple[0:2] > ('20','5'):
+		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
+	mode = service_details['data']['mode']
+
+	return mode
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -1623,11 +1589,8 @@ def criticalChecktwentyone(version):
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
-<<<<<<< HEAD
-		check_analysis = 'Validated the cluster state for uuid from server configs file only if vmanageID is 0.'
-=======
 		check_analysis = 'Validated the uuid from server configs file.'
->>>>>>> main
+
 		check_action = None
 		log_file_logger.info('Validated the uuid from server configs file.')
 
@@ -1648,51 +1611,20 @@ def criticalChecktwentytwo(version):
 
 	return  check_result, check_analysis, check_action
 
-#22:Check:Cluster:Validate Server Configs file - reachability
+#22:Check:Cluster:Validate Server Configs file
 def criticalChecktwentytwo(version):
-	success, analysis = validateServerConfigsReachability()
+	success, analysis, action = validateServerConfigsFile()
 	if not success:
 		check_result = 'Failed'
-		check_analysis = 'Failed to validate the service reachability from server configs file.'
+		check_analysis = 'Failed to validate the server_configs.json.'
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESS'
-		check_analysis = 'Validated the service reachability from server configs file.'
+		check_analysis = 'Validated the server_configs.json.'
 		check_action = None
-		log_file_logger.info('Validated the service reachability from server configs file.')
+		log_file_logger.info('Validated the server_configs.json.')
 
 	return  check_result, check_analysis, check_action
-
-#22:Check:Cluster:Validate Server Configs file - rest API
-def criticalChecktwentytwo(version):
-	success, analysis = validateServerConfigsFile()
-	if not success:
-		check_result = 'Failed'
-		check_analysis = 'Failed to validate the server configs file.'
-		check_action = '{}'.format(analysis)
-	else:
-		check_result = 'SUCCESS'
-		check_analysis = 'Validated the server configs file.'
-		check_action = None
-		log_file_logger.info('Validated the server configs file.')
-
-	return  check_result, check_analysis, check_action
-
-#23:Check:vManage:Validate Server Configs file - tenantmode
-def criticalChecktwentythree(version):
-	success, analysis = validateServerConfigstenantMode()
-	if not success:
-		check_result = 'Failed'
-		check_analysis = 'Failed to validate the tenant mode from server configs file.'
-		check_action = '{}'.format(analysis)
-	else:
-		check_result = 'SUCCESS'
-		check_analysis = 'Validated the tenant mode from server configs file.'
-		check_action = None
-		log_file_logger.info('Validated the tenant mode from server configs file.')
-
-	return  check_result, check_analysis, check_action
-
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
@@ -3780,7 +3712,7 @@ if __name__ == "__main__":
 				pre_check(log_file_logger, check_name)
 				try:
 					check_result, check_analysis, check_action = criticalChecktwentythree(version)
-=======
+>>>>
 				# Check:vManage:Validate UUID
 				check_count += 1
 				check_count_zfill = zfill_converter(check_count)
@@ -3789,7 +3721,6 @@ if __name__ == "__main__":
 				pre_check(log_file_logger, check_name)
 				try:
 					check_result, check_analysis, check_action = criticalChecktwentytwo(version)
->>>>>>> main
 					if check_result == 'Failed':
 						critical_checks[check_name] = [check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
