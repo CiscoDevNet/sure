@@ -10049,9 +10049,6 @@ if __name__ == "__main__":
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
 				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					check_error_report(check_analysis,check_action)
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					check_error_report(check_analysis, check_action)
@@ -13392,7 +13389,6 @@ if __name__ == "__main__":
 			check_count_zfill = zfill_converter(check_count)
 			print(' #{}:Checking:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill))
 			check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill)
-
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
@@ -13561,6 +13557,7 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
+
 
 
 			#Check:vManage:Validate there are no empty password users
