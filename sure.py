@@ -1596,8 +1596,8 @@ def criticalChecktwentytwo(version):
 
 	return  check_result, check_analysis, check_action
 
-#22:Check:Cluster:Validate Server Configs file
-def criticalChecktwentytwo(version):
+#22:Check:Cluster:Validate server_configs.json
+def criticalChecktwenty(version):
 	success, analysis, action = validateServerConfigsFile()
 	if not success:
 		check_result = 'Failed'
@@ -3636,15 +3636,14 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-<<<<<<< HEAD
-            		#Check:vManage:Validate server configs file - reachability
+            #Check:vManage:Validate server_configs.json
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill)
+			check_name = '#{}:Check:vManage:Validate server_configs.json'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
+				check_result, check_analysis, check_action = criticalChecktwenty(version)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -3662,7 +3661,6 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
 
 				# Check:vManage:Validate UUID
 				check_count += 1
@@ -6834,11 +6832,11 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-<<<<<<< HEAD
-            		#Check:vManage:Validate server configs file - reachability
+
+            		#Check:vManage:Validate server_configs.json
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
-			check_name = '#{}:Check:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill)
+			check_name = '#{}:Check:vManage:Validate server_configs.json.'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
 				check_result, check_analysis, check_action = criticalChecktwentytwo(version)
@@ -10041,13 +10039,6 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
-<<<<<<< HEAD
-            		#Check:vManage:Validate server configs file - reachability
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print('  #{}:Checking:vManage:Validate cluster state for reachability from server configs file.'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate cluster state for reachability from server configs file.'.format(check_count_zfill)
 
 			# Check:vManage:Validate UUID
 			check_count += 1
@@ -13395,12 +13386,6 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
-           		#Check:vManage:Validate server configs file - reachability
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' #{}:Checking:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Validate cluster state for service reachability from server configs file.'.format(check_count_zfill)
 
 			# Check:vManage:Validate UUID
 			check_count += 1
