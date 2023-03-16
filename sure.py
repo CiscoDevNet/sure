@@ -455,7 +455,7 @@ def validateServerConfigsUUID():
                     check_analysis = "Validation of uuid from server_configs.json does not apply."
             except:
                 success = False
-                check_analysis = "Failed to validate the uuid from server configs file."
+                check_analysis = "Failed to validate uuid from server configs file."
     elif os.path.isfile(server_configs_file) == False :
         check_analysis = server_configs_file + " file not found."
 
