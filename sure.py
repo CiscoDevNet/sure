@@ -34,7 +34,6 @@ import sys
 import platform
 import getpass
 import csv
-from requests.auth import HTTPBasicAuth
 
 try:
 	#python3 Imports
@@ -450,10 +449,10 @@ def validateServerConfigsUUID():
                         check_analysis = None
                     else:
                         success = False
-                        check_analysis = "Failed to validate the uuid from server configs file."
+                        check_analysis = "Failed to validate the uuid from server_configs.json."
                 else:
                     success = True
-                    check_analysis = "Validation of uuid from server configs file does not apply."
+                    check_analysis = "Validation of uuid from server_configs.json does not apply."
             except:
                 success = False
                 check_analysis = "Failed to validate the uuid from server configs file."
@@ -1575,7 +1574,6 @@ def criticalChecktwentyone(version):
 	else:
 		check_result = 'SUCCESS'
 		check_analysis = 'Validated the uuid from server configs file.'
-
 		check_action = None
 		log_file_logger.info('Validated the uuid from server configs file.')
 
@@ -6831,7 +6829,6 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
 
             		#Check:vManage:Validate server_configs.json
 			check_count += 1
