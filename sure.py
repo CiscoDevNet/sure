@@ -633,9 +633,7 @@ def vmanage_service_list():
 		vmanage_ips.append(deviceIP)
 		vmanage_ids.append(vmanageID)
 		vmanage_uuids.append(uuid)
-	print(vmanage_ips)
-	print(vmanage_ids)
-	print(vmanage_uuids)
+
 	return vmanage_ips, vmanage_ids, vmanage_uuids
 
 #vManage tenancy mode
@@ -647,7 +645,7 @@ def vmanage_tenancy_mode():
 	elif version_tuple[0:2] > ('20','5'):
 		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
 	mode = service_details['data']['mode']
-	print(mode)
+
 	return mode
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
