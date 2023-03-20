@@ -2,8 +2,6 @@
 
 #!/usr/bin/env python
 
-<<<<<<< HEAD
-=======
 """
 ------------------------------------------------------------------
 
@@ -14,7 +12,6 @@ All rights reserved.
 ------------------------------------------------------------------
 """
 
->>>>>>> dev
 __sure_version =  "2.0.0"
 
 #Common Imports
@@ -422,12 +419,8 @@ def  dpiStatus(dpi_stats):
 #Server type: onprem/cloud
 def serverType():
 	server_type = str(executeCommand('cat /sys/devices/virtual/dmi/id/sys_vendor'))
-<<<<<<< HEAD
-	if 'VMware' in server_type or 'Red Hat' in server_type:
-=======
 
 	if 'VMware' in server_type or 'Red Hat' in server_type:   #add red hat kvm type
->>>>>>> dev
 		return 'on-prem'
 	elif 'Amazon'in server_type or 'Microsoft' in server_type:
 		return 'on-cloud'
@@ -625,8 +618,6 @@ def es_indices_details():
 		if match:
 			es_indices = executeCommand('curl --connect-timeout 6 --silent -XGET {}/_cat/indices/ -u elasticsearch:s3cureElast1cPass'.format(ip_add))
 	return es_indices
-<<<<<<< HEAD
-=======
 
 #vManage service list for cluster checks
 def vmanage_service_list():
@@ -659,7 +650,6 @@ def vmanage_tenancy_mode():
 	mode = service_details['data']['mode']
 
 	return mode
->>>>>>> dev
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -680,22 +670,22 @@ def criticalCheckone(version):
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
 	if vmanage_version == 20.6:
 		#print('20.6')
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, and matching latest long life release version'.format(version)
 		check_action = None
 	elif vmanage_version > 20.3 and vmanage_version < 20.6:
 		#print('between 20.3 and 20.6')
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Direct Upgrade to next long life release 20.6 is possible and no intermediate upgrade is required'
 		check_action = None
 	elif vmanage_version == 20.3:
 		#print('20.3')
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Controller is currently on recommended long life release branch, you can upgrade directly to latest release in 20.3.x'
 		check_action = None
 	elif vmanage_version >= 20.1 and vmanage_version < 20.3:
 		#print('between 20.1 and 20.3')
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Direct Upgrade to next long life release 20.3 is possible and no intermediate upgrade is required'
 		check_action = None
 	elif vmanage_version >= 18.3 and    vmanage_version <= 19.2:
@@ -707,7 +697,7 @@ def criticalCheckone(version):
 			check_action = 'Upgrade through Version 20.1 is required'
 		elif  boot_partition_size_Gig > 2.0:
 			#print(boot_partition_size_Gig)
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'Current Disk Space is {}, it is more than 2GB and Direct Upgrade to next long life release 20.3 is possible'.format(' '.join(boot_partition_size[0]))
 			check_action = None
 	elif vmanage_version < 18.3:
@@ -727,7 +717,7 @@ def criticalCheckTwo():
 	rootfs_partition_size = int(rootfs_partition_size_percent[0][0])
 
 	if optdata_partition_size <= 80 and rootfs_partition_size <= 80:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Enough Disk space is available to perform the upgrade. Space available /opt/data:{}%, rootfs.rw:{}%'.format(100-optdata_partition_size, 100-rootfs_partition_size)
 		check_action = None
 	elif optdata_partition_size >= 80 or rootfs_partition_size >= 80:
@@ -791,7 +781,7 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 				check_analysis = 'xEdge device count is more than 5000, it exceeds supported scenarios.'
 				check_action = 'Please evaluate current overlay design.'
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Server meets hardware recommendations'
 		check_action = None
 
@@ -806,7 +796,7 @@ def criticalCheckfour(cpu_count, vedge_count, dpi_status, server_type):
 			check_analysis = 'No. of Processors is below minimum supported size when DPI is in use. CPU Count is {}, it should be 32 or higher.'.format(cpu_count)
 			check_action = 'Allocate more processors'
 		elif cpu_count >= 32:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 			check_action = None
 	elif dpi_status != 'enable' and server_type == 'on-prem':
@@ -819,7 +809,7 @@ def criticalCheckfour(cpu_count, vedge_count, dpi_status, server_type):
 			check_analysis = 'Number of Processors is below the minimum supported size. CPU Count is {}, it should be 16 or higher.'.format(cpu_count)
 			check_action = 'Allocate more processors'
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 			check_action = None
 	elif dpi_status != 'enable' and server_type == 'on-cloud':
@@ -832,11 +822,11 @@ def criticalCheckfour(cpu_count, vedge_count, dpi_status, server_type):
 			check_analysis = 'Number of Processors is below the minimum supported size. CPU Count is {}, it should be 16 or higher.' .format(cpu_count)
 			check_action = 'Allocate more processors'
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 			check_action = None
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 		check_action = None
 
@@ -857,7 +847,7 @@ def criticalCheckfive(es_indices):
 			check_analysis = 'There are Indices that have RED status'
 			check_action = 'At least one StatsDB index is exhibiting problems. Please contact TAC  case to investigate and correct the issue'
 		elif len(es_index_red) == 0:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'All the indices have GREEN status'
 			check_action = None
 	else:
@@ -887,7 +877,7 @@ def criticalCheckfive(es_indices):
 				check_analysis = 'There are Indices that have RED status'
 				check_action = 'At least one StatsDB index is exhibiting problems. Please contact TAC  case to investigate and correct the issue'
 	elif len(es_index_red) == 0:
-				check_result = 'SUCCESS'
+				check_result = 'SUCCESSFUL'
 				check_analysis = 'All the indices have GREEN status'
 				check_action = None
 	else:
@@ -913,16 +903,12 @@ def criticalChecksix(version_tuple):
 				if 'ERROR' in line:
 					last_14day_date_time = datetime.now() - timedelta(days = 14)
 					match = re.findall(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})',  line)
-<<<<<<< HEAD
-					date_time = datetime.strptime(match1[0], '%Y-%m-%d %H:%M:%S')
-=======
 					date_time = datetime.strptime(match[0], '%Y-%m-%d %H:%M:%S')
->>>>>>> dev
 					if date_time > last_14day_date_time:
 						count +=1
 
 			if count == 0:
-				check_result = 'SUCCESS'
+				check_result = 'SUCCESSFUL'
 				check_analysis = 'No Error messaged found in /var/log/nms/neo4j-out.log'
 				check_action = None
 			else:
@@ -930,7 +916,7 @@ def criticalChecksix(version_tuple):
 				check_analysis = '{} Error messages found in /var/log/nms/neo4j-out.log'.format(count)
 				check_action = 'There are errors reported in configDB log file. It is advisable to contact TAC to investigate any issues before an upgrade'
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check is not required for the current version'
 		check_action = None
 	return check_result, check_analysis, check_action
@@ -947,7 +933,7 @@ def criticalCheckseven():
 			check_analysis = 'Enabled service/s not running'
 			check_action = 'It is advisable to investigate why a service is being reported as failed. Please  restart the process or contact TAC for further help'
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'All enabled services are running'
 			check_action = None
 	return nms_status1, nms_failed, check_result,check_analysis,check_action
@@ -995,7 +981,7 @@ def criticalCheckeight(version_tuple):
 			check_analysis = 'StatsDB indices with version 2.0 found'
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
 		elif len(version_list) == 0:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'Version of all the Elasticsearch Indices is greater than 2.0'
 			check_action = None
 	else:
@@ -1042,7 +1028,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 
 						check_action = 'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 					else:
-						check_result = 'SUCCESS'
+						check_result = 'SUCCESSFUL'
 						check_analysis = '''The rate of daily incoming Approute data is within limits.\n
 											DPI is disabled.'''
 						check_action = None
@@ -1076,7 +1062,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 												DPI is disabled.'''
 							check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 					else:
-						check_result = 'SUCCESS'
+						check_result = 'SUCCESSFUL'
 						check_analysis = '''The rate of daily incoming Approute data is within limits.\n
 											DPI is disabled.'''
 						check_action = None
@@ -1087,10 +1073,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 					dpi_estimate_ondeday = None
 
 				elif index['index'] == 'Approute' and index['status'] != 'success':
-<<<<<<< HEAD
-=======
 					dpi_estimate_ondeday = None
->>>>>>> dev
 					appr_estimate_ondeday = 0
 
 				elif index['index'] == 'DPI' and index['status'] == 'success':
@@ -1105,10 +1088,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 						dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])*(1024)
 
 				elif index['index'] == 'Approute' and index['status'] == 'success':
-<<<<<<< HEAD
-=======
 					dpi_estimate_ondeday = None
->>>>>>> dev
 					appr_estimate_ondeday = index['estimation']['1 day   ']
 					if 'KB' in appr_estimate_ondeday:
 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
@@ -1143,7 +1123,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 					check_analysis = 'The incoming rate of DPI is higher than expected.Consider using vAnalytics for DPI. Contact Cisco TAC for more information on this.'
 					check_action = 'Server hardware size may need to be changed according to the rate of incoming DPI data.'
 				else:
-					check_result = 'SUCCESS'
+					check_result = 'SUCCESSFUL'
 					check_analysis = 'The rate of daily incoming DPI data is within limits.'
 					check_action = None
 
@@ -1173,7 +1153,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 						check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
 				else:
-					check_result = 'SUCCESS'
+					check_result = 'SUCCESSFUL'
 					check_analysis = '''The rate of daily incoming DPI data is within limits.'''
 					check_action = None
 
@@ -1209,7 +1189,7 @@ def criticalCheckten(version_tuple, controllers_info):
 				else:
 					continue
 	if len(ntp_nonworking) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'All controllers (vSmart\'s and vManage\'s) have valid ntp association'
 		check_action = None
 	elif len(ntp_nonworking) != 0:
@@ -1244,7 +1224,7 @@ def criticalCheckeighteen(version_tuple):
 			check_analysis = 'The Neo4j Store version is {}, it should be SF4.0.0.'.format(nodestore_version)
 			check_action = 'Execute the following command to upgrade it: "request nms configuration-db upgrade"'
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'The Neo4j Store version is {} and it is up to date.'.format(nodestore_version)
 			check_action = None
 
@@ -1269,7 +1249,7 @@ def criticalChecknineteen():
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
 			check_action = 'Contact TAC  to do DB cleanup'
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'The ConfigDB size is {} which is within limits i.e less than 5GB'.format(db_size)
 			check_action = None
 	else:
@@ -1305,7 +1285,7 @@ def criticalCheckeleven(total_devices, vbond_info, vsmart_info):
 		check_action = 'It is advisable to do VM resizing to match the network scale. For more information: https://www.cisco.com/c/en/us/td/docs/routers/sdwan/release/notes/compatibility-and-server-recommendations/ch-server-recs-20-3.html'
 
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'vSmart/vBond CPU count is sufficient for the number of devices present'
 		check_action = 'None'
 
@@ -1317,7 +1297,7 @@ def criticalChecktwelve(vmanage_info):
 		version = []
 		version.append(vmanage_info[vmanage][2])
 	if len(set(version)) == 1:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'All the servers on the cluster have same version'
 		check_action = 'None'
 	else:
@@ -1360,7 +1340,7 @@ def criticalCheckthirteen(vmanage_service_details):
 		check_analysis = 'The cluster has relevant services down'
 		check_action = 'Troubleshoot why specific services are as down on a server'
 	elif len(services_down) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'The cluster has all relevant services up and running'
 		check_action = 'None'
 	return services_down, check_result,check_analysis, check_action
@@ -1393,7 +1373,7 @@ def criticalCheckfourteen(vmanage_service_details):
 		check_analysis = 'The cluster has even number of configDB servers'
 		check_action = ' Cluster is not on a supported configuration. Modify cluster to have odd number of configDB owners (1,3,5) '
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'The cluster has odd number of configDB servers'
 		check_action = None
 	return configDB_count,check_result,check_analysis, check_action
@@ -1426,7 +1406,7 @@ def criticalCheckfifteen(vmanage_service_details, cluster_size):
 		check_analysis = 'All the servers in the cluster dont have message-service running'
 		check_action = 'Cluster is not on a supported configuration. Modify cluster to have messaging server running '
 	elif len(cluster_msdown) == cluster_size:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'All the servers in the cluster have message-service running'
 		check_action = None
 	return cluster_msdown,check_result,check_analysis, check_action
@@ -1437,13 +1417,13 @@ def criticalChecksixteen(dr_data):
 	dr_status = ''
 	if dr_data['replicationDetails'] == []:
 		dr_status = 'disabled'
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'DR Replication is Disabled'
 		check_action = None
 	elif dr_data['replicationDetails']:
 		dr_status = 'enabled'
 		if dr_data['replicationDetails'][0]['replicationStatus'] == 'Success':
-			check_action = 'SUCCESS'
+			check_action = 'SUCCESSFUL'
 			check_analysis = 'DR replication Successful'
 			check_result = None
 		else:
@@ -1514,7 +1494,7 @@ def criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger):
 			continue
 
 	if len(ping_output_failed) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
 		check_action = None
 	else:
@@ -1579,7 +1559,7 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 				continue
 
 		if len(ping_output_failed) == 0:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
 			check_action = None
 		else:
@@ -1590,41 +1570,7 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 	except Exception as e:
 		log_file_logger.exception(e)
 
-def criticalCheckTwentyone():
-    result = ''
-    check_result = ''
 
-    if os.path.exists('./vmanage-runutils.jar') :
-        cmd = '/usr/bin/java -jar vmanage-runutils.jar checkconfigdb'
-        sub = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        out, err = sub.communicate()
-        encoding = 'utf-8'
-        result = str(err, encoding)
-        val = input("configuration-DB checks are completed. Do you want to remove the vmanage-runutils.jar file?(Y/N)")
-        if val.lower() == 'y' :
-            os.remove('./vmanage-runutils.jar')
-    else :
-        check_result = "vmanage-runutils.jar file is missing. Some configuration-DB checks are skipped"
-
-
-    if len(result) > 1 :
-        if 'Failed' in result :
-            f = open('configdb_status.log', 'w')
-            f.write(result)
-            f.close()
-            check_result = 'Failed'
-            check_analysis = 'Some issues are observed in config-DB'
-            check_action = 'Please check the configdb_status.log file and correct the issue found in the configuration-DB'
-            return  check_result, check_analysis, check_action
-
-    check_result = check_result + 'SUCCESS'
-    check_analysis = 'No issues found in configuration-DB '
-    check_action = None
-    return check_result, check_analysis, check_action
-
-<<<<<<< HEAD
-
-=======
 #20:Check:vManage:Validate Server Configs file - uuid
 def criticalChecktwenty(version):
 	success, analysis = validateServerConfigsUUID()
@@ -1634,7 +1580,7 @@ def criticalChecktwenty(version):
 		check_action = '{}'.format(analysis)
 		check_action = '{}'.format(analysis)
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Validated the uuid from server configs file.'
 		check_action = None
 		log_file_logger.info('Validated the uuid from server configs file.')
@@ -1649,7 +1595,7 @@ def criticalChecktwentyone(version):
 		check_analysis = 'Failed to validate the server_configs.json.'
 		check_action = '{}'.format(analysis)
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Validated the server_configs.json.'
 		check_action = None
 		log_file_logger.info('Validated the server_configs.json.')
@@ -1664,13 +1610,12 @@ def criticalChecktwentytwo(version):
 		check_analysis = 'Failed to validate UUID at /etc/viptela/uuid.'
 		check_action = '{}'.format(analysis)
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'UUID is valid.'
 		check_action = None
 		log_file_logger.info('Validated the uuid at /etc/viptela/uuid.')
 
 	return check_result, check_analysis, check_action
->>>>>>> dev
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
@@ -1682,7 +1627,7 @@ def warningCheckone(cpu_speed):
 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
 		check_action = 'Upgrade the hardware type'
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'CPU Clock speed is {}, matches hardware recommendations'.format(cpu_speed)
 		check_action = None
 	return check_result,check_analysis,check_action
@@ -1698,7 +1643,7 @@ def warningChecktwo():
 			eth_drivers[eth] = driver.split()[1]
 
 	if len(eth_drivers) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_action = None
 		check_analysis = 'VM is not using Intel e1000 card type'
 
@@ -1735,7 +1680,7 @@ def warningCheckthree():
 						check_analysis = 'The last backup is older than 48h, it is advisable to have a recent upgrade before attempting an upgrade.'
 						check_action = 'Perform a Backup before upgrading'
 					elif date_time_obj >= last_48hr_date:
-						check_result = 'SUCCESS'
+						check_result = 'SUCCESSFUL'
 						check_analysis = 'Last Backup preformed recently, it meets best practices recommendations'
 						check_action = None
 
@@ -1777,12 +1722,12 @@ def warningCheckfour():
 			check_action = 'Open TAC case to investigate possible root causes. Most common cause is use of IDE as disk controller, they may point towards perfomance issues'
 
 		elif slow_queries != [] and len(slow_queries) > 0 and len(slow_queries) < 5:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'No database performance issues found.'
 			check_action = None
 
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'No database performance issues found.'
 			check_action = None
 
@@ -1793,7 +1738,7 @@ def warningCheckfour():
 def warningCheckfive(tasks):
 	tasks_running= {}
 	if tasks['runningTasks'] == []:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'There are no stuck or pending tasks on the server'
 		check_action = None
 	else:
@@ -1811,7 +1756,7 @@ def warningCheckfive(tasks):
 def warningChecksix(version_tuple):
 	if version_tuple[0:2] != ('20','3'):
 		users_emptypass = []
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = '#06:Check is not required on the current version'
 		check_action = None
 	else:
@@ -1821,7 +1766,7 @@ def warningChecksix(version_tuple):
 			if 'auth-type' not in user.keys():
 				users_emptypass.append(user['name'])
 		if len(users_emptypass) == 0:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'All users have authentication configured'
 			check_action = None
 		else:
@@ -1839,7 +1784,7 @@ def warningCheckseven(controllers_info):
 		for controller in controllers_info:
 			version_list.append('.'.join(controllers_info[controller][2].split('.')[0:2]))
 		if len(set(version_list))==1:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'Versions of all the controllers are same'
 			check_action = None
 		else:
@@ -1868,7 +1813,7 @@ def warningCheckeight(controllers_info):
 		except:
 			controllers_exp[controller] = 'uknown'
 	if len(controllers_exp) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Certificates are ok'
 		check_action = None
 	elif 'unknown' in controllers_exp.values():
@@ -1893,11 +1838,11 @@ def warningChecknine(controllers_info):
 			novedge.append([controller, controllers_info[controller][0], controllers_info[controller][1]])
 
 	if novedge != [] and state_vedgeList == [] :
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'No edge devices found and hence all the controllers do not have consistent state_vedgeList'
 		check_action = None
 	elif state_vedgeList == [] and novedge == [] :
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'All the controllers have consistent state_vedgeList '
 		check_action = None
 	else:
@@ -1926,7 +1871,7 @@ def warningCheckten(vsmart_count, vbond_count):
 		check_analysis = 'The vbond and vsmart count on API call does not match the currently control connected devices.'
 		check_action = 'Troubleshoot: vBond and vSmart count showing discrepancy.'
 	elif len(discrepancy) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'The vBond and vSmart count on API call matches the currently control connected devices. '
 		check_action = None
 	return control_sum_tab, discrepancy, check_result, check_analysis, check_action
@@ -1946,11 +1891,11 @@ def infoCheckone(server_type, disk_controller):
 			check_analysis = 'Disk Type is IDE'
 			check_action = 'On most scenarios, changing IDE to SCSI can improve disk IO performance. When using 20.3 or higher, it is advisable to change the controller type on the VM configuration.'
 		else:
-			check_result = 'SUCCESS'
+			check_result = 'SUCCESSFUL'
 			check_analysis = 'Disk type is not IDE, safe to upgrade. '
 			check_action = None
 	elif server_type == 'on-cloud':
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check is not required for on-cloud deployments'
 		check_action = None
 	else:
@@ -1962,7 +1907,7 @@ def infoCheckone(server_type, disk_controller):
 #02:Check:Controllers:Validate there is at minimum vBond, vSmart present
 def infoChecktwo(vsmart_count, vbond_count):
 	if vsmart_count >= 1 and vbond_count >= 1:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'One or more than one vBond and vSmart present, safe to upgrade'
 		check_action = None
 	else:
@@ -1984,7 +1929,7 @@ def infoChecktthree(controllers_info):
 		check_analysis = 'The vManage reported Controllers that are not reachable. '
 		check_action = 'Either troubleshoot why the controller is down, or delete any invalid device from the overlay '
 	elif len(unreach_controllers) == 0:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'All the controllers are reachable'
 		check_action = None
 	return unreach_controllers,check_result, check_analysis, check_action
@@ -2017,9 +1962,9 @@ def check_error_report(check_analysis,check_action ):
 if __name__ == "__main__":
 	start_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 	json_final_result = {}
-	result_log = {'Critical': {'SUCCESS':'INFO', 'Failed':'ERROR'},
-			  'Warning': {'SUCCESS':'INFO', 'Failed':'WARNING'},
-			  'Informational': {'SUCCESS':'INFO', 'Failed':'WARNING'}}
+	result_log = {'Critical': {'SUCCESSFUL':'INFO', 'Failed':'ERROR'},
+			  'Warning': {'SUCCESSFUL':'INFO', 'Failed':'WARNING'},
+			  'Informational': {'SUCCESSFUL':'INFO', 'Failed':'WARNING'}}
 
 	#Validating the vmanage sever
 	try:
@@ -2341,7 +2286,7 @@ if __name__ == "__main__":
 																	 'action': '{}'.format(check_action_two),
 																	 'status': '{}'.format(check_result_two),
 																	 'document': '',})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -2350,7 +2295,7 @@ if __name__ == "__main__":
 																	 'action': '{}'.format(check_action_one),
 																	 'status': '{}'.format(check_result_one),
 																	 'document': '',})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -2553,35 +2498,6 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
-			# Check:vManage:Validate ConfigDB overall status
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}: Check:vManage:Validate ConfigDB overall status'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action = criticalCheckTwentyone()
-				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: configDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: ConfigDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-			except Exception as e:			
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-					
 
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
@@ -2921,11 +2837,7 @@ if __name__ == "__main__":
 					check_error_report(check_analysis,check_action)
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-<<<<<<< HEAD
-					log_file_logger.info('#{}: Disk Controller type: {}\n'.format(disk_controller))
-=======
 					log_file_logger.info('#{}: Disk Controller type: {}\n'.format(check_count_zfill,disk_controller))
->>>>>>> dev
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 																 'log type': '{}'.format(result_log['Informational'][check_result]),
@@ -3416,7 +3328,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -3425,7 +3337,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -3630,33 +3542,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-			# Check:vManage:Validate ConfigDB overall status
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}: Check:vManage:Validate ConfigDB overall status'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action = criticalCheckTwentyone()
-				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: configDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: ConfigDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-			except Exception as e:			
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
 
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
@@ -3708,8 +3593,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-<<<<<<< HEAD
-=======
             #Check:vManage:Validate server configs file - uuid
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
@@ -3790,7 +3673,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
->>>>>>> dev
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
 			warning_checks = {}
@@ -4569,7 +4451,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -4578,7 +4460,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -4779,33 +4661,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-			# Check:vManage:Validate ConfigDB overall status
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}: Check:vManage:Validate ConfigDB overall status'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action = criticalCheckTwentyone()
-				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: configDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: ConfigDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-			except Exception as e:			
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))	
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
@@ -4842,17 +4697,6 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.info('#{}: All vBonds info with total_cpu_count:\n{}'.format(check_count_zfill, vbond_info))
 					log_file_logger.info('#{}: All vSmarts info with total_cpu_count:\n{}\n'.format(check_count_zfill, vsmart_info))
-<<<<<<< HEAD
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-=======
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 															 'log type': '{}'.format(result_log['Critical'][check_result]),
@@ -4943,7 +4787,6 @@ if __name__ == "__main__":
 						'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
->>>>>>> dev
 				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
@@ -5708,7 +5551,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -5717,7 +5560,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -6718,7 +6561,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -6727,7 +6570,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -7800,7 +7643,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -7809,7 +7652,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -7935,11 +7778,7 @@ if __name__ == "__main__":
 				ntp_nonworking, check_result, check_analysis, check_action = criticalCheckten(version_tuple, controllers_info)
 				if check_result == 'Failed':
 					critical_checks[check_name] = [ check_analysis, check_action]
-<<<<<<< HEAD
-					lcheck_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-=======
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
->>>>>>> dev
 					log_file_logger.error('#{}: Devices with invalid ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonworking))
 					check_error_report(check_analysis,check_action)
 				else:
@@ -8052,11 +7891,6 @@ if __name__ == "__main__":
 															 'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-<<<<<<< HEAD
-				log_file_logger.exception('{}\n'.format(e))
-
-
-=======
 				log_file_logger.exception('{}\n'.format(e))
 
 			# Check:vManage:Validate server configs file - uuid
@@ -8137,7 +7971,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
->>>>>>> dev
 			#Warning Checks
 			warning_checks = {}
 			log_file_logger.info('*** Performing Warning Checks')
@@ -8903,7 +8736,7 @@ if __name__ == "__main__":
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
 
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -8913,7 +8746,7 @@ if __name__ == "__main__":
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
 
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -9946,7 +9779,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -9955,7 +9788,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -10037,11 +9870,7 @@ if __name__ == "__main__":
 					critical_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: List of indices with older versions  :\n{}\n'.format(check_count_zfill, version_list))
-<<<<<<< HEAD
-					wcheck_error_report(check_analysis,check_action)
-=======
 					check_error_report(check_analysis,check_action)
->>>>>>> dev
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
@@ -10168,34 +9997,6 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
-			# Check:vManage:Validate ConfigDB overall status
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}: Check:vManage:Validate ConfigDB overall status'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action = criticalCheckTwentyone()
-				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: configDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: ConfigDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-			except Exception as e:			
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))	
 
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
@@ -11120,7 +10921,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -11129,7 +10930,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -11248,11 +11049,7 @@ if __name__ == "__main__":
 															 'status': '{}'.format(check_result),
 															 'document': ''})
 			except Exception as e:
-<<<<<<< HEAD
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-=======
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name,log_file_path))
->>>>>>> dev
 				log_file_logger.exception('{}\n'.format(e))
 
 
@@ -11825,10 +11622,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-<<<<<<< HEAD
-
-=======
->>>>>>> dev
 			if cluster_size>1:
 				cluster_checks = {}
 
@@ -12253,7 +12046,7 @@ if __name__ == "__main__":
 															 'status': '{}'.format(check_result),
 															 'document': ''})
 
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					print(' INFO:{}\n\n'.format(check_analysis_one))
@@ -12264,7 +12057,7 @@ if __name__ == "__main__":
 															 'status': '{}'.format(check_result),
 															 'document': ''})
 
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					print(' INFO:{}\n\n'.format(check_analysis_two))
@@ -13366,7 +13159,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					print(' INFO:{}\n\n'.format(check_analysis_one))
@@ -13376,7 +13169,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					print(' INFO:{}\n\n'.format(check_analysis_two))
@@ -13600,35 +13393,6 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-			# Check:vManage:Validate ConfigDB overall status
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Critical Check:#{}'.format(check_count_zfill))
-			check_name = '#{}: Check:vManage:Validate ConfigDB overall status'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action = criticalCheckTwentyone()
-				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: configDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: ConfigDB status: {}\n'.format(check_count_zfill, nodestore_version))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-			except Exception as e:			
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-
-
 			#Check:Controllers:Validate vSmart/vBond CPU count for scale
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
@@ -13676,11 +13440,6 @@ if __name__ == "__main__":
 															 'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
-<<<<<<< HEAD
-				log_file_logger.exception('{}\n'.format(e))
-
-
-=======
 				log_file_logger.exception('{}\n'.format(e))
 
             #Check:vManage:Validate server configs file - uuid
@@ -13770,7 +13529,6 @@ if __name__ == "__main__":
 						check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
->>>>>>> dev
 			#Warning Checks
 			print('\n**** Performing Warning checks\n')
 			warning_checks = {}
@@ -14605,7 +14363,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
 															 'document': ''})
-				elif check_result_one == 'SUCCESS':
+				elif check_result_one == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					print(' INFO:{}\n\n'.format(check_analysis_one))
@@ -14615,7 +14373,7 @@ if __name__ == "__main__":
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
 															 'document': ''})
-				elif check_result_two == 'SUCCESS':
+				elif check_result_two == 'SUCCESSFUL':
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					print(' INFO:{}\n\n'.format(check_analysis_two))
@@ -14871,17 +14629,6 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
 					log_file_logger.info('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-<<<<<<< HEAD
-					print(' INFO:{}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
-=======
 					print(' INFO:{}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 															 'log type': '{}'.format(result_log['Critical'][check_result]),
@@ -14978,7 +14725,6 @@ if __name__ == "__main__":
 					 'document': ''})
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
->>>>>>> dev
 				log_file_logger.exception('{}\n'.format(e))
 
 			#Warning Checks
@@ -14998,11 +14744,7 @@ if __name__ == "__main__":
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-<<<<<<< HEAD
-					log_file_logger.error('#{}: CPU clock speed: {}\n'.format(cpu_speed))
-=======
 					log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
->>>>>>> dev
 					check_error_report(check_analysis,check_action)
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 
