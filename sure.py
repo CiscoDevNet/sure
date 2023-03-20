@@ -341,20 +341,23 @@ def controllersInfo(controllers):
 	controllers_info = {}
 	count = 1
 	for device in controllers['data']:
-		if device['deviceState'] == 'READY':
-			if 'state_vedgeList' and 'timeRemainingForExpiration' not in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),'no-timeRemainingforExpiration', 'no-vedges']
-				count += 1
-			elif 'state_vedgeList' not in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), 'no-vedges']
-				count += 1
-			elif 'timeRemainingForExpiration' not in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),'no-timeRemainingforExpiration', (device['state_vedgeList'])]
+		if device['deviceState'] == 'READY':		
+			if 'state_vedgeList' not in device.keys():
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), 'no-vedges']
 				count += 1
 			else:
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList'])]
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), (device['state_vedgeList'])]
 				count += 1
 	return controllers_info
+
+#Certificate Info
+def certificateInfo(certificate):
+	certificate_info = {}
+	count = 1
+	for device in certificate['data']:
+		certificate_info[count] = [(device['deviceType']),(device['expirationDateLong'])]
+		count += 1
+	return certificate_info
 
 #CPU Clock Speed
 def cpuSpeed():
@@ -1156,17 +1159,17 @@ def criticalCheckeleven(total_devices, vbond_info, vsmart_info):
 	failed_vsmarts = {}
 
 	for vsmart in vsmart_info:
-		if vsmart_info[vsmart][7] < 2 and total_devices <= 50:
+		if vsmart_info[vsmart][6] < 2 and total_devices <= 50:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
-		elif vsmart_info[vsmart][7] < 4 and total_devices > 50 and  total_devices <= 1000:
+		elif vsmart_info[vsmart][6] < 4 and total_devices > 50 and  total_devices <= 1000:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
-		elif vsmart_info[vsmart][7] < 8 and total_devices > 1000:
+		elif vsmart_info[vsmart][6] < 8 and total_devices > 1000:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
 
 	for vbond in vbond_info:
-		if vbond_info[vbond][7] < 2 and total_devices <= 1000:
+		if vbond_info[vbond][6] < 2 and total_devices <= 1000:
 			failed_vbonds[vbond] = vbond_info[vbond]
-		elif vbond_info[vbond][7] < 4 and total_devices > 1000:
+		elif vbond_info[vbond][6] < 4 and total_devices > 1000:
 			failed_vbonds[vbond] = vbond_info[vbond]
 
 	if len(failed_vbonds) != 0 or len(failed_vsmarts) != 0:
@@ -1688,18 +1691,20 @@ def warningCheckseven(controllers_info):
 
 
 #08:Check:Controllers:Confirm Certificate Expiration Dates
-def warningCheckeight(controllers_info):
+def warningCheckeight(certificate_info):
 	controllers_exp = {}
 	controllers_notexp = {}
-	for controller in controllers_info:
+	for controller in certificate_info:
 		try:
-			time_remaining = timedelta(seconds=controllers_info[controller][5])
-			if timedelta(seconds=controllers_info[controller][5]) <= timedelta(seconds=2592000):
+			time_remaining = timedelta(seconds=certificate_info[controller][1])
+			if(certificate_info[controller][1] == -1):
+				controllers_exp[controller] = 'unknown'
+			elif timedelta(seconds=certificate_info[controller][1]) <= timedelta(seconds=2592000):
 				controllers_exp[controller] = str(time_remaining)
-			elif timedelta(seconds=controllers_info[controller][5]) > timedelta(seconds=2592000):
+			elif timedelta(seconds=certificate_info[controller][1]) > timedelta(seconds=2592000):
 				controllers_notexp[controller] = str(time_remaining)
 		except:
-			controllers_exp[controller] = 'uknown'
+			controllers_exp[controller] = 'unknown'	
 	if len(controllers_exp) == 0:
 		check_result = 'SUCCESS'
 		check_analysis = 'Certificates are ok'
@@ -1720,9 +1725,9 @@ def warningChecknine(controllers_info):
 	state_vedgeList = []
 	novedge = []
 	for controller in controllers_info:
-		if controllers_info[controller][6] != 'Sync' and controllers_info[controller][6] != 'no-vedges':
+		if controllers_info[controller][5] != 'Sync' and controllers_info[controller][5] != 'no-vedges':
 			state_vedgeList.append([controller, controllers_info[controller][0], controllers_info[controller][1]])
-		elif controllers_info[controller][6] == 'no-vedges':
+		elif controllers_info[controller][5] == 'no-vedges':
 			novedge.append([controller, controllers_info[controller][0], controllers_info[controller][1]])
 
 	if novedge != [] and state_vedgeList == [] :
@@ -1982,6 +1987,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				out = getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port)
 				#print(json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port)))
@@ -2655,7 +2664,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -3027,6 +3036,9 @@ if __name__ == "__main__":
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -3779,7 +3791,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -4149,6 +4161,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -4841,7 +4857,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -5230,6 +5246,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -5886,7 +5906,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -6235,6 +6255,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -6962,7 +6986,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -7243,7 +7267,7 @@ if __name__ == "__main__":
 					if check_result == 'Failed':
 						cluster_checks[check_name] = [ check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-						log_file_logger.error('#{}: DR Replication status: {}\n'.format(check_count_zfilldr_status))
+						log_file_logger.error('#{}: DR Replication status: {}\n'.format(check_count_zfill,dr_status))
 						check_error_report(check_analysis,check_action)
 					else:
 						check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -7318,6 +7342,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -7994,7 +8022,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					log_file_logger.error('#{}: Check result:   {}'.format(check_count_zfill, check_result))
@@ -8380,6 +8408,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -9058,7 +9090,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -9427,6 +9459,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -10188,7 +10224,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -10566,6 +10602,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid ,'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -11266,7 +11306,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -11655,6 +11695,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -12377,7 +12421,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -12768,6 +12812,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -13571,7 +13619,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -13968,6 +14016,10 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+
+				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+				certificate_info=certificateInfo(certificate)
+				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
@@ -14708,7 +14760,7 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
+				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
 				if check_result == 'Failed':
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
