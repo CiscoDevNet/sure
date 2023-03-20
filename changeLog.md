@@ -1,33 +1,33 @@
 - v3.0.0 (Pre-Release)
   - Total Enhancements: 3
-    - Split the script into Python2 and Python3 versions #44
+    - Split the script into Python2 and Python3 versions
       https://github.com/CiscoDevNet/sure/issues/44
-    - Enhance the script for version above 20.6 #46
+    - Enhance the script for version above 20.6 
       https://github.com/CiscoDevNet/sure/issues/46
     - Change SUCCESS to SUCCESSFUL throughout the script, for uniformity with NMS team
       https://github.com/CiscoDevNet/sure/issues/52 
 
   - Total Checks Added : 4
-    - Monitor CPU for wildfly and statsdb #31
+    - Monitor CPU for wildfly and statsdb 
       https://github.com/CiscoDevNet/sure/issues/31
     - Critical Check - Validate UUID from server configs file
     - Critical Check - Validate server configs file on vManage
     - Critical Check - Validate UUID at /etc/viptela/uuid
 
   - Total Issues: 8
-    - error in check 9 :the JSON object must be str, not 'NoneType' #16
+    - error in check 9 :the JSON object must be str, not 'NoneType' 
       https://github.com/CiscoDevNet/sure/issues/16
-    - Need to sanitize user input & perform error handling #24
+    - Need to sanitize user input & perform error handling 
       https://github.com/CiscoDevNet/sure/issues/24
-    - Keyerror exception on 'timeRemainingForExpiration' #29
+    - Keyerror exception on 'timeRemainingForExpiration' 
       https://github.com/CiscoDevNet/sure/issues/29
-    - Tabulate the preliminary data #30
+    - Tabulate the preliminary data 
       https://github.com/CiscoDevNet/sure/issues/30
-    - Add warning incase DB Slicing is required. #32
+    - Add warning incase DB Slicing is required. 
       https://github.com/CiscoDevNet/sure/issues/32
-    - Return the roundtrip delay for intercluster comm. #33
+    - Return the roundtrip delay for intercluster comm. 
       https://github.com/CiscoDevNet/sure/issues/33
-    - Moving the checks critical and failing the testcase #34
+    - Moving the checks critical and failing the testcase 
       https://github.com/CiscoDevNet/sure/issues/34
 
 - v2.0.0 (23th September 2022)
