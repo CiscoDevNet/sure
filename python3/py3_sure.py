@@ -1468,7 +1468,7 @@ def criticalChecktwenty(version):
 		check_action = '{}'.format(analysis)
 		check_action = '{}'.format(analysis)
 	else:
-		check_result = 'SUCCESS'
+		check_result = 'SUCCESSFUL'
 		check_analysis = 'Validated the uuid from server configs file.'
 		check_action = None
 		log_file_logger.info('Validated the uuid from server configs file.')
