@@ -275,6 +275,63 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#Print Output Table
+def findColumnLength(maxChars,rows, cols,tabledata):
+    columnLength = []
+    for colcount in range(cols):
+        currColumnLength=0
+        for rowcount in range(rows):    
+            currColumnLength = len(str(tabledata[rowcount][colcount])) if len(str(tabledata[rowcount][colcount])) > currColumnLength  else currColumnLength
+        columnLength.append(currColumnLength if currColumnLength < maxChars else maxChars)
+    return columnLength
+
+def maxCharactersCol(maxChars,cols,tabledata):
+    temp=""
+    rowcount=0
+    while rowcount < len(tabledata):
+        for colcount in range(cols):
+            while(len(str(tabledata[rowcount][colcount]))>maxChars):
+                temp=tabledata[rowcount]
+                tabledata[rowcount][colcount]=str(tabledata[rowcount][colcount]).replace('\n','')
+                tabledata.insert(rowcount,["" for x in range(cols)])
+                tabledata[rowcount+1]=[string[maxChars:] for string in temp]
+                tabledata[rowcount]=[string[0:maxChars] for string in temp]
+                rowcount+=1
+        rowcount+=1
+    return len(tabledata)
+            
+def AddLines(rows, cols, columnLength, rowLength, tabledata, finalTable):
+    for rowcount in range(rows):
+        currentRow="|"
+        checkEmpty=""
+        for colcount in range(cols):
+                if(tabledata[rowcount][colcount]==""):
+                    checkEmpty="Yes"
+                currentRow += " " + tabledata[rowcount][colcount] + " " * (columnLength[colcount] - len(tabledata[rowcount][colcount]) + 1) + "|"  
+                rowUnderFields= "+"
+        if(checkEmpty!="Yes"):
+            for colcount in range(cols):
+                rowUnderFields += ("-" * (columnLength[colcount] + 2)+"+")
+            finalTable.append(rowUnderFields) 
+        finalTable.append(currentRow)
+    finalTable.append(finalTable[0])
+        
+def printTable(tabledata):
+    rows = len(tabledata)
+    cols = len(tabledata[0])
+    maxChars=70
+    finalTable = []
+    columnLength=findColumnLength(maxChars,rows, cols,tabledata)
+    rows=maxCharactersCol(maxChars,cols,tabledata)
+    AddLines(rows, cols, columnLength, rows, tabledata, finalTable)
+    output=""
+    for row in finalTable:
+        output+=""+row+"\n"
+    return output
+table_data=[["Parameters","Used", "Expected/Max","Check Result","Check Analysis","Check Actions"]]
+
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
 #Create Directory, File and Wrtie to the File
 
 def createDir(path):
@@ -535,7 +592,7 @@ def criticalCheckTwo():
 	rootfs_partition_size_percent = executeCommand('df -kh | grep rootfs.rw')
 	rootfs_partition_size_percent = re.findall('(\d+)([%])' , rootfs_partition_size_percent)
 	rootfs_partition_size = int(rootfs_partition_size_percent[0][0])
-
+	
 	if optdata_partition_size <= 80 and rootfs_partition_size <= 80:
 		check_result = 'SUCCESS'
 		check_analysis = 'Enough Disk space is available to perform the upgrade. Space available /opt/data:{}%, rootfs.rw:{}%'.format(100-optdata_partition_size, 100-rootfs_partition_size)
@@ -544,7 +601,8 @@ def criticalCheckTwo():
 		check_result = 'Failed'
 		check_analysis = 'Not enough disk space is available for the upgrade. Space available /opt/data:{}%, rootfs.rw:{}%'.format(100-optdata_partition_size, 100-rootfs_partition_size)
 		check_action = 'Free the disk space by opening a TAC case depending on where the disk is being used'
-
+	table_data.append(['vManage Disk-/opt/data',str(optdata_partition_size)+"%",'80%',check_result,check_analysis,str(check_action)])
+	table_data.append(['vManage Disk-rootfs.rw',str(rootfs_partition_size)+"%",'80%',check_result,check_analysis,str(check_action)])
 	return (''.join(optdata_partition_size_percent[0])),(''.join(rootfs_partition_size_percent[0])), check_result, check_analysis, check_action
 
 #03:Check:vManage:Memory size
@@ -558,7 +616,7 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 			check_result = 'Failed'
 			check_analysis = 'Memory size is below the hardware size recommendations when DPI is enabled. Memory size should be 128 GB.\n For more information please check: https://www.cisco.com/c/en/us/td/docs/routers/sdwan/release/notes/compatibility-and-server-recommendations/ch-server-recs-20-3.html'
 			check_action = 'Correct the memory available to the server'
-
+			table_data.append(['vManage Memory size(GB)',str(memory_size),'128',check_result,check_analysis,str(check_action)])
 	elif dpi_status != 'enable' and server_type == 'on-prem':
 		if cluster_size == 1:
 			if memory_size < 32:
@@ -566,39 +624,47 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 				check_analysis = '''The current memory size does not meet minimum hardware recommendations.\n
 									Memory size must be 32 GB or higher.'''
 				check_action = 'Correct the memory available to the server'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'32',check_result,check_analysis,str(check_action)])
 			elif vedge_count > 250 and vedge_count <= 1000 and memory_size < 64:
 				check_result = 'Failed'
 				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
 									Memory size should be 64 GB or higher, as per documented hardware recommendations.'''
 				check_action = 'Correct the memory available to the server'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'64',check_result,check_analysis,str(check_action)])
 			elif vedge_count > 1000 and vedge_count <= 1500 and memory_size < 128:
 				check_result = 'Failed'
 				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
 									Memory size should be 128 GB, as per documented hardware recommendations.'''
 				check_action = 'Correct the memory available to the server'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'128',check_result,check_analysis,str(check_action)])
 			elif vedge_count > 1500:
 				check_result = 'Failed'
 				check_analysis = 'xEdge device count is more than 1500, it exceeds supported scenarios.'
 				check_action = 'Please implement network changes to bring the scale into supported range'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'NA',check_result,check_analysis,str(check_action)])
 		elif cluster_size>1:
 			if vedge_count <= 2000 and memory_size < 64:
 				check_result = 'Failed'
 				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
 									Memory size should be 64 GB or higher, as per documented hardware recommendations.'''
 				check_action = 'Correct the memory available to the server'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'64',check_result,check_analysis,str(check_action)])
 			elif vedge_count > 2000 and vedge_count <= 5000 and memory_size < 128:
 				check_result = 'Failed'
 				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
 									Memory size should be 128 GB, as per documented hardware recommendations.'''
 				check_action = 'Correct the memory available to the server'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'128',check_result,check_analysis,str(check_action)])
 			elif vedge_count > 5000:
 				check_result = 'Failed'
 				check_analysis = 'xEdge device count is more than 5000, it exceeds supported scenarios.'
 				check_action = 'Please evaluate current overlay design.'
+				table_data.append(['vManage Memory size(GB)',str(memory_size),'NA',check_result,check_analysis,str(check_action)])
 	else:
 		check_result = 'SUCCESS'
 		check_analysis = 'Server meets hardware recommendations'
 		check_action = None
+		table_data.append(['vManage Memory size(GB)',str(memory_size),'NA',check_result,check_analysis,str(check_action)])
 
 	return memory_size, memory_size_gb[1], dpi_status, server_type, check_result, check_analysis, check_action
 
@@ -610,40 +676,49 @@ def criticalCheckfour(cpu_count, vedge_count, dpi_status, server_type):
 			check_result = 'Failed'
 			check_analysis = 'No. of Processors is below minimum supported size when DPI is in use. CPU Count is {}, it should be 32 or higher.'.format(cpu_count)
 			check_action = 'Allocate more processors'
+			table_data.append(['vManage CPU count',str(cpu_count),'32',check_result,check_analysis,check_action])
 		elif cpu_count >= 32:
 			check_result = 'SUCCESS'
 			check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 			check_action = None
+			table_data.append(['vManage CPU count',str(cpu_count),'32',check_result,check_analysis,check_action])
 	elif dpi_status != 'enable' and server_type == 'on-prem':
 		if vedge_count > 250 and  cpu_count < 32:
 			check_result = 'Failed'
 			check_analysis = 'Based on device count, number of Processors is insufficient for the upgrade. CPU Count is {}, it should be 32 or higher.'.format(cpu_count)
 			check_action = 'Allocate more processors'
+			table_data.append(['vManage CPU count',str(cpu_count),'32',check_result,check_analysis,check_action])
 		elif cpu_count < 16:
 			check_result = 'Failed'
 			check_analysis = 'Number of Processors is below the minimum supported size. CPU Count is {}, it should be 16 or higher.'.format(cpu_count)
 			check_action = 'Allocate more processors'
+			table_data.append(['vManage CPU count',str(cpu_count),'16',check_result,check_analysis,check_action])
 		else:
 			check_result = 'SUCCESS'
 			check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 			check_action = None
+			table_data.append(['vManage CPU count',str(cpu_count),'16',check_result,check_analysis,check_action])
 	elif dpi_status != 'enable' and server_type == 'on-cloud':
 		if vedge_count > 250 and  cpu_count < 32:
 			check_result = 'Failed'
 			check_analysis = 'Based on device count, number of Processors is insufficient for the upgrade. CPU Count is {}, it should be 32 or higher.'.format(cpu_count)
 			check_action = 'Allocate more processors'
+			table_data.append(['vManage CPU count',str(cpu_count),'32',check_result,check_analysis,check_action])
 		elif vedge_count < 250 and  cpu_count < 16:
 			check_result = 'Failed'
 			check_analysis = 'Number of Processors is below the minimum supported size. CPU Count is {}, it should be 16 or higher.' .format(cpu_count)
 			check_action = 'Allocate more processors'
+			table_data.append(['vManage CPU count',str(cpu_count),'16',check_result,check_analysis,check_action])
 		else:
 			check_result = 'SUCCESS'
 			check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 			check_action = None
+			table_data.append(['vManage CPU count',str(cpu_count),'NA',check_result,check_analysis,check_action])
 	else:
 		check_result = 'SUCCESS'
 		check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
 		check_action = None
+		table_data.append(['vManage CPU count',str(cpu_count),'NA',check_result,check_analysis,check_action])
 
 	return check_result, check_analysis, check_action
 
@@ -1008,7 +1083,7 @@ def criticalChecknineteen():
 		check_result = 'Failed'
 		check_analysis = 'Error retrieving the ConfigDB size.'
 		check_action = 'Investigate why the command (request nms configuration-db diagnostics) is not returning appropriate data.'
-
+	table_data.append(['Config DB size',str(db_size),"5GB",check_result,check_analysis,str(check_action)])
 	return db_size, check_result, check_analysis, check_action
 
 #13:Check:Controllers:Validate vSmart/vBond CPU count for scale
@@ -6271,7 +6346,8 @@ if __name__ == "__main__":
 	'-----------------------------------------------------------------------------------------------------------------\n\n',
 	'Detailed list of failed checks, and actions recommended\n\n'
 	]
-
+	result_summary_table=['-----------------------------------------------------------------------------------------------------------------\n\n',
+			        "RESULTS SUMMARY TABLE\n\n",printTable(table_data),"\n"]
 	full_lst = [
 	'-----------------------------------------------------------------------------------------------------------------\n\n',
 	'Detailed list of ALL checks, and actions recommended\n\n'
@@ -6282,7 +6358,7 @@ if __name__ == "__main__":
 
 	report_file = open(report_file_path, 'r')
 	Lines = report_file.readlines()
-	Lines = Lines[:8] + meta_data + check_failed_lst + full_lst + Lines[8:]
+	Lines = Lines[:8] + meta_data + check_failed_lst +result_summary_table+full_lst + Lines[8:]
 	report_file.close()
 
 	report_file = open(report_file_path, "w")
