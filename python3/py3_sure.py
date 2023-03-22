@@ -445,7 +445,7 @@ def validateServerConfigsUUID():
                         success = False
                         check_analysis = "Failed to validate the uuid from server_configs.json."
                 else:
-                    success = False
+                    success = True
                     check_analysis = "Validation of uuid from server_configs.json does not apply"
             except:
                 success = False
@@ -610,12 +610,7 @@ def es_indices_details():
 
 #vManage service list for cluster checks
 def vmanage_service_list():
-	if version_tuple[0:2] < ('19','2'):
-		service_list = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port))
-	elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'):
-		service_list = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-	elif version_tuple[0:2] > ('20','5'):
-		service_list = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
+	service_list = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
 	vmanage_service_list = service_list['data'][0]['data']
 	vmanage_ips,vmanage_ids, vmanage_uuids = [], [], []
 	for vmanage in vmanage_service_list:
@@ -630,12 +625,7 @@ def vmanage_service_list():
 
 #vManage tenancy mode
 def vmanage_tenancy_mode():
-	if version_tuple[0:2] < ('19','2'):
-		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port))
-	elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'):
-		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
-	elif version_tuple[0:2] > ('20','5'):
-		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
+	service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
 	mode = service_details['data']['mode']
 
 	return mode
