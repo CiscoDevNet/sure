@@ -987,15 +987,15 @@ def criticalChecknineteen():
 		if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup'
+			check_action = 'Contact TAC  to do DB cleanup/slicing'
 		elif db_size[-1] == 'G' and float(db_size[0:-1]) >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup'
+			check_action = 'Contact TAC  to do DB cleanup/slicing'
 		elif db_size[-1] == 'T' and float(db_size[0:-1])*1000 >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup'
+			check_action = 'Contact TAC  to do DB cleanup/slicing'
 		else:
 			check_result = 'SUCCESSFUL'
 			check_analysis = 'The ConfigDB size is {} which is within limits i.e less than 5GB'.format(db_size)
