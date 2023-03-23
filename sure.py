@@ -279,6 +279,61 @@ def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
 			command = 'curl -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, Port, JSessionID, tokenid)
 			executeCommand(command)
 
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#Print Output Table
+def findColumnLength(maxChars,rows, cols,tabledata):
+    columnLength = []
+    for colcount in range(cols):
+        currColumnLength=0
+        for rowcount in range(rows):    
+            currColumnLength = len(str(tabledata[rowcount][colcount])) if len(str(tabledata[rowcount][colcount])) > currColumnLength  else currColumnLength
+        columnLength.append(currColumnLength if currColumnLength < maxChars else maxChars)
+    return columnLength
+
+def maxCharactersCol(maxChars,cols,tabledata):
+    temp=""
+    rowcount=0
+    while rowcount < len(tabledata):
+        for colcount in range(cols):
+            while(len(str(tabledata[rowcount][colcount]))>maxChars):
+                temp=tabledata[rowcount]
+                tabledata[rowcount][colcount]=str(tabledata[rowcount][colcount]).replace('\n','')
+                tabledata.insert(rowcount,["" for x in range(cols)])
+                tabledata[rowcount+1]=[string[maxChars:] for string in temp]
+                tabledata[rowcount]=[string[0:maxChars] for string in temp]
+                rowcount+=1
+        rowcount+=1
+    return len(tabledata)
+            
+def AddLines(rows, cols, columnLength, rowLength, tabledata, finalTable):
+    for rowcount in range(rows):
+        currentRow="|"
+        checkEmpty=""
+        for colcount in range(cols):
+                if(tabledata[rowcount][colcount]==""):
+                    checkEmpty="Yes"
+                currentRow += " " + tabledata[rowcount][colcount] + " " * (columnLength[colcount] - len(tabledata[rowcount][colcount]) + 1) + "|"  
+                rowUnderFields= "+"
+        if(checkEmpty!="Yes"):
+            for colcount in range(cols):
+                rowUnderFields += ("-" * (columnLength[colcount] + 2)+"+")
+            finalTable.append(rowUnderFields) 
+        finalTable.append(currentRow)
+    finalTable.append(finalTable[0])
+        
+def printTable(tabledata):
+    rows = len(tabledata)
+    cols = len(tabledata[0])
+    maxChars=70
+    finalTable = []
+    columnLength=findColumnLength(maxChars,rows, cols,tabledata)
+    rows=maxCharactersCol(maxChars,cols,tabledata)
+    AddLines(rows, cols, columnLength, rows, tabledata, finalTable)
+    output=""
+    for row in finalTable:
+        output+=""+row+"\n"
+    return output
+table_data=[["Parameters","Value"]]
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Print Output Table
@@ -2061,40 +2116,38 @@ if __name__ == "__main__":
 				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				out = getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port)
-				#print(json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port)))
 				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
 				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -2103,11 +2156,10 @@ if __name__ == "__main__":
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
 				total_devices = len(controllers_info) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-
 																		 }}
 				if cluster_size > 1:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
@@ -2115,7 +2167,7 @@ if __name__ == "__main__":
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -3106,41 +3158,41 @@ if __name__ == "__main__":
 			log_file_logger.info('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'system/device/vedges', args.vmanage_port , tokenid))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid,'statistics/settings/status', args.vmanage_port, tokenid))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -3148,19 +3200,19 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				total_devices = len(controllers_info) + vedge_count
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -4239,34 +4291,34 @@ if __name__ == "__main__":
 				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
-
+						
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])	
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])	
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
 				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -4274,19 +4326,20 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-
 				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
+
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																					}}
 				if cluster_size > 1:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format( log_file_path))
@@ -5317,41 +5370,41 @@ if __name__ == "__main__":
 			log_file_logger.info('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'system/device/controllers', args.vmanage_port))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'device/vmanage', args.vmanage_port))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'system/device/vedges', args.vmanage_port))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'statistics/settings/status', args.vmanage_port))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -5360,18 +5413,18 @@ if __name__ == "__main__":
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
 				total_devices = len(controllers_info) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid,'clusterManagement/health/details', args.vmanage_port))
+					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -6326,42 +6379,41 @@ if __name__ == "__main__":
 			log_file_logger.info('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/vedges', args.vmanage_port , tokenid))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid,'statistics/settings/status', args.vmanage_port, tokenid))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -6369,19 +6421,19 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				total_devices = len(controllers_info) + vedge_count
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -7420,35 +7472,34 @@ if __name__ == "__main__":
 				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
-
+						
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])	
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])	
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
 				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -7457,18 +7508,19 @@ if __name__ == "__main__":
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
 				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
+
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																					}}
 				if cluster_size > 1:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -8479,42 +8531,41 @@ if __name__ == "__main__":
 			print ('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid,'system/device/controllers', args.vmanage_port))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid,'device/vmanage', args.vmanage_port))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'system/device/vedges', args.vmanage_port))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'statistics/settings/status', args.vmanage_port))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -8523,18 +8574,18 @@ if __name__ == "__main__":
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
 				total_devices = len(controllers_info) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
 					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -9530,42 +9581,41 @@ if __name__ == "__main__":
 			print ('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/vedges', args.vmanage_port , tokenid))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'statistics/settings/status', args.vmanage_port, tokenid))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -9573,19 +9623,19 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				total_devices = len(controllers_info) + vedge_count
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid,'clusterManagement/health/details', args.vmanage_port, tokenid))
+					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))			
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -10680,35 +10730,34 @@ if __name__ == "__main__":
 				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
-
-				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid ,'device/vmanage', args.vmanage_port, tokenid))
+						
+				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])	
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])	
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
 				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -10716,20 +10765,20 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-
 				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
+
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																					}}
 				if cluster_size > 1:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))			
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -11766,42 +11815,41 @@ if __name__ == "__main__":
 			print ('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid, 'system/device/vedges', args.vmanage_port))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'statistics/settings/status', args.vmanage_port))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -11810,18 +11858,18 @@ if __name__ == "__main__":
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
 				total_devices = len(controllers_info) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port))
+					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -12883,42 +12931,41 @@ if __name__ == "__main__":
 			print ('****Collecting Preliminary Data\n')
 
 			try:
-				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/controllers', args.vmanage_port, tokenid))
+				controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+				
 				certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
 
-				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'device/vmanage', args.vmanage_port, tokenid))
+				system_ip_data = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device/vmanage', args.vmanage_port))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'system/device/vedges', args.vmanage_port , tokenid))
+				vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])
 
-				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'statistics/settings/status', args.vmanage_port, tokenid))
+				dpi_stats = json.loads(getRequest(version_tuple, vmanage_lo_ip,jsessionid,  'statistics/settings/status', args.vmanage_port))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -12926,20 +12973,19 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				total_devices = len(controllers_info) + vedge_count
+				table_data.append(['Total devices',str(total_devices)])
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
+																		 }}
 				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+					cluster_health_data = json.loads(getRequest(version_tuple,vmanage_lo_ip,jsessionid, 'clusterManagement/health/details', args.vmanage_port))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -14085,7 +14131,6 @@ if __name__ == "__main__":
 			#Preliminary data
 			log_file_logger.info('****Collecting Preliminary Data\n')
 			print ('****Collecting Preliminary Data\n')
-
 			try:
 				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
 				controllers_info = controllersInfo(controllers)
@@ -14094,35 +14139,34 @@ if __name__ == "__main__":
 				certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 				certificate_info=certificateInfo(certificate)
 				log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
-
+						
 				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
 				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+				table_data.append(['vManage System IP address',str(system_ip)])	
 
 				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+				table_data.append(['vManage System IP address',str(cpu_speed)])	
 
 				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+				table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
 				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+				table_data.append(['xEdge Count',str(vedge_count)])	
 
 				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+				table_data.append(['vManage Cluster Size',str(cluster_size)])	
+				table_data.append(['vManage Server Mode',str(server_mode)])	
 
 				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+				table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
 				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
 				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+				table_data.append(['DPI Status',str(dpi_status)])
 
 				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+				table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -14131,19 +14175,19 @@ if __name__ == "__main__":
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
 				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
+				table_data.append(['Total devices',str(total_devices)])
+
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																					"Software Version":"{}".format(version),
 																					"System IP Address":"{}".format(system_ip)
-																				 }}
-
+																					}}
 				if cluster_size > 1:
 					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
 					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
 					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
 					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
 					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-
+				log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
