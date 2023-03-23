@@ -14349,8 +14349,8 @@ if __name__ == "__main__":
 					check_name, log_file_path))
 			log_file_logger.exception('{}\n'.format(e))
 
-		#Warning Checks
-		print('\n**** Performing Warning checks\n')
+			#Warning Checks
+			print('\n**** Performing Warning checks\n') 
 
 			warning_checks = {}
 			log_file_logger.info('*** Performing Warning Checks')

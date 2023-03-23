@@ -2971,7 +2971,7 @@ if __name__ == "__main__":
 						check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 						writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 					json_final_result['json_data_pdf']['description']['Cluster'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),  
 																 'result': '{}'.format(check_analysis),
 																 'action': '{}'.format(check_action),
 																 'status': '{}'.format(check_result),
@@ -3005,7 +3005,7 @@ if __name__ == "__main__":
 
 							writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 						json_final_result['json_data_pdf']['description']['Cluster'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),  
 																 'result': '{}'.format(check_analysis),
 																 'action': '{}'.format(check_action),
 																 'status': '{}'.format(check_result),
@@ -3019,8 +3019,8 @@ if __name__ == "__main__":
 			log_file_logger.info('Logging out of the Session')
 			sessionLogout(vmanage_lo_ip,jsessionid,args.vmanage_port)
 			log_file_logger.info('Successfully closed the connection')
-
-
+			
+			
 
 		#version equal to or above 19.2 and below 20.5
 		elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'): 
@@ -3080,7 +3080,7 @@ if __name__ == "__main__":
 				vsmart_count = len(vsmart_info)
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
-
+				
 				total_devices = len(controllers_info.keys()) + vedge_count
 				log_file_logger.info('Total devices: {}'.format(total_devices))
 				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
@@ -3097,7 +3097,7 @@ if __name__ == "__main__":
 			except Exception as e:
 				log_file_logger.exception('{}\n'.format(e))
 				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-
+				
 
 			print('*Starting Checks, this may take several minutes\n\n')
 
@@ -3135,7 +3135,7 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: Boot Partition Size: {}\n'.format(check_count_zfill, boot_partition_size))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),  
 																 'result': '{}'.format(check_analysis),
 																 'action': '{}'.format(check_action),
 																 'status': '{}'.format(check_result),
@@ -3165,7 +3165,7 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: /rootfs.rw Used: {}\n'.format(check_count_zfill, rootfs_partition_size))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),  
 																 'result': '{}'.format(check_analysis),
 																 'action': '{}'.format(check_action),
 																 'status': '{}'.format(check_result),
@@ -3191,12 +3191,12 @@ if __name__ == "__main__":
 					log_file_logger.error('#{}: Server Type: {}'.format(check_count_zfill, server_type))
 					log_file_logger.error('#{}: vEdge Count: {}\n'.format(check_count_zfill, vedge_count))
 					check_error_report(check_analysis,check_action)
-
+			
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),  
 																 'result': '{}'.format(check_analysis),
 																 'action': '{}'.format(check_action),
 																 'status': '{}'.format(check_result),
@@ -3204,7 +3204,7 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
+	 
 			#Check:vManage:CPU Count
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
@@ -3222,7 +3222,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3252,7 +3252,7 @@ if __name__ == "__main__":
 					check_error_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					check_error_report(check_analysis_two,check_action_two)
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result_two]),
+															 'log type': '{}'.format(result_log['Critical'][check_result_two]),  
 															 'result': '{}'.format(check_analysis_two),
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
@@ -3261,7 +3261,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_one))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result_one]),
+															 'log type': '{}'.format(result_log['Critical'][check_result_one]),  
 															 'result': '{}'.format(check_analysis_one),
 															 'action': '{}'.format(check_action_one),
 															 'status': '{}'.format(check_result_one),
@@ -3270,7 +3270,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis_two))
 					json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result_two]),
+															 'log type': '{}'.format(result_log['Critical'][check_result_two]),  
 															 'result': '{}'.format(check_analysis_two),
 															 'action': '{}'.format(check_action_two),
 															 'status': '{}'.format(check_result_two),
@@ -3295,7 +3295,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3312,20 +3312,20 @@ if __name__ == "__main__":
 			check_name = '#{}:Check:vManage:Validate all services are up'.format(check_count_zfill)
 			pre_check(log_file_logger, check_name)
 			try:
-				nms_data, nms_failed, check_result, check_analysis, check_action = criticalCheckseven()
+				nms_data, nms_failed, check_result, check_analysis, check_action = criticalCheckseven() 
 				if check_result == 'Failed':
 					critical_checks[check_name] = [check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: List of services that are enabled but not running:\n{}'.format(check_count_zfill, nms_failed))
 					log_file_logger.error('#{}: Status of all services  :\n{}\n'.format(check_count_zfill, nms_data))
-					check_error_report(check_analysis,check_action)
+					check_error_report(check_analysis,check_action)                
 
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.info('#{}: Status of all the services:\n{}\n'.format(check_count_zfill, nms_data))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3352,7 +3352,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3381,7 +3381,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3408,7 +3408,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3435,7 +3435,7 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3443,8 +3443,8 @@ if __name__ == "__main__":
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing #{}:Check:vManage:Validate Neo4j Store version. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
-
-			#Check:vManage:Validate ConfigDB Size is less than 5GB
+			
+			#Check:vManage:Validate ConfigDB Size is less than 5GB 
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
@@ -3462,7 +3462,7 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Critical'][check_result]),
+																 'log type': '{}'.format(result_log['Critical'][check_result]),  
 																 'result': '{}'.format(check_analysis),
 																 'action': '{}'.format(check_action),
 																 'status': '{}'.format(check_result),
@@ -3483,7 +3483,7 @@ if __name__ == "__main__":
 
 					output = json.loads(getRequest( version_tuple,vmanage_lo_ip,jsessionid,'device/system/synced/status?deviceId={}'.format(vbond_info[vbond][1]),args.vmanage_port, tokenid))
 					if output['data'] != []:
-						total_cpu_count = int(output['data'][0]['total_cpu_count'])
+						total_cpu_count = int(output['data'][0]['total_cpu_count']) 
 					else:
 						total_cpu_count = 0
 					vbond_info[vbond].append(total_cpu_count)
@@ -3512,7 +3512,7 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: All vSmarts info with total_cpu_count:\n{}\n'.format(check_count_zfill, vsmart_info))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),
+															 'log type': '{}'.format(result_log['Critical'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3522,7 +3522,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            #Check:vManage:Validate nms bringup file
+#Check:vManage:Validate nms bringup file
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
@@ -3548,7 +3548,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-            #Check:vManage:Validate server configs file - uuid
+            		#Check:vManage:Validate server configs file - uuid
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			print(' Critical Check:#{}'.format(check_count_zfill))
@@ -3625,7 +3625,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3651,7 +3651,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3677,7 +3677,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3703,7 +3703,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3731,7 +3731,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3758,7 +3758,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3783,7 +3783,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3806,16 +3806,16 @@ if __name__ == "__main__":
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Controllers with certificates close to expiration:\n{}\n'.format(check_count_zfill, controllers_exp))
 					check_error_report(check_analysis,check_action)
-				else:
+				else: 
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
 															 'document': ''})
-
+					
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
@@ -3833,12 +3833,12 @@ if __name__ == "__main__":
 					warning_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Controllers with inconsistent state_vedgeList: {}\n'.format(check_count_zfill, state_vedgeList))
-					check_error_report(check_analysis,check_action)
+					check_error_report(check_analysis,check_action)                  
 				else:
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3866,7 +3866,7 @@ if __name__ == "__main__":
 					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),
+															 'log type': '{}'.format(result_log['Warning'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
@@ -3876,7 +3876,7 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-
+		  
 			#Informational Checks
 			print('\n**** Performing Informational checks\n')
 
@@ -3900,7 +3900,7 @@ if __name__ == "__main__":
 					log_file_logger.info('#{}: Disk Controller type: {}\n'.format(check_count_zfill, disk_controller))
 					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Informational'][check_result]),
+															 'log type': '{}'.format(result_log['Informational'][check_result]),  
 															 'result': '{}'.format(check_analysis),
 															 'action': '{}'.format(check_action),
 															 'status': '{}'.format(check_result),
