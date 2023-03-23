@@ -451,7 +451,7 @@ def validateServerConfigsUUID():
                         success = False
                         check_analysis = "Failed to validate the uuid from server_configs.json."
                 else:
-                    success = False
+                    success = True
                     check_analysis = "Validation of uuid from server_configs.json does not apply"
             except:
                 success = False
@@ -1577,7 +1577,6 @@ def criticalChecktwenty(version):
 	if not success:
 		check_result = 'Failed'
 		check_analysis = 'Failed to validate uuid from server configs file.'
-		check_action = '{}'.format(analysis)
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESSFUL'
