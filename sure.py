@@ -1363,6 +1363,7 @@ def criticalCheckeighteen(version_tuple):
 	return nodestore_version, check_result, check_analysis, check_action
 
 #12:Check:vManage:Validate ConfigDB Size is less than 5GB
+#32:Check: Add warning incase DB Slicing is required.
 def criticalChecknineteen():
 	db_data = showCommand('request nms configuration-db diagnostics')
 	if 'Disk space used by configuration' in db_data:
@@ -1371,15 +1372,15 @@ def criticalChecknineteen():
 		if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup'
+			check_action = 'Contact TAC  to do DB cleanup/slicing'
 		elif db_size[-1] == 'G' and float(db_size[0:-1]) >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup'
+			check_action = 'Contact TAC  to do DB cleanup/slicing'
 		elif db_size[-1] == 'T' and float(db_size[0:-1])*1000 >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup'
+			check_action = 'Contact TAC  to do DB cleanup/slicing'
 		else:
 			check_result = 'SUCCESSFUL'
 			check_analysis = 'The ConfigDB size is {} which is within limits i.e less than 5GB'.format(db_size)
@@ -1661,6 +1662,7 @@ def threaded(f, daemon=False):
 	return wrap
 
 
+#33: Check: Return the roundtrip delay for intercluster communication
 @threaded
 def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 	try:
@@ -1680,13 +1682,15 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 			vmanage_cluster_ip = device['deviceIP']
 			if vmanage_system_ip != system_ip:
 				output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
+				roundtrip_op = output.split("time=")
+				roundtrip = roundtrip_op[1]
 				output = output.split('\n')[-3:]
 				xmit_stats = output[0].split(",")
 				timing_stats = xmit_stats[3]
 				packet_loss = float(xmit_stats[2].split("%")[0])
-				ping_output[count] = vmanage_cluster_ip, packet_loss, timing_stats
+				ping_output[count] = vmanage_cluster_ip, packet_loss, timing_stats, roundtrip
 				if packet_loss != 0:
-					ping_output_failed[count] = vmanage_cluster_ip, packet_loss, timing_stats
+					ping_output_failed[count] = vmanage_cluster_ip, packet_loss, timing_stats, roundtrip
 			else:
 				continue
 
@@ -2011,6 +2015,19 @@ def warningCheckten(vsmart_count, vbond_count):
 
 #11:Check:xEdge:Version compatibility
 
+#31:Check:Monitor CPU for wildfly and statsdb
+def checkUtilisation():
+	cpu_mem = showCommand('ps aux --sort -rss | head -n 5')
+	x=cpu_mem.split('vmanage ')
+	y=x[1].split(' ')
+	y = list(filter(None,y))
+	wildfly_cpu = y[1]
+	wildfly_mem = y[2]
+	z=x[3].split(' ')
+	z = list(filter(None,z))
+	elasticSearch_cpu = z[1]
+	elasticSearch_mem = z[2]
+	return wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
