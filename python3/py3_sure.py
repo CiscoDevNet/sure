@@ -5,7 +5,7 @@
 """
 ------------------------------------------------------------------
 
-April 2022, Rugvedi Kapse, Javier Contreras 
+April 2022, Rugvedi Kapse, Javier Contreras
 
 Copyright (c) 2022 by Cisco Systems, Inc.
 All rights reserved.
@@ -201,7 +201,7 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 
 	return response.text.encode('utf8')
 
-### NOT SURE TO DELETE 
+### NOT SURE TO DELETE
 # def generateSessionID(vManageIP,Username,Password,Port):
 # 	if Port==None:
 # 		command = "curl --insecure -i -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'j_username={}' --data-urlencode 'j_password={}' https://{}:8443/j_security_check".format(Username, Password,vManageIP)
@@ -283,21 +283,77 @@ def getRequest(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenID =
 
 
 
-def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
-	if version_tuple[0:2] < ('19','2'):
-		if Port==None:
-			command = 'curl --insecure -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP,JSessionID )
-			executeCommand(command)
-		else:
-			command = 'curl --insecure -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP, Port, JSessionID)
-			executeCommand(command)
-	else:
-		if Port==None:
-			command = 'curl -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, JSessionID, tokenid)
-			executeCommand(command)
-		else:
-			command = 'curl -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, Port, JSessionID, tokenid)
-			executeCommand(command)
+# def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
+# 	if version_tuple[0:2] < ('19','2'):
+# 		if Port==None:
+# 			command = 'curl --insecure -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP,JSessionID )
+# 			executeCommand(command)
+# 		else:
+# 			command = 'curl --insecure -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP, Port, JSessionID)
+# 			executeCommand(command)
+# 	else:
+# 		if Port==None:
+# 			command = 'curl -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, JSessionID, tokenid)
+# 			executeCommand(command)
+# 		else:
+# 			command = 'curl -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, Port, JSessionID, tokenid)
+# 			executeCommand(command)
+
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+#Print Output Table
+def findColumnLength(maxChars,rows, cols,tabledata):
+    columnLength = []
+    for colcount in range(cols):
+        currColumnLength=0
+        for rowcount in range(rows):    
+            currColumnLength = len(str(tabledata[rowcount][colcount])) if len(str(tabledata[rowcount][colcount])) > currColumnLength  else currColumnLength
+        columnLength.append(currColumnLength if currColumnLength < maxChars else maxChars)
+    return columnLength
+
+def maxCharactersCol(maxChars,cols,tabledata):
+    temp=""
+    rowcount=0
+    while rowcount < len(tabledata):
+        for colcount in range(cols):
+            while(len(str(tabledata[rowcount][colcount]))>maxChars):
+                temp=tabledata[rowcount]
+                tabledata[rowcount][colcount]=str(tabledata[rowcount][colcount]).replace('\n','')
+                tabledata.insert(rowcount,["" for x in range(cols)])
+                tabledata[rowcount+1]=[string[maxChars:] for string in temp]
+                tabledata[rowcount]=[string[0:maxChars] for string in temp]
+                rowcount+=1
+        rowcount+=1
+    return len(tabledata)
+            
+def AddLines(rows, cols, columnLength, rowLength, tabledata, finalTable):
+    for rowcount in range(rows):
+        currentRow="|"
+        checkEmpty=""
+        for colcount in range(cols):
+                if(tabledata[rowcount][colcount]==""):
+                    checkEmpty="Yes"
+                currentRow += " " + tabledata[rowcount][colcount] + " " * (columnLength[colcount] - len(tabledata[rowcount][colcount]) + 1) + "|"  
+                rowUnderFields= "+"
+        if(checkEmpty!="Yes"):
+            for colcount in range(cols):
+                rowUnderFields += ("-" * (columnLength[colcount] + 2)+"+")
+            finalTable.append(rowUnderFields) 
+        finalTable.append(currentRow)
+    finalTable.append(finalTable[0])
+        
+def printTable(tabledata):
+    rows = len(tabledata)
+    cols = len(tabledata[0])
+    maxChars=70
+    finalTable = []
+    columnLength=findColumnLength(maxChars,rows, cols,tabledata)
+    rows=maxCharactersCol(maxChars,cols,tabledata)
+    AddLines(rows, cols, columnLength, rows, tabledata, finalTable)
+    output=""
+    for row in finalTable:
+        output+=""+row+"\n"
+    return output
+table_data=[["Parameters","Value"]]
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -361,20 +417,23 @@ def controllersInfo(controllers):
 	controllers_info = {}
 	count = 1
 	for device in controllers['data']:
-		if device['deviceState'] == 'READY':
-			if 'state_vedgeList' in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList'])] 
+		if device['deviceState'] == 'READY':		
+			if 'state_vedgeList' not in device.keys():
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), 'no-vedges']
 				count += 1
 			else:
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), 'no-vedges'] 
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), (device['state_vedgeList'])]
 				count += 1
-			# elif 'timeRemainingForExpiration' not in device.keys():
-			## 	controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),'no-timeRemainingforExpiration', (device['state_vedgeList'])]
-			# 	count += 1
-			# else:
-			# 	controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']),(device['timeRemainingForExpiration']), (device['state_vedgeList'])]
-			# 	count += 1
 	return controllers_info
+
+#Certificate Info
+def certificateInfo(certificate):
+	certificate_info = {}
+	count = 1
+	for device in certificate['data']:
+		certificate_info[count] = [(device['deviceType']),(device['expirationDateLong'])]
+		count += 1
+	return certificate_info
 
 #CPU Clock Speed
 def cpuSpeed():
@@ -444,29 +503,7 @@ def serverType():
 	elif 'Amazon'in server_type or 'Microsoft' in server_type:
 		return 'on-cloud'
 
-#vManage migration issue checks
-def validatenmsBringup():
-    success = False
-    nms_bringup_file = '/opt/web-app/etc/nms_bringup'
-    if os.path.isfile('/opt/web-app/etc/nms_bringup') == True:
-        with open(nms_bringup_file, 'r') as csv_file:
-            total_line_num = len(csv_file.readlines())
-        with open(nms_bringup_file, 'r') as csvfile:
-            csv_reader = csv.reader(csvfile)
-            line_count = 0
-            for row in csv_reader:
-                line_count += 1
-            if line_count < total_line_num:
-                success = False
-                check_analysis = "Validate the nms_bringup file at /opt/web-app/etc for drconsul service before upgrade to avoid migration issues."
-            else:
-                success = True
-                check_analysis = None
-    elif os.path.isfile('/opt/web-app/etc/nms_bringup') == False:
-        check_analysis = "/opt/web-app/etc/nms_bringup file not found."
-
-    return success, check_analysis
-
+#vManage: Validate server_configs.json
 def validateServerConfigsUUID():
     success = False
     server_configs_file = '/opt/web-app/etc/server_configs.json'
@@ -483,17 +520,136 @@ def validateServerConfigsUUID():
             try:
                 configs = json.load(config_file)
                 uuid = configs['cluster']
-                if uuid == uuid_val:
-                    success = True
-                    check_analysis = None
+                vmanageID = configs['vmanageID']
+                if vmanageID == '0':
+                   if uuid == uuid_val:
+                        success = True
+                        check_analysis = None
+                   else:
+                        success = False
+                        check_analysis = "Failed to validate the uuid from server_configs.json."
                 else:
-                    success = False
-                    check_analysis = "Failed to validate uuid from server configs file."
+                    success = True
+                    check_analysis = "Validation of uuid from server_configs.json does not apply"
             except:
                 success = False
                 check_analysis = "Failed to validate uuid from server configs file."
     elif os.path.isfile(server_configs_file) == False :
         check_analysis = server_configs_file + " file not found."
+
+    return success, check_analysis
+
+#vManage: Parse server_configs.json
+def _parse_local_server_config(services):
+    server_configs_file = '/opt/web-app/etc/server_configs.json'
+    server_config_dict = {}
+    if os.path.isfile(server_configs_file) == True:
+        try:
+            with open(server_configs_file, 'r') as data_dict:
+                server_configs_data = json.load(data_dict)
+                server_config_dict['vmanageID'] = server_configs_data['vmanageID']
+                server_config_dict['clusterUUID'] = server_configs_data['cluster']
+                server_config_dict['mode'] = server_configs_data['mode']
+                services_data_dict = server_configs_data["services"]
+                for service in services:
+                        serviceToDeviceIpMap = {}
+                        serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in services_data_dict[service]['hosts'].values()]
+                        serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in services_data_dict[service]['clients'].values()]
+                        serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
+                        server_config_dict[service] = serviceToDeviceIpMap
+                success = True
+                check_analysis = None
+        except Exception:
+            success = False
+            check_analysis = "Error while processing read server_configs.json."
+            log_file_logger.error("Error while processing read server_configs.json.")
+
+    elif os.path.isfile(server_configs_file) == False:
+        success = False
+        check_analysis = server_configs_file + " file not found."
+
+    return server_config_dict, success, check_analysis
+
+def validateIps(serviceToDeviceIp, vmanage_ips):
+	if len(serviceToDeviceIp) == len(vmanage_ips):
+		check = all(item in serviceToDeviceIp for item in vmanage_ips)
+		if check is True:
+			return True
+
+	return False
+
+# vManage: Validate server_configs.json
+def validateServerConfigsFile():
+	if version_tuple[0:2] >= ('19', '2') and version_tuple[0:2] < ('20', '6'):
+		services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
+	elif version_tuple[0:2] > ('20', '5'):
+		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
+
+	server_config_dict, success, check_analysis = _parse_local_server_config(services)
+	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
+
+	if success:
+		try:
+			# Check vmanageID
+			vmanageID = server_config_dict['vmanageID']
+			if vmanageID not in vmanage_ids:
+				success = False
+				check_analysis = "Failed to validate the vmanageID from server_configs.json."
+				check_action = "Check the correctness of vmanageID at server_configs.json."
+				return success, check_analysis, check_action
+
+			# Check cluster
+			uuid = server_config_dict['clusterUUID']
+			if uuid not in vmanage_uuids:
+				success = False
+				check_analysis = "Failed to validate cluster from server_configs.json."
+				check_action = "Check the correctness of cluster at server_configs.json."
+				return success, check_analysis, check_action
+
+			# Check mode
+			mode = server_config_dict['mode']
+			tenant_mode = vmanage_tenancy_mode()
+			if mode != tenant_mode:
+				success = False
+				check_analysis = "Failed to validate the tenant mode from server_configs.json."
+				check_action = "Check the correctness of tenant mode at server_configs.json"
+				return success, check_analysis, check_action
+
+			# Check services
+			for service_name in services:
+				if (validateIps(server_config_dict[service_name]['hosts'], vmanage_ips) and validateIps(server_config_dict[service_name]['clients'], vmanage_ips) and server_config_dict[service_name]['deviceIP'] in vmanage_ips):
+					success = True
+					check_analysis = None
+					check_action = None
+				else:
+					success = False
+					check_analysis = "Failed to validate host/client/device IPs from server_configs.json for service_name:" + service_name
+					check_action = "Check the correctness of host/client/device IPs at server_configs.json for service_name:" + service_name
+					break
+
+		except:
+			success = False
+			check_analysis = "Exception while validating server_configs.json."
+			check_action = "Check the correctness of host/client/device IPs at server_configs.json."
+
+	return success, check_analysis, check_action
+
+def isValidUUID():
+	success = False
+	uuid_file = "/etc/viptela/uuid"
+	if os.path.isfile(uuid_file) == True:
+		with open(uuid_file) as uuid_f:
+			uuid_val = uuid_f.read().strip()
+			regex = "^[{]?[0-9a-fA-F]{8}" + "-([0-9a-fA-F]{4}-)" + "{3}[0-9a-fA-F]{12}[}]?$"
+			p = re.compile(regex)
+			if (re.search(p, uuid_val)):
+				success = True
+				check_analysis = None
+			else:
+				success = False
+				check_analysis = "Investigate why the UUID is not valid."
+	elif os.path.isfile(uuid_file) == False:
+		check_analysis = uuid_file + " file not found."
 
     return success, check_analysis
 
@@ -540,6 +696,28 @@ def es_indices_details():
 		if match:
 			es_indices = executeCommand('curl --connect-timeout 6 --silent -XGET {}/_cat/indices/ -u elasticsearch:s3cureElast1cPass'.format(ip_add))
 	return es_indices
+
+#vManage service list for cluster checks
+def vmanage_service_list():
+	service_list = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
+	vmanage_service_list = service_list['data'][0]['data']
+	vmanage_ips,vmanage_ids, vmanage_uuids = [], [], []
+	for vmanage in vmanage_service_list:
+		vmanageID = vmanage['vmanageID']
+		deviceIP = vmanage['configJson']['deviceIP']
+		uuid = vmanage['configJson']['uuid']
+		vmanage_ips.append(deviceIP)
+		vmanage_ids.append(vmanageID)
+		vmanage_uuids.append(uuid)
+
+	return vmanage_ips, vmanage_ids, vmanage_uuids
+
+#vManage tenancy mode
+def vmanage_tenancy_mode():
+	service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
+	mode = service_details['data']['mode']
+
+	return mode
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -851,6 +1029,7 @@ def criticalCheckeight(version_tuple):
 #09:Check:vManage:Evaluate incoming DPI data size
 def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_devices, dpi_status):
 	#es_indices = es_indices_details()
+
 	try:
 		api_returned_data = True
 		if dpi_status != 'enable':
@@ -1126,17 +1305,17 @@ def criticalCheckeleven(total_devices, vbond_info, vsmart_info):
 	failed_vsmarts = {}
 
 	for vsmart in vsmart_info:
-		if vsmart_info[vsmart][7] < 2 and total_devices <= 50:
+		if vsmart_info[vsmart][6] < 2 and total_devices <= 50:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
-		elif vsmart_info[vsmart][7] < 4 and total_devices > 50 and  total_devices <= 1000:
+		elif vsmart_info[vsmart][6] < 4 and total_devices > 50 and  total_devices <= 1000:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
-		elif vsmart_info[vsmart][7] < 8 and total_devices > 1000:
+		elif vsmart_info[vsmart][6] < 8 and total_devices > 1000:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
 
 	for vbond in vbond_info:
-		if vbond_info[vbond][7] < 2 and total_devices <= 1000:
+		if vbond_info[vbond][6] < 2 and total_devices <= 1000:
 			failed_vbonds[vbond] = vbond_info[vbond]
-		elif vbond_info[vbond][7] < 4 and total_devices > 1000:
+		elif vbond_info[vbond][6] < 4 and total_devices > 1000:
 			failed_vbonds[vbond] = vbond_info[vbond]
 
 	if len(failed_vbonds) != 0 or len(failed_vsmarts) != 0:
@@ -1430,27 +1609,29 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 # 	except Exception as e:
 # 		log_file_logger.exception(e)
 
-#20:Check:vManage:Validate NMS Bringup file
+
+#20:Check:vManage:Validate Server Configs file - uuid
 def criticalChecktwenty(version):
-	success, analysis = validatenmsBringup()
-	if not success:
-		check_result = 'Failed'
-		check_analysis = 'Current incorrect nms_bringup file at /opt/web-app/etc will cause migration issues when upgraded.'
-		check_action = '{}'.format(analysis)
-	else:
-		check_result = 'SUCCESSFUL'
-		check_analysis = 'Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues and upgrade is possible.'
-		check_action = None
-		log_file_logger.info('Validated the nms_bringup file at /opt/web-app/etc to avoid migration issues.')
-
-	return  check_result, check_analysis, check_action
-
-#21:Check:vManage:Validate Server Configs file
-def criticalChecktwentyone(version):
 	success, analysis = validateServerConfigsUUID()
 	if not success:
 		check_result = 'Failed'
 		check_analysis = 'Failed to validate uuid from server configs file.'
+		check_action = '{}'.format(analysis)
+		check_action = '{}'.format(analysis)
+	else:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Validated the uuid from server configs file.'
+		check_action = None
+		log_file_logger.info('Validated the uuid from server configs file.')
+
+	return  check_result, check_analysis, check_action
+
+#22:Check:vManage:Validate UUID
+def criticalChecktwentytwo(version):
+	success, analysis = isValidUUID()
+	if not success:
+		check_result = 'Failed'
+		check_analysis = 'Failed to validate UUID at /etc/viptela/uuid.'
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESSFUL'
@@ -1458,7 +1639,7 @@ def criticalChecktwentyone(version):
 		check_action = None
 		log_file_logger.info('Validated the uuid from server configs file.')
 
-	return  check_result, check_analysis, check_action
+	return check_result, check_analysis, check_action
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
@@ -1628,18 +1809,20 @@ def warningCheckseven(controllers_info):
 	return check_result, check_analysis, check_action
 
 #08:Check:Controllers:Confirm Certificate Expiration Dates
-def warningCheckeight(controllers_info):
+def warningCheckeight(certificate_info):
 	controllers_exp = {}
 	controllers_notexp = {}
-	for controller in controllers_info:
+	for controller in certificate_info:
 		try:
-			time_remaining = timedelta(seconds=controllers_info[controller][5])
-			if timedelta(seconds=controllers_info[controller][5]) <= timedelta(seconds=2592000):
+			time_remaining = timedelta(seconds=certificate_info[controller][1])
+			if(certificate_info[controller][1] == -1):
+				controllers_exp[controller] = 'unknown'
+			elif timedelta(seconds=certificate_info[controller][1]) <= timedelta(seconds=2592000):
 				controllers_exp[controller] = str(time_remaining)
-			elif timedelta(seconds=controllers_info[controller][5]) > timedelta(seconds=2592000):
+			elif timedelta(seconds=certificate_info[controller][1]) > timedelta(seconds=2592000):
 				controllers_notexp[controller] = str(time_remaining)
 		except:
-			controllers_exp[controller] = 'uknown'
+			controllers_exp[controller] = 'unknown'
 	if len(controllers_exp) == 0:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Certificates are ok'
@@ -1660,9 +1843,9 @@ def warningChecknine(controllers_info):
 	state_vedgeList = []
 	novedge = []
 	for controller in controllers_info:
-		if controllers_info[controller][6] != 'Sync' and controllers_info[controller][6] != 'no-vedges':
+		if controllers_info[controller][5] != 'Sync' and controllers_info[controller][5] != 'no-vedges':
 			state_vedgeList.append([controller, controllers_info[controller][0], controllers_info[controller][1]])
-		elif controllers_info[controller][6] == 'no-vedges':
+		elif controllers_info[controller][5] == 'no-vedges':
 			novedge.append([controller, controllers_info[controller][0], controllers_info[controller][1]])
 
 	if novedge != [] and state_vedgeList == [] :
@@ -1761,24 +1944,6 @@ def infoChecktthree(controllers_info):
 		check_analysis = 'All the controllers are reachable'
 		check_action = None
 	return unreach_controllers,check_result, check_analysis, check_action
-
-#04:Check:vManage:Persona type: COMPUTE/DATA/COMPUTE_AND_DATA
-def infoCheckfour(version):
-	#vmanage version
-	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-	if vmanage_version >= 20.6:
-		if os.path.isfile('/opt/web-app/etc/persona') == False:
-			check_result = 'Failed'
-			check_analysis = '/opt/web-app/etc/persona file not found'
-			check_action = 'Persona file was not found. It is advisable to contact TAC to investigate why the /opt/web-app/etc/persona is missing'
-
-	elif os.path.isfile('/opt/web-app/etc/persona') == True:
-		persona_type = re.findall('"([^"]*)"',str(executeCommand('cat /opt/web-app/etc/persona')))[1]
-		check_result = 'SUCCESSFUL'
-		check_analysis = 'Current vManage persona type is {}.'.format(persona_type)
-		check_action = None
-
-	return check_result, check_analysis, check_action, persona_type
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -4053,64 +4218,69 @@ if __name__ == "__main__":
 				raise SystemExit('\033[1;31m ERROR: Error generating CSRF Token. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.  \033[0;0m \n\n'.format( log_file_path))
 
 
-			#Preliminary data
-			log_file_logger.info('****Collecting Preliminary Data\n')
+		#Preliminary data
+		log_file_logger.info('\n****Collecting Preliminary Data\n')
 
-			try:
-				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
-				controllers_info = controllersInfo(controllers)
-				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+		try:
+			controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
+			controllers_info = controllersInfo(controllers)
+			log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 
-				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
-				system_ip = system_ip_data['data']['ipAddress']
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+			certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+			certificate_info=certificateInfo(certificate)
+			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
+					
+			system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
+			system_ip = system_ip_data['data']['ipAddress']
+			table_data.append(['vManage System IP address',str(system_ip)])	
 
-				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+			cpu_speed = cpuSpeed()
+			table_data.append(['vManage System IP address',str(cpu_speed)])	
 
-				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+			cpu_count = cpuCount()
+			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
-				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+			vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
+			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
+			table_data.append(['xEdge Count',str(vedge_count)])	
 
-				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
+			table_data.append(['vManage Cluster Size',str(cluster_size)])	
+			table_data.append(['vManage Server Mode',str(server_mode)])	
 
-				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+			disk_controller = diskController()
+			table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
-				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
-				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+			dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
+			dpi_status = dpiStatus(dpi_stats)
+			table_data.append(['DPI Status',str(dpi_status)])
 
-				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+			server_type = serverType()
+			table_data.append(['Server Type',str(server_type)])
 
-				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
-				vbond_count = len(vbond_info)
-				vsmart_count = len(vsmart_info)
-				log_file_logger.info('vSmart info: {}'.format(vbond_info))
-				log_file_logger.info('vBond info: {}'.format(vsmart_info))
+			vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
+			vbond_count = len(vbond_info)
+			vsmart_count = len(vsmart_info)
+			log_file_logger.info('vSmart info: {}'.format(vbond_info))
+			log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
+			total_devices = len(controllers_info.keys()) + vedge_count
+			table_data.append(['Total devices',str(total_devices)])
 
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
-				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
-																					"Software Version":"{}".format(version),
-																					"System IP Address":"{}".format(system_ip)
-																	 }}
-				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
-					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
-					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
-					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
-					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
-			except Exception as e:
-				log_file_logger.exception('{}\n'.format(e))
-				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format( log_file_path))
+			json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
+																				"Software Version":"{}".format(version),
+																				"System IP Address":"{}".format(system_ip)
+																				}}
+			if cluster_size > 1:
+				cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+				vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
+				vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
+				log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
+				#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
+		except Exception as e:
+			log_file_logger.exception('{}\n'.format(e))
+			raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format( log_file_path))
 
 
 
@@ -4528,10 +4698,92 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-			#Warning Checks
-			print('\n**** Performing Warning checks\n')
-			warning_checks = {}
-			log_file_logger.info('*** Performing Warning Checks')
+		# Check:vManage:Validate server configs file - uuid
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' Critical Check:#{}'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwenty(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		# Check:vManage:Validate server_configs.json
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' Critical Check:#{}'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate server_configs.json'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwentyone(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		# Check:vManage:Validate UUID
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' Critical Check:#{}'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwentytwo(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
+						check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		#Warning Checks
+		print('\n**** Performing Warning checks\n')
+		warning_checks = {}
+		log_file_logger.info('*** Performing Warning Checks')
 
 			#Check:vManage:CPU Speed
 			check_count += 1
@@ -4717,31 +4969,31 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-			#Check:Controllers:Confirm Certificate Expiration Dates
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Warning Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: Controllers with certificates close to expiration:\n{}\n'.format(check_count_zfill, controllers_exp))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),  
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
+		#Check:Controllers:Confirm Certificate Expiration Dates
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' Warning Check:#{}'.format(check_count_zfill))
+		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
+			if check_result == 'Failed':
+				warning_checks[check_name] = [ check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.error('#{}: Controllers with certificates close to expiration:\n{}\n'.format(check_count_zfill, controllers_exp))
+				check_error_report(check_analysis,check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															'log type': '{}'.format(result_log['Warning'][check_result]),
+															'result': '{}'.format(check_analysis),
+															'action': '{}'.format(check_action),
+															'status': '{}'.format(check_result),
+															'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
 
 			#Check:Controllers:vEdge list sync
 			check_count += 1
@@ -4885,37 +5137,10 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
- #Check:vManage:Persona type
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' Informational Check:#{}'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Informational'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-
-			except Exception as e:
-				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-
-			if cluster_size>1:
-				cluster_checks = {}
-				log_file_logger.info('*** Performing Cluster Checks')
-				print('\n**** Performing Cluster checks\n')
+		if cluster_size>1:
+			cluster_checks = {}
+			log_file_logger.info('*** Performing Cluster Checks')
+			print('\n**** Performing Cluster checks\n')
 
 				#Check:Cluster:Version consistency
 				check_count += 1
@@ -7172,39 +7397,42 @@ if __name__ == "__main__":
 			#Preliminary data
 			log_file_logger.info('****Collecting Preliminary Data\n')
 
-			try:
-				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
-				controllers_info = controllersInfo(controllers)
-				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+		try:
+			controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
+			controllers_info = controllersInfo(controllers)
+			log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 
-				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
-				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+			certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+			certificate_info=certificateInfo(certificate)
+			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
+					
+			system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
+			system_ip = system_ip_data['data']['ipAddress']
+			table_data.append(['vManage System IP address',str(system_ip)])	
 
-				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+			cpu_speed = cpuSpeed()
+			table_data.append(['vManage System IP address',str(cpu_speed)])	
 
-				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+			cpu_count = cpuCount()
+			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
-				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+			vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
+			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
+			table_data.append(['xEdge Count',str(vedge_count)])	
 
-				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
+			table_data.append(['vManage Cluster Size',str(cluster_size)])	
+			table_data.append(['vManage Server Mode',str(server_mode)])	
 
-				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+			disk_controller = diskController()
+			table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
-				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
-				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+			dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
+			dpi_status = dpiStatus(dpi_stats)
+			table_data.append(['DPI Status',str(dpi_status)])
 
-				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+			server_type = serverType()
+			table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -7212,23 +7440,24 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
-				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
-																					"Software Version":"{}".format(version),
-																					"System IP Address":"{}".format(system_ip)
-																				 }}
-				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
-					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
-					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
-					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
-					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			total_devices = len(controllers_info.keys()) + vedge_count
+			table_data.append(['Total devices',str(total_devices)])
 
-			except Exception as e:
-				log_file_logger.exception('{}\n'.format(e))
-				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				
+			json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
+																				"Software Version":"{}".format(version),
+																				"System IP Address":"{}".format(system_ip)
+																				}}
+			if cluster_size > 1:
+				cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+				vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
+				vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
+				log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
+				#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
+		except Exception as e:
+			log_file_logger.exception('{}\n'.format(e))
+			raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+
 
 
 			print('*Starting Checks, this may take several minutes\n\n')
@@ -7609,34 +7838,112 @@ if __name__ == "__main__":
 						total_cpu_count = 0
 					vsmart_info[vsmart].append(total_cpu_count)
 
-				failed_vbonds,failed_vsmarts,check_result,check_analysis, check_action = criticalCheckeleven(total_devices, vbond_info, vsmart_info)
-				if check_result == 'Failed':
-					critical_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: vBonds with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vbonds))
-					log_file_logger.error('#{}: vSmarts with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vsmarts))
-					log_file_logger.error('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
-					log_file_logger.error('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
-					log_file_logger.info('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Critical'][check_result]),  
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
+			failed_vbonds,failed_vsmarts,check_result,check_analysis, check_action = criticalCheckeleven(total_devices, vbond_info, vsmart_info)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [ check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.error('#{}: vBonds with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vbonds))
+				log_file_logger.error('#{}: vSmarts with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vsmarts))
+				log_file_logger.error('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
+				log_file_logger.error('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
+				check_error_report(check_analysis,check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.info('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
+				log_file_logger.info('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															'log type': '{}'.format(result_log['Critical'][check_result]),
+															'result': '{}'.format(check_analysis),
+															'action': '{}'.format(check_action),
+															'status': '{}'.format(check_result),
+															'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
 
-			
-			#Warning Checks
-			warning_checks = {}
-			log_file_logger.info('*** Performing Warning Checks')
+		# Check:vManage:Validate server configs file - uuid
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwenty(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		# Check:vManage:Validate server_configs.json
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		check_name = '#{}:Check:vManage:Validate server_configs.json'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwentyone(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		# Check:vManage:Validate UUID
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		check_name = '#{}:Check:vManage:Validate uuid at /etc/viptela/uuid.'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwentytwo(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
+						check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		#Warning Checks
+		warning_checks = {}
+		log_file_logger.info('*** Performing Warning Checks')
 
 			#Check:vManage:CPU Speed
 			check_count += 1
@@ -7820,28 +8127,28 @@ if __name__ == "__main__":
 				log_file_logger.exception('{}\n'.format(e))
 
 
-			#Check:Controllers:Confirm Certificate Expiration Dates
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					log_file_logger.error('#{}: Check result:   {}'.format(check_count_zfill, check_result))
-					log_file_logger.error('#{}: Check Analysis: {}'.format(check_count_zfill, check_analysis))
-					log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
-					check_error_report(check_analysis,check_action)                  
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))   
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),  
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})                
+		#Check:Controllers:Confirm Certificate Expiration Dates
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
+			if check_result == 'Failed':
+				warning_checks[check_name] = [ check_analysis, check_action]
+				log_file_logger.error('#{}: Check result:   {}'.format(check_count_zfill, check_result))
+				log_file_logger.error('#{}: Check Analysis: {}'.format(check_count_zfill, check_analysis))
+				log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
+				check_error_report(check_analysis,check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															'log type': '{}'.format(result_log['Warning'][check_result]),
+															'result': '{}'.format(check_analysis),
+															'action': '{}'.format(check_action),
+															'status': '{}'.format(check_result),
+															'document': ''})
 
 			except Exception as e:
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
@@ -7987,35 +8294,9 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
- 		   #Check:vManage:Persona type
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Informational'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-
-			except Exception as e:
-				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-
-			if cluster_size>1:
-				cluster_checks = {}
-				log_file_logger.info('*** Performing Cluster Checks')
+		if cluster_size>1:
+			cluster_checks = {}
+			log_file_logger.info('*** Performing Cluster Checks')
 
 				#Check:Cluster:Version consistency
 				check_count += 1
@@ -10371,59 +10652,62 @@ if __name__ == "__main__":
 				controllers_info = controllersInfo(controllers)
 				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 
-				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid ,'device/vmanage', args.vmanage_port, tokenid))
-				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+			certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+			certificate_info=certificateInfo(certificate)
+			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
+					
+			system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
+			system_ip = system_ip_data['data']['ipAddress']
+			table_data.append(['vManage System IP address',str(system_ip)])	
 
-				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+			cpu_speed = cpuSpeed()
+			table_data.append(['vManage System IP address',str(cpu_speed)])	
 
-				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+			cpu_count = cpuCount()
+			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
-				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+			vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
+			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
+			table_data.append(['xEdge Count',str(vedge_count)])	
 
-				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
+			table_data.append(['vManage Cluster Size',str(cluster_size)])	
+			table_data.append(['vManage Server Mode',str(server_mode)])	
 
-				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+			disk_controller = diskController()
+			table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
-				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
-				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+			dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
+			dpi_status = dpiStatus(dpi_stats)
+			table_data.append(['DPI Status',str(dpi_status)])
 
-				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+			server_type = serverType()
+			table_data.append(['Server Type',str(server_type)])
 
-				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
-				vbond_count = len(vbond_info)
-				vsmart_count = len(vsmart_info)
-				log_file_logger.info('vSmart info: {}'.format(vbond_info))
-				log_file_logger.info('vBond info: {}'.format(vsmart_info))
-				
+			vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
+			vbond_count = len(vbond_info)
+			vsmart_count = len(vsmart_info)
+			log_file_logger.info('vSmart info: {}'.format(vbond_info))
+			log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
-				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
-																					"Software Version":"{}".format(version),
-																					"System IP Address":"{}".format(system_ip)
-																				 }}
-				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
-					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
-					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
-					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
-					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			total_devices = len(controllers_info.keys()) + vedge_count
+			table_data.append(['Total devices',str(total_devices)])
 
-			except Exception as e:
-				log_file_logger.exception('{}\n'.format(e))
-				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				
+			json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
+																				"Software Version":"{}".format(version),
+																				"System IP Address":"{}".format(system_ip)
+																				}}
+			if cluster_size > 1:
+				cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+				vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
+				vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
+				log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
+				#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
+		except Exception as e:
+			log_file_logger.exception('{}\n'.format(e))
+			raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+
 
 			print('*Starting Checks, this may take several minutes')
 
@@ -10843,6 +11127,60 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.\033[0;0m'.format(log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+		# Check:vManage:Validate server configs file - uuid
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print('  #{}:Checking:vManage:Validate uuid from server configs file'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwenty(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		# Check:vManage:Validate server_configs.json
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print('  #{}:Checking:vManage:Validate server_configs.json'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate server_configs.json'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwentyone(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
 		# Check:vManage:Validate UUID
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
@@ -11063,31 +11401,31 @@ if __name__ == "__main__":
 				log_file_logger.exception('{}\n'.format(e))
 
 
-			#Check:Controllers:Confirm Certificate Expiration Dates
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print('  #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
-			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),  
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
+		#Check:Controllers:Confirm Certificate Expiration Dates
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print('  #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
+		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
+			if check_result == 'Failed':
+				warning_checks[check_name] = [ check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
+				check_error_report(check_analysis,check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															'log type': '{}'.format(result_log['Warning'][check_result]),
+															'result': '{}'.format(check_analysis),
+															'action': '{}'.format(check_action),
+															'status': '{}'.format(check_result),
+															'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
 
 			#Check:Controllers:vEdge list sync
 			check_count += 1
@@ -11204,59 +11542,31 @@ if __name__ == "__main__":
 				log_file_logger.exception('{}\n'.format(e))
 
 
-			#Check:Controllers:Validate all controllers are reachable
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print('  #{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
-			check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)  
-			try:
-				unreach_controllers,check_result, check_analysis, check_action = infoChecktthree(controllers_info)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: Unreachable Controllers: {}\n'.format(check_count_zfill, unreach_controllers))
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Informational'][check_result]),  
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-
-           #Check:vManage:Persona type
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' #{}:Check:vManage:Persona type'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					check_error_report(check_analysis,check_action)
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Informational'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-
-			except Exception as e:
-				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-				
+		#Check:Controllers:Validate all controllers are reachable
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print('  #{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
+		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			unreach_controllers,check_result, check_analysis, check_action = infoChecktthree(controllers_info)
+			if check_result == 'Failed':
+				warning_checks[check_name] = [ check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.error('#{}: Unreachable Controllers: {}\n'.format(check_count_zfill, unreach_controllers))
+				check_error_report(check_analysis,check_action)
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															'log type': '{}'.format(result_log['Informational'][check_result]),
+															'result': '{}'.format(check_analysis),
+															'action': '{}'.format(check_action),
+															'status': '{}'.format(check_result),
+															'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
 
 			if cluster_size>1:
 				cluster_checks = {}
@@ -13740,39 +14050,42 @@ if __name__ == "__main__":
 			log_file_logger.info('****Collecting Preliminary Data\n')
 			print ('****Collecting Preliminary Data\n')
 
-			try:
-				controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
-				controllers_info = controllersInfo(controllers)
-				log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
+		try:
+			controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
+			controllers_info = controllersInfo(controllers)
+			log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 
-				system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
-				system_ip = system_ip_data['data']['ipAddress']
-				#system_ip = controllers_info[hostname][1]
-				log_file_logger.info('Collected vManage System IP address: {}'.format(system_ip))
+			certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+			certificate_info=certificateInfo(certificate)
+			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
+					
+			system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
+			system_ip = system_ip_data['data']['ipAddress']
+			table_data.append(['vManage System IP address',str(system_ip)])	
 
-				cpu_speed = cpuSpeed()
-				log_file_logger.info('Collected vManage CPU Speed GHz: {}'.format(cpu_speed))
+			cpu_speed = cpuSpeed()
+			table_data.append(['vManage System IP address',str(cpu_speed)])	
 
-				cpu_count = cpuCount()
-				log_file_logger.info('Collected vManage CPU Count: {}'.format(cpu_count))
+			cpu_count = cpuCount()
+			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-				vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
-				vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-				log_file_logger.info('Collected  xEdge Count: {}'.format(vedge_count))
+			vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
+			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
+			table_data.append(['xEdge Count',str(vedge_count)])	
 
-				cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-				log_file_logger.info('Collected vManage Cluster Size: {}'.format(cluster_size))
-				log_file_logger.info('Collected vManage Server Mode: {}'.format(server_mode))
+			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
+			table_data.append(['vManage Cluster Size',str(cluster_size)])	
+			table_data.append(['vManage Server Mode',str(server_mode)])	
 
-				disk_controller = diskController()
-				log_file_logger.info('Collected vManage Disk Controller Type: {}'.format(disk_controller))
+			disk_controller = diskController()
+			table_data.append(['vManage Disk Controller Type',str(disk_controller)])	
 
-				dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
-				dpi_status = dpiStatus(dpi_stats)
-				log_file_logger.info('Collected DPI Status: {}'.format(dpi_status))
+			dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
+			dpi_status = dpiStatus(dpi_stats)
+			table_data.append(['DPI Status',str(dpi_status)])
 
-				server_type = serverType()
-				log_file_logger.info('Collected Server Type: {}'.format(server_type))
+			server_type = serverType()
+			table_data.append(['Server Type',str(server_type)])
 
 				vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
 				vbond_count = len(vbond_info)
@@ -13780,24 +14093,24 @@ if __name__ == "__main__":
 				log_file_logger.info('vSmart info: {}'.format(vbond_info))
 				log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-				total_devices = len(controllers_info.keys()) + vedge_count
-				log_file_logger.info('Total devices: {}'.format(total_devices))
-				json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
-																					"Software Version":"{}".format(version),
-																					"System IP Address":"{}".format(system_ip)
-																				 }}
+			total_devices = len(controllers_info.keys()) + vedge_count
+			table_data.append(['Total devices',str(total_devices)])
 
-				if cluster_size > 1:
-					cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
-					vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
-					vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
-					log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
-					#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
+																				"Software Version":"{}".format(version),
+																				"System IP Address":"{}".format(system_ip)
+																				}}
+			if cluster_size > 1:
+				cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+				vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
+				vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
+				log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
+				#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
+			log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
+		except Exception as e:
+			log_file_logger.exception('{}\n'.format(e))
+			raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
 
-			except Exception as e:
-				log_file_logger.exception('{}\n'.format(e))
-				raise SystemExit('\033[1;31m ERROR: Error Collecting Preliminary Data. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
-				
 
 			print('*Starting Checks, this may take several minutes')
 
@@ -14243,6 +14556,64 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
+		# Check:vManage:Validate server configs file - uuid
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' #{}:Checking:vManage:Validate uuid from server configs file.'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate uuid from server configs file.'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwenty(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+				print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				print(' INFO:{}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+		# Check:vManage:Validate server_configs.json
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' #{}:Checking:vManage:Validate server_configs.json'.format(check_count_zfill))
+		check_name = '#{}:Check:vManage:Validate server_configs.json'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			check_result, check_analysis, check_action = criticalChecktwentyone(version)
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				check_error_report(check_analysis, check_action)
+				print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				print(' INFO:{}\n\n'.format(check_analysis))
+
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
 		# Check:vManage:Validate UUID
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
@@ -14255,9 +14626,11 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				check_error_report(check_analysis, check_action)
+				print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
 				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				print(' INFO:{}\n\n'.format(check_analysis))
 
 			json_final_result['json_data_pdf']['description']['vManage'].append(
 				{'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -14477,33 +14850,33 @@ if __name__ == "__main__":
 				log_file_logger.exception('{}\n'.format(e))
 
 
-			#Check:Controllers:Confirm Certificate Expiration Dates
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
-			check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(controllers_info)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
-					check_error_report(check_analysis,check_action)
-					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					print(' INFO:{}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															 'log type': '{}'.format(result_log['Warning'][check_result]),  
-															 'result': '{}'.format(check_analysis),
-															 'action': '{}'.format(check_action),
-															 'status': '{}'.format(check_result),
-															 'document': ''})
-			except Exception as e:
-				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
+		#Check:Controllers:Confirm Certificate Expiration Dates
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		print(' #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
+		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			controllers_exp, controllers_notexp, check_result, check_analysis, check_action = warningCheckeight(certificate_info)
+			if check_result == 'Failed':
+				warning_checks[check_name] = [ check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
+				check_error_report(check_analysis,check_action)
+				print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
+				print(' INFO:{}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['Controllers'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+															'log type': '{}'.format(result_log['Warning'][check_result]),
+															'result': '{}'.format(check_analysis),
+															'action': '{}'.format(check_action),
+															'status': '{}'.format(check_result),
+															'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
 
 			#Check:Controllers:vEdge list sync
 			check_count += 1
@@ -14657,37 +15030,8 @@ if __name__ == "__main__":
 				print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
 				log_file_logger.exception('{}\n'.format(e))
 
-		   #Check:vManage:Persona type
-			check_count += 1
-			check_count_zfill = zfill_converter(check_count)
-			print(' #{}:Check:vManage:Persona type'.format(check_count_zfill))
-			check_name = '#{}:Check:vManage:Persona type'.format(check_count_zfill)
-			pre_check(log_file_logger, check_name)
-			try:
-				check_result, check_analysis, check_action, persona_type = infoCheckfour(version)
-				if check_result == 'Failed':
-					warning_checks[check_name] = [ check_analysis, check_action]
-					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					check_error_report(check_analysis,check_action)
-					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
-				else:
-					check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-					log_file_logger.info('#{}: Collected Persona Type: {}\n'.format(check_count_zfill, persona_type))
-					writeFile(report_file, 'Result: INFO - {}\n\n'.format(check_analysis))
-					print(' INFO:{}\n\n'.format(check_analysis))
-				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-																 'log type': '{}'.format(result_log['Informational'][check_result]),
-																 'result': '{}'.format(check_analysis),
-																 'action': '{}'.format(check_action),
-																 'status': '{}'.format(check_result),
-																 'document': ''})
-
-			except Exception as e:
-				print('\033[1;31m ERROR: Error collecting persona type  {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
-				log_file_logger.exception('{}\n'.format(e))
-
-			if cluster_size>1:
-				cluster_checks = {}
+		if cluster_size>1:
+			cluster_checks = {}
 
 				log_file_logger.info('*** Performing Cluster Checks')
 				print('\n**** Performing Cluster checks\n')
