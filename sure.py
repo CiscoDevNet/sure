@@ -279,65 +279,7 @@ def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
 			command = 'curl -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, Port, JSessionID, tokenid)
 			executeCommand(command)
 
-<<<<<<< HEAD
-=======
-#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-#Print Output Table
-def findColumnLength(maxChars,rows, cols,tabledata):
-    columnLength = []
-    for colcount in range(cols):
-        currColumnLength=0
-        for rowcount in range(rows):    
-            currColumnLength = len(str(tabledata[rowcount][colcount])) if len(str(tabledata[rowcount][colcount])) > currColumnLength  else currColumnLength
-        columnLength.append(currColumnLength if currColumnLength < maxChars else maxChars)
-    return columnLength
 
-def maxCharactersCol(maxChars,cols,tabledata):
-    temp=""
-    rowcount=0
-    while rowcount < len(tabledata):
-        for colcount in range(cols):
-            while(len(str(tabledata[rowcount][colcount]))>maxChars):
-                temp=tabledata[rowcount]
-                tabledata[rowcount][colcount]=str(tabledata[rowcount][colcount]).replace('\n','')
-                tabledata.insert(rowcount,["" for x in range(cols)])
-                tabledata[rowcount+1]=[string[maxChars:] for string in temp]
-                tabledata[rowcount]=[string[0:maxChars] for string in temp]
-                rowcount+=1
-        rowcount+=1
-    return len(tabledata)
-            
-def AddLines(rows, cols, columnLength, rowLength, tabledata, finalTable):
-    for rowcount in range(rows):
-        currentRow="|"
-        checkEmpty=""
-        for colcount in range(cols):
-                if(tabledata[rowcount][colcount]==""):
-                    checkEmpty="Yes"
-                currentRow += " " + tabledata[rowcount][colcount] + " " * (columnLength[colcount] - len(tabledata[rowcount][colcount]) + 1) + "|"  
-                rowUnderFields= "+"
-        if(checkEmpty!="Yes"):
-            for colcount in range(cols):
-                rowUnderFields += ("-" * (columnLength[colcount] + 2)+"+")
-            finalTable.append(rowUnderFields) 
-        finalTable.append(currentRow)
-    finalTable.append(finalTable[0])
-        
-def printTable(tabledata):
-    rows = len(tabledata)
-    cols = len(tabledata[0])
-    maxChars=70
-    finalTable = []
-    columnLength=findColumnLength(maxChars,rows, cols,tabledata)
-    rows=maxCharactersCol(maxChars,cols,tabledata)
-    AddLines(rows, cols, columnLength, rows, tabledata, finalTable)
-    output=""
-    for row in finalTable:
-        output+=""+row+"\n"
-    return output
-table_data=[["Parameters","Value"]]
-
->>>>>>> dev
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Print Output Table
 def findColumnLength(maxChars,rows, cols,tabledata):
