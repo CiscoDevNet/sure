@@ -1941,21 +1941,6 @@ def warningCheckten(vsmart_count, vbond_count):
 
 #11:Check:xEdge:Version compatibility
 
-#31:Check:Monitor CPU for wildfly and statsdb
-def checkUtilisation():
-	cpu_mem = showCommand('ps aux --sort -rss | head -n 5')
-	x=cpu_mem.split('vmanage ')
-	y=x[1].split(' ')
-	y = list(filter(None,y))
-	wildfly_cpu = y[1]
-	wildfly_mem = y[2]
-	z=x[3].split(' ')
-	z = list(filter(None,z))
-	elasticSearch_cpu = z[1]
-	elasticSearch_mem = z[2]
-	return wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem
-
-checkUtilisation()
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Information Checks
