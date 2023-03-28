@@ -396,6 +396,7 @@ def _parse_local_server_config(services, cluster_uuid):
         success = False
         check_analysis = server_configs_file + " file not found."
 
+	print("done _prarse")
     return server_config_dict, success, check_analysis
 
 def validateIps(serviceToDeviceIp, vmanage_ips):
@@ -408,7 +409,9 @@ def validateIps(serviceToDeviceIp, vmanage_ips):
 
 # vManage: Validate server_configs.json
 def validateServerConfigsFile():
-	if version_tuple[0:2] >= ('19', '2') and version_tuple[0:2] < ('20', '6'):
+	if version_tuple[0:2] == ('19', '2'):
+		services = ["neo4j", "elasticsearch", "zookeeper", "wildfly"]
+	elif version_tuple[0:2] > ('19', '2') and version_tuple[0:2] < ('20', '6'):
 		services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
 	elif version_tuple[0:2] > ('20', '5'):
 		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
@@ -419,6 +422,7 @@ def validateServerConfigsFile():
 
 	server_config_dict, success, check_analysis = _parse_local_server_config(services, cluster_uuid)
 	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
+	check_action = None
 
 	if success:
 		try:
