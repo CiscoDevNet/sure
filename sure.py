@@ -490,7 +490,7 @@ def _parse_local_server_config(services, cluster_uuid):
     elif os.path.isfile(server_configs_file) == False:
         success = False
         check_analysis = server_configs_file + " file not found."
-    print(" done _parse_local_server_config")
+
     return server_config_dict, success, check_analysis
 
 def validateIps(serviceToDeviceIp, vmanage_ips):
