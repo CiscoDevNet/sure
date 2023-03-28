@@ -375,7 +375,8 @@ def _parse_local_server_config(services):
             with open(server_configs_file, 'r') as data_dict:
                 server_configs_data = json.load(data_dict)
                 server_config_dict['vmanageID'] = server_configs_data['vmanageID']
-                server_config_dict['clusterUUID'] = server_configs_data['cluster']
+                if cluster_uuid:
+                        server_config_dict['clusterUUID'] = server_configs_data['cluster']
                 server_config_dict['mode'] = server_configs_data['mode']
                 services_data_dict = server_configs_data["services"]
                 for service in services:
@@ -412,7 +413,11 @@ def validateServerConfigsFile():
 	elif version_tuple[0:2] > ('20', '5'):
 		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
 
-	server_config_dict, success, check_analysis = _parse_local_server_config(services)
+	cluster_uuid = True
+	if version_tuple[0:2] == ('19', '2'):
+		cluster_uuid = False
+
+	server_config_dict, success, check_analysis = _parse_local_server_config(services, cluster_uuid)
 	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
 
 	if success:
@@ -426,12 +431,13 @@ def validateServerConfigsFile():
 				return success, check_analysis, check_action
 
 			# Check cluster
-			uuid = server_config_dict['clusterUUID']
-			if uuid not in vmanage_uuids:
-				success = False
-				check_analysis = "Failed to validate cluster from server_configs.json."
-				check_action = "Check the correctness of cluster at server_configs.json."
-				return success, check_analysis, check_action
+			if cluster_uuid:
+				uuid = server_config_dict['clusterUUID']
+				if uuid not in vmanage_uuids:
+					success = False
+					check_analysis = "Failed to validate cluster from server_configs.json."
+					check_action = "Check the correctness of cluster at server_configs.json."
+					return success, check_analysis, check_action
 
 			# Check mode
 			mode = server_config_dict['mode']
@@ -1385,6 +1391,14 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 
 #20:Check:vManage:Validate Server Configs file - uuid
 def criticalChecktwenty(version):
+	#vmanage version
+	vmanage_version = float('.'.join((version.split('.'))[0:2]))
+	if vmanage_version == 19.2:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Check is not required for the current version'
+		check_action = None
+		return check_result, check_analysis, check_action
+
 	success, analysis = validateServerConfigsUUID()
 	if not success:
 		check_result = 'Failed'
