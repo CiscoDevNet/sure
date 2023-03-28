@@ -455,8 +455,6 @@ def _parse_local_server_config(services, cluster_uuid):
     elif os.path.isfile(server_configs_file) == False:
         success = False
         check_analysis = server_configs_file + " file not found."
-
-	print("done _prarse")
     return server_config_dict, success, check_analysis
 
 def validateIps(serviceToDeviceIp, vmanage_ips):
@@ -1434,7 +1432,7 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 				output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
 				roundtrip_op = output.split("time=")
 				roundtrip = roundtrip_op[1]
-				# print(roundtrip)
+				print(roundtrip)
 				output = output.split('\n')[-3:]
 				xmit_stats = output[0].split(",")
 				timing_stats = xmit_stats[3]
@@ -1843,7 +1841,7 @@ def infoChecktthree(controllers_info):
 
 def pre_check(log_file_logger, check_name):
 	log_file_logger.info('{}'.format(check_name))
-		
+
 def zfill_converter(check_count):
 	check_count = str(check_count).zfill(2)
 	return check_count
@@ -2220,7 +2218,7 @@ if __name__ == "__main__":
 			if check_result_one == 'Failed' and check_result_two == 'Failed':
 				critical_checks[check_name] = [ check_analysis_two, check_action_two]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action_two)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis_two))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -2232,7 +2230,7 @@ if __name__ == "__main__":
 
 			elif check_result_one == 'SUCCESSFUL':
 				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result_one,check_analysis_one,str(check_action_one)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result_two,check_analysis_two,str(check_action_one)])
 				if args.debug == True:
 					print(' INFO:{}\n\n'.format(check_analysis_one))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -3512,7 +3510,7 @@ if __name__ == "__main__":
 															'document': ''})
 			elif check_result_one == 'SUCCESSFUL':
 				check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result_one,check_analysis_one,str(check_action_one)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result_two,check_analysis_two,str(check_action_one)])
 				if args.debug == True:
 					print(' INFO:{}\n\n'.format(check_analysis_one))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -4623,8 +4621,10 @@ if __name__ == "__main__":
 		log_file_logger.info('Successfully closed the connection')
 		writeFile(report_file, '{}'.format(printTable(report_data)))
 
+
 	report_file.close()
-	
+
+
 	end_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
 
 	json_final_result['json_data_pdf']['vmanage execution info'].update({'Script Execution Time': {'Start Time': '{}'.format(start_time),'End Time': '{}'.format(end_time)}})
@@ -4696,7 +4696,7 @@ if __name__ == "__main__":
 
 	report_file = open(report_file_path, 'r')
 	Lines = report_file.readlines()
-	Lines = Lines[:8] + meta_data + full_lst + Lines[8:]
+	Lines = Lines[:8] + meta_data  + full_lst + Lines[8:]
 	report_file.close()
 
 	report_file = open(report_file_path, "w")
