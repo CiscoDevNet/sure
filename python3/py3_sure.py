@@ -503,6 +503,7 @@ def validateServerConfigsFile():
 
 	server_config_dict, success, check_analysis = _parse_local_server_config(services)
 	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
+	check_action = None
 
 	if success:
 		try:
