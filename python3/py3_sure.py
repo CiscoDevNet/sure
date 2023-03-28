@@ -710,10 +710,20 @@ def criticalCheckone(version):
 	#vmanage version
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
 
+	if vmanage_version >= 20.6:
+		#print('20.6')
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Current vManage version is {}, and matching latest long life release version'.format(version)
+		check_action = None
+	elif vmanage_version > 20.3 and vmanage_version < 20.6:
+		#print('between 20.3 and 20.6')
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Direct Upgrade to next long life release 20.6 is possible and no intermediate upgrade is required'
+		check_action = None
 	#print('20.6')
-	check_result = 'SUCCESSFUL'
-	check_analysis = 'Current vManage version is {}, and matching latest long life release version'.format(version)
-	check_action = None
+	# check_result = 'SUCCESSFUL'
+	# check_analysis = 'Current vManage version is {}, and matching latest long life release version'.format(version)
+	# check_action = None
 	return (' '.join(boot_partition_size[0])), check_result, check_analysis, check_action
 
 #02:Check:vManage:At minimum 20%  server disk space should be available
@@ -894,7 +904,7 @@ def criticalCheckfive(es_indices):
 #06:Check:vManage:Look for any neo4j exception errors
 def criticalChecksix(version_tuple):
     check_result = 'SUCCESSFUL'
-    check_analysis = 'Check is not required for the current version'
+    check_analysis = 'Check will be available in the next release'
     check_action = None
     return check_result, check_analysis, check_action
 
@@ -963,7 +973,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 	appr_estimate_ondeday = None
 	dpi_estimate_ondeday = None
 	check_result = 'SUCCESSFUL'
-	check_analysis = '#09 Check will be available in the next release.'
+	check_analysis = 'Check will be available in the next release.'
 	check_action = None
 
 	# try:
@@ -1156,7 +1166,7 @@ def criticalCheckten(version_tuple, controllers_info):
 def criticalCheckeighteen(version_tuple):
 	if version_tuple[0:2] >= ('20', '6'):
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Check is not required for the current version'
+		check_analysis = 'Check will be available in the next release.'
 		check_action = None
 		nodestore_version = None
 	else:
@@ -1648,7 +1658,7 @@ def warningCheckthree():
 def warningCheckfour():
 	if version_tuple[0:2] >= ('20', '6'):
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Check is not required for the current version'
+		check_analysis = 'Check will be available in the next release.'
 		check_action = None
 	else:
 		if os.path.isfile('/var/log/nms/query.log') == False:

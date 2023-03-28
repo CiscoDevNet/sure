@@ -738,7 +738,11 @@ def criticalCheckone(version):
 
 	#vmanage version
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-	if vmanage_version == 20.6:
+	if vmanage_version > 20.6:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Current vManage version is {}, and matching latest long life release version'.format(version)
+		check_action = None
+	elif vmanage_version == 20.6:
 		#print('20.6')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, and matching latest long life release version'.format(version)
@@ -985,7 +989,7 @@ def criticalChecksix(version_tuple):
 				check_action = 'There are errors reported in configDB log file. It is advisable to contact TAC to investigate any issues before an upgrade'
 	else:
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Check is not required for the current version'
+		check_analysis = 'Check will be available in the next release'
 		check_action = None
 	return check_result, check_analysis, check_action
 
@@ -1067,7 +1071,7 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 	appr_estimate_ondeday = None
 	dpi_estimate_ondeday = None
 	check_result = 'SUCCESSFUL'
-	check_analysis = '#09 Check will be available in the next release.'
+	check_analysis = 'Check will be available in the next release.'
 	check_action = None
 	# try:
 	# 	api_returned_data = True
@@ -1276,7 +1280,7 @@ def criticalCheckten(version_tuple, controllers_info):
 def criticalCheckeighteen(version_tuple):
 	if version_tuple[0:2] >= ('20', '6'):
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Check is not required for the current version'
+		check_analysis = 'Check will be available in the next release.'
 		check_action = None
 		nodestore_version = None
 	else:
@@ -1782,7 +1786,7 @@ def warningCheckthree():
 def warningCheckfour():
 	if version_tuple[0:2] >= ('20', '6'):
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Check is not required for the current version'
+		check_analysis = 'Check will be available in the next release.'
 		check_action = None
 	else:
 		if os.path.isfile('/var/log/nms/query.log') == False:
