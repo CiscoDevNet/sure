@@ -634,20 +634,20 @@ def criticalCheckone(version):
 
 	#vmanage version
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-	if vmanage_version > 20.3 and vmanage_version < 20.6:
+	elif vmanage_version == 20.4:
 		#print('between 20.3 and 20.6')
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Direct Upgrade to next long life release 20.6 is possible and no intermediate upgrade is required'
+		check_analysis = 'Current vManage version is {}, Direct Upgrade to to release in 20.9 and For cluster upgrade make sure to perform procedure**: request nms configuration-db upgrade'
 		check_action = None
 	elif vmanage_version == 20.3:
 		#print('20.3')
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Controller is currently on recommended long life release branch, you can upgrade directly to latest release in 20.3.x'
+		check_analysis = 'Current vManage version is {}, Controller is currently on recommended long life release branch, you can upgrade directly to release in 20.9 and For cluster upgrade make sure to perform procedure**: request nms configuration-db upgrade'
 		check_action = None
 	elif vmanage_version >= 20.1 and vmanage_version < 20.3:
 		#print('between 20.1 and 20.3')
 		check_result = 'SUCCESSFUL'
-		check_analysis = 'Direct Upgrade to next long life release 20.3 is possible and no intermediate upgrade is required'
+		check_analysis = 'Current vManage version is {}, Step Upgrade through 20.3 to release 20.9 is possible'
 		check_action = None
 	elif vmanage_version >= 18.3 and    vmanage_version <= 19.2:
 		#print('between 18.3 and 19.2')
@@ -659,12 +659,12 @@ def criticalCheckone(version):
 		elif  boot_partition_size_Gig > 2.0:
 			#print(boot_partition_size_Gig)
 			check_result = 'SUCCESSFUL'
-			check_analysis = 'Current Disk Space is {}, it is more than 2GB and Direct Upgrade to next long life release 20.3 is possible'.format(' '.join(boot_partition_size[0]))
+			check_analysis = 'Current Disk Space is {}, it is more than 2GB and Step Upgrade through 20.3 to release 20.9 is possible'.format(' '.join(boot_partition_size[0]))
 			check_action = None
 	elif vmanage_version < 18.3:
 		#print('below 18.3')
 		check_result = 'Failed'
-		check_analysis = 'Direct Upgrade to Version 20.3 is not possible'
+		check_analysis = 'Current vManage version is {}, Direct Upgrade to Version 20.3 is not possible'
 		check_action = 'Step Upgrade to 18.4 is required'
 	return (' '.join(boot_partition_size[0])), check_result, check_analysis, check_action
 
@@ -1888,9 +1888,11 @@ if __name__ == "__main__":
 
 	#Getting the password and validating it
 	try:
-		password = getpass.getpass('vManage Password:')
+		password = getpass.getpass('vManage Password (Note: Tool doesn\'t support passwords containing "!") :')
 		if len(password) == 0:
 			raise SystemExit('\033[1;31m \n\nERROR: Invalid Password provided \033[0;0m \n\n')
+		elif '!' in password:
+			raise SystemExit('\033[1;31m \n\nERROR: Tool doesn\'t support passwords containing "!" \033[0;0m \n\n')
 	except:
 		raise SystemExit('\033[1;31m \n\nERROR: Invalid Password provided \033[0;0m \n\n')
 
