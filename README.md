@@ -14,7 +14,7 @@ The objective is to execute without impact the performance of the vManage or oth
 - Root access is not required to perform any check.
 - No data is collected or shared to anyone. All information used by the tool, remains in the provided 
 report and logs
-- Doesn't use Real Time APIs APIs have scale limitations
+- Doesn't use Real Time APIs that have scale limitations
 
 **IF YOU HAVE ANY QUESTIONS OR FEEDBACK, reach out to sure-tool@cisco.com**
 
