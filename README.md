@@ -12,9 +12,15 @@ The objective is to execute without impact the performance of the vManage or oth
 - Not Intrusive
 - Run Time - usually less than 60 seconds, depending on your deployment size
 - Root access is not required to perform any check.
-- No data is collected or shared to anyone. All information used by the tool, remains in the provided report and logs
+- No data is collected or shared to anyone. All information used by the tool, remains in the provided 
+report and logs
+- Doesn't use Real Time APIs that have scale limitations
 
 **IF YOU HAVE ANY QUESTIONS OR FEEDBACK, reach out to sure-tool@cisco.com**
+
+## Requirements 
+- vManage user with admin OR RO network operator privileges
+- The vManage user password must not contain the "!" character.
 
 ## To Download the script on vManage
 This script needs to be downloaded onto Cisco vManage.  <br>
@@ -266,30 +272,32 @@ criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_de
 \#10:Check:vManage:NTP status across network<br>
 \#11:Check:vManage:Validate Neo4j Store version<br>
 \#12:Check:vManage:Validate ConfigDB Size is less than 5GB<br>
-\#13:Check:Controllers:Validate vSmart/vBond CPU count for scale<br>
+\#13:Check:vManage:Validate UUID from server configs file<br>
+\#14:Check:vManage:Validate server configs file on vManage<br>
+\#15:Check:vManage:Validate UUID at /etc/viptela/uuid<br>
+\#16:Check:Controllers:Validate vSmart/vBond CPU count for scale<br>
 
 **_Checks with severity level: WARNING_**<br>
-\#14:Check:vManage:CPU Speed<br>
-\#15:Check:vManage:Network Card type<br>
-\#16:Check:vManage:Backup status<br>
-\#17:Check:vManage:Evaluate Neo4j performance<br>
-\#18:Check:vManage:Confirm there are no pending tasks<br>
-\#19:Check:vManage:Validate there are no empty password users<br>
-\#20:Check:Controllers:Controller versions<br>
-\#21:Check:Controllers:Confirm Certificate Expiration Dates<br>
-\#22:Check:Controllers:vEdge list sync<br>
-\#22:Check:Controllers: Confirm control connections<br>
+\#1:Check:vManage:CPU Speed<br>
+\#2:Check:vManage:Network Card type<br>
+\#3:Check:vManage:Backup status<br>
+\#4:Check:vManage:Evaluate Neo4j performance<br>
+\#5:Check:vManage:Confirm there are no pending tasks<br>
+\#6:Check:vManage:Validate there are no empty password users<br>
+\#7:Check:Controllers:Controller versions<br>
+\#8:Check:Controllers:Confirm Certificate Expiration Dates<br>
+\#9:Check:Controllers:vEdge list sync<br>
+\#10:Check:Controllers: Confirm control connections<br>
 
 **_Checks with severity level: INFORMATIONAL_**<br>
-\#24:Check:vManage:Disk controller type<br>
-\#25:Check:Controllers:Validate there is at minimum vBond, vSmart present<br> 
-\#26:Check:Controllers:Validate all controllers are reachable<br>
+\#1:Check:vManage:Disk controller type<br>
+\#2:Check:Controllers:Validate there is at minimum vBond, vSmart present<br> 
+\#3:Check:Controllers:Validate all controllers are reachable<br>
 
 **_Cluster Checks with severity level: CRITICAL_**<br>
-\#27:Check:Cluster:Version consistency<br>
-\#28:Check:Cluster:Cluster health<br>
-\#29:Check:Cluster:Cluster ConfigDB topology<br>
-\#30:Check:Cluster:Messaging server<br>
-\#31:Check:Cluster:DR replication status<br>
-\#32:Check:Cluster:Intercluster communication<br>
-
+\#1:Check:Cluster:Version consistency<br>
+\#2:Check:Cluster:Cluster health<br>
+\#3:Check:Cluster:Cluster ConfigDB topology<br>
+\#4:Check:Cluster:Messaging server<br>
+\#5:Check:Cluster:DR replication status<br>
+\#6:Check:Cluster:Intercluster communication<br>

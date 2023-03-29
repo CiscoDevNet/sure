@@ -1,22 +1,25 @@
-- v3.0.0 (Pre-Release)
-  - Total Enhancements: 3
+- v3.0.0 (30th March 2023)
+  - Total Enhancements: 6
     - Split the script into Python2 and Python3 versions
       https://github.com/CiscoDevNet/sure/issues/44
     - Enhance the script for version above 20.6 
       https://github.com/CiscoDevNet/sure/issues/46
     - Change SUCCESS to SUCCESSFUL throughout the script, for uniformity with NMS team
       https://github.com/CiscoDevNet/sure/issues/52 
-
-  - Total Checks Added : 4
-    - Monitor CPU for wildfly and statsdb 
+    - Move Execution mode conditions within the check to shorten the length of script
+      https://github.com/CiscoDevNet/sure/issues/68
+    - Tabulate report file instead of sequential data 
+      https://github.com/CiscoDevNet/sure/issues/69
+    - Collecting Preliminary Data - Monitor RSS consumer JAVA process - wildfly, statsdb and neo4j
       https://github.com/CiscoDevNet/sure/issues/31
+
+  - Total Checks Added : 3
+    
     - Critical Check - Validate UUID from server configs file
     - Critical Check - Validate server configs file on vManage
     - Critical Check - Validate UUID at /etc/viptela/uuid
 
-  - Total Issues: 8
-    - error in check 9 :the JSON object must be str, not 'NoneType' 
-      https://github.com/CiscoDevNet/sure/issues/16
+  - Total Issues: 5
     - Need to sanitize user input & perform error handling 
       https://github.com/CiscoDevNet/sure/issues/24
     - Keyerror exception on 'timeRemainingForExpiration' 
@@ -27,8 +30,6 @@
       https://github.com/CiscoDevNet/sure/issues/32
     - Return the roundtrip delay for intercluster comm. 
       https://github.com/CiscoDevNet/sure/issues/33
-    - Moving the checks critical and failing the testcase 
-      https://github.com/CiscoDevNet/sure/issues/34
 
 - v2.0.0 (23th September 2022)
   - 2 new vManage checks added:
