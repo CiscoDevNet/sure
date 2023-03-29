@@ -718,8 +718,27 @@ def vmanage_tenancy_mode():
 	elif version_tuple[0:2] > ('20','5'):
 		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
 	mode = service_details['data']['mode']
-
 	return mode
+
+def checkUtilization():
+	resource_usage = executeCommand('ps aux --sort -rss -ww | head -n 5')
+	resource_usage=resource_usage.split('vmanage  ')
+	wildfly_data= [match for match in resource_usage if "wildfly" in match]
+	wildfly_data=wildfly_data[0].split(' ')
+	wildfly_data=list(filter(None,wildfly_data))
+	wildfly_cpu =wildfly_data[1]
+	wildfly_mem = wildfly_data[2]
+	neo4j_data= [match for match in resource_usage if "neo4j" in match]
+	neo4j_data=neo4j_data[0].split(' ')
+	neo4j_data=list(filter(None,neo4j_data))
+	neo4j_cpu =neo4j_data[1]
+	neo4j_mem = neo4j_data[2]
+	elasticSearch_data= [match for match in resource_usage if "elasticsearch" in match]
+	elasticSearch_data=elasticSearch_data[0].split(' ')
+	elasticSearch_data=list(filter(None,elasticSearch_data))
+	elasticSearch_cpu =elasticSearch_data[1]
+	elasticSearch_mem = elasticSearch_data[2]
+	return wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -1869,7 +1888,7 @@ def warningCheckfive(tasks):
 
 #06:Check:vManage:Validate there are no empty password users
 def warningChecksix(version_tuple):
-	if version_tuple[0:2] >= ('20','3'):
+	if version_tuple[0:2] != ('20','3'):
 		users_emptypass = []
 		check_result = 'SUCCESSFUL'
 		check_analysis = '#06:Check is not required on the current version'
@@ -2243,6 +2262,14 @@ if __name__ == "__main__":
 			vsmart_count = len(vsmart_info)
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
+
+			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
+			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
+			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
+			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
+			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
+			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
+			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
 
 			total_devices = len(controllers_info) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
@@ -3522,6 +3549,14 @@ if __name__ == "__main__":
 			vsmart_count = len(vsmart_info)
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
+
+			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
+			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
+			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
+			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
+			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
+			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
+			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
 
 			total_devices = len(controllers_info) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
@@ -4909,6 +4944,14 @@ if __name__ == "__main__":
 			vsmart_count = len(vsmart_info)
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
+
+			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
+			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
+			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
+			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
+			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
+			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
+			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
 
 			total_devices = len(controllers_info.keys()) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
