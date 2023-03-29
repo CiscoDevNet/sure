@@ -951,165 +951,171 @@ def criticalCheckeight(version_tuple):
 #09:Check:vManage:Evaluate incoming DPI data size
 def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_devices, dpi_status):
 	#es_indices = es_indices_details()
-	try:
-		api_returned_data = True
-		if dpi_status != 'enable':
-			dpi_estimate_ondeday = 0
-			for index in (es_indices_est[1]['Per index disk space ']):
-				if index['index'] == 'Approute' and index['status'] != 'success':
-						appr_estimate_ondeday = None
-				elif index['index'] == 'Approute' and index['status'] == 'success':
-						appr_estimate_ondeday = index['estimation']['1 day   ']
-						if 'KB' in appr_estimate_ondeday:
-							appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
-						elif 'MB' in appr_estimate_ondeday:
-							appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
-						elif 'GB' in appr_estimate_ondeday:
-							appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
-						elif 'TB' in appr_estimate_ondeday:
-							appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
+	appr_estimate_ondeday = None
+	dpi_estimate_ondeday = None
+	check_result = 'SUCCESSFUL'
+	check_analysis = '#09 Check will be available in the next release.'
+	check_action = None
 
-			if appr_estimate_ondeday == None:
-				check_result = 'Failed'
-				check_analysis = 'It was not possible to retrieve index data.'
-				check_action = 'Check if there is any server side error, related to API execution'
+	# try:
+	# 	api_returned_data = True
+	# 	if dpi_status != 'enable':
+	# 		dpi_estimate_ondeday = 0
+	# 		for index in (es_indices_est[1]['Per index disk space ']):
+	# 			if index['index'] == 'Approute' and index['status'] != 'success':
+	# 					appr_estimate_ondeday = None
+	# 			elif index['index'] == 'Approute' and index['status'] == 'success':
+	# 					appr_estimate_ondeday = index['estimation']['1 day   ']
+	# 					if 'KB' in appr_estimate_ondeday:
+	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
+	# 					elif 'MB' in appr_estimate_ondeday:
+	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
+	# 					elif 'GB' in appr_estimate_ondeday:
+	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
+	# 					elif 'TB' in appr_estimate_ondeday:
+	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
 
-			elif appr_estimate_ondeday != None:
-				if server_type == 'on-cloud' :
-					if appr_estimate_ondeday_gb > 500.0:
-						check_result = 'Failed'
-						check_analysis = '''The rate of incoming Approute data is higher than expected.\n
-											DPI is disabled.'''
+	# 		if appr_estimate_ondeday == None:
+	# 			check_result = 'Failed'
+	# 			check_analysis = 'It was not possible to retrieve index data.'
+	# 			check_action = 'Check if there is any server side error, related to API execution'
 
-						check_action = 'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
-					else:
-						check_result = 'SUCCESSFUL'
-						check_analysis = '''The rate of daily incoming Approute data is within limits.\n
-											DPI is disabled.'''
-						check_action = None
+	# 		elif appr_estimate_ondeday != None:
+	# 			if server_type == 'on-cloud' :
+	# 				if appr_estimate_ondeday_gb > 500.0:
+	# 					check_result = 'Failed'
+	# 					check_analysis = '''The rate of incoming Approute data is higher than expected.\n
+	# 										DPI is disabled.'''
 
-				elif server_type == 'on-prem':
-					if appr_estimate_ondeday_gb <= 50.0:
-						if cpu_count < 32 or  memory_size < 128:
-							check_result = 'Failed'
-							check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-												DPI is disabled.'''
-							check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	# 					check_action = 'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	# 				else:
+	# 					check_result = 'SUCCESSFUL'
+	# 					check_analysis = '''The rate of daily incoming Approute data is within limits.\n
+	# 										DPI is disabled.'''
+	# 					check_action = None
 
-					elif appr_estimate_ondeday_gb > 50.0 and appr_estimate_ondeday_gb <= 100.0:
-						if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-							check_result = 'Failed'
-							check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-												DPI is disabled.'''
-							check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	# 			elif server_type == 'on-prem':
+	# 				if appr_estimate_ondeday_gb <= 50.0:
+	# 					if cpu_count < 32 or  memory_size < 128:
+	# 						check_result = 'Failed'
+	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	# 											DPI is disabled.'''
+	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 
-					elif appr_estimate_ondeday_gb > 100.0 and total_devices < 1000:
-						if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-							check_result = 'Failed'
-							check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-												DPI is disabled.'''
-							check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	# 				elif appr_estimate_ondeday_gb > 50.0 and appr_estimate_ondeday_gb <= 100.0:
+	# 					if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	# 						check_result = 'Failed'
+	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	# 											DPI is disabled.'''
+	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 
-					elif appr_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
-						if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
-							check_result = 'Failed'
-							check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-												DPI is disabled.'''
-							check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
-					else:
-						check_result = 'SUCCESSFUL'
-						check_analysis = '''The rate of daily incoming Approute data is within limits.\n
-											DPI is disabled.'''
-						check_action = None
+	# 				elif appr_estimate_ondeday_gb > 100.0 and total_devices < 1000:
+	# 					if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	# 						check_result = 'Failed'
+	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	# 											DPI is disabled.'''
+	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 
-		elif dpi_status == 'enable':
-			for index in (es_indices_est[1]['Per index disk space ']):
-				if index['index'] == 'DPI' and index['status'] != 'success':
-					dpi_estimate_ondeday = None
+	# 				elif appr_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
+	# 					if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
+	# 						check_result = 'Failed'
+	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	# 											DPI is disabled.'''
+	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	# 				else:
+	# 					check_result = 'SUCCESSFUL'
+	# 					check_analysis = '''The rate of daily incoming Approute data is within limits.\n
+	# 										DPI is disabled.'''
+	# 					check_action = None
 
-				elif index['index'] == 'Approute' and index['status'] != 'success':
-					appr_estimate_ondeday = None
-					dpi_estimate_ondeday = None
+	# 	elif dpi_status == 'enable':
+	# 		for index in (es_indices_est[1]['Per index disk space ']):
+	# 			if index['index'] == 'DPI' and index['status'] != 'success':
+	# 				dpi_estimate_ondeday = None
 
-				elif index['index'] == 'DPI' and index['status'] == 'success':
-					dpi_estimate_ondeday = index['estimation']['1 day   ']
-					if 'KB' in dpi_estimate_ondeday:
-						dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024**2)
-					elif 'MB' in dpi_estimate_ondeday:
-						dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024)
-					elif 'GB' in dpi_estimate_ondeday:
-						dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])
-					elif 'TB' in dpi_estimate_ondeday:
-						dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])*(1024)
+	# 			elif index['index'] == 'Approute' and index['status'] != 'success':
+	# 				appr_estimate_ondeday = None
+	# 				dpi_estimate_ondeday = None
 
-				elif index['index'] == 'Approute' and index['status'] == 'success':
-					appr_estimate_ondeday = index['estimation']['1 day   ']
-					if 'KB' in appr_estimate_ondeday:
-						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
-					elif 'MB' in appr_estimate_ondeday:
-						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
-					elif 'GB' in appr_estimate_ondeday:
-						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
-					elif 'TB' in appr_estimate_ondeday:
-						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
+	# 			elif index['index'] == 'DPI' and index['status'] == 'success':
+	# 				dpi_estimate_ondeday = index['estimation']['1 day   ']
+	# 				if 'KB' in dpi_estimate_ondeday:
+	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024**2)
+	# 				elif 'MB' in dpi_estimate_ondeday:
+	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024)
+	# 				elif 'GB' in dpi_estimate_ondeday:
+	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])
+	# 				elif 'TB' in dpi_estimate_ondeday:
+	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])*(1024)
 
-	except:
-		dpi_estimate_ondeday = None
-		appr_estimate_ondeday = None
-		api_returned_data = False
+	# 			elif index['index'] == 'Approute' and index['status'] == 'success':
+	# 				appr_estimate_ondeday = index['estimation']['1 day   ']
+	# 				if 'KB' in appr_estimate_ondeday:
+	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
+	# 				elif 'MB' in appr_estimate_ondeday:
+	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
+	# 				elif 'GB' in appr_estimate_ondeday:
+	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
+	# 				elif 'TB' in appr_estimate_ondeday:
+	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
 
-	if api_returned_data == False:
-		check_result = 'Failed'
-		check_analysis = 'Error retrieving data using the endpoint: https://<vManage-IPAddress>:<vManage-Port>/dataservice/management/elasticsearch/index/size/estimate'
-		check_action = 'Investigate why the API is not returning appropriate data.'
-	elif api_returned_data == True:
-		if dpi_estimate_ondeday == None:
-			check_result = 'Failed'
-			check_analysis = 'The status of Index-DPI is not success'
-			check_action = 'Investigate why the Index-DPI status is not "success"'
+	# except:
+	# 	dpi_estimate_ondeday = None
+	# 	appr_estimate_ondeday = None
+	# 	api_returned_data = False
 
-		elif dpi_estimate_ondeday != None:
-			total_estimate_oneday_gb = dpi_estimate_ondeday_gb + appr_estimate_ondeday_gb
+	# if api_returned_data == False:
+	# 	check_result = 'Failed'
+	# 	check_analysis = 'Error retrieving data using the endpoint: https://<vManage-IPAddress>:<vManage-Port>/dataservice/management/elasticsearch/index/size/estimate'
+	# 	check_action = 'Investigate why the API is not returning appropriate data.'
+	# elif api_returned_data == True:
+	# 	if dpi_estimate_ondeday == None:
+	# 		check_result = 'Failed'
+	# 		check_analysis = 'The status of Index-DPI is not success'
+	# 		check_action = 'Investigate why the Index-DPI status is not "success"'
 
-			if server_type == 'on-cloud' :
-				if total_estimate_oneday_gb > 500.0:
-					check_result = 'Failed'
-					check_analysis = 'The incoming rate of DPI is higher than expected.Consider using vAnalytics for DPI. Contact Cisco TAC for more information on this.'
-					check_action = 'Server hardware size may need to be changed according to the rate of incoming DPI data.'
-				else:
-					check_result = 'SUCCESSFUL'
-					check_analysis = 'The rate of daily incoming DPI data is within limits.'
-					check_action = None
+	# 	elif dpi_estimate_ondeday != None:
+	# 		total_estimate_oneday_gb = dpi_estimate_ondeday_gb + appr_estimate_ondeday_gb
 
-			elif server_type == 'on-prem':
-				if dpi_estimate_ondeday_gb <= 50.0:
-					if cpu_count < 32 or  memory_size < 128:
-						check_result = 'Failed'
-						check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-						check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	# 		if server_type == 'on-cloud' :
+	# 			if total_estimate_oneday_gb > 500.0:
+	# 				check_result = 'Failed'
+	# 				check_analysis = 'The incoming rate of DPI is higher than expected.Consider using vAnalytics for DPI. Contact Cisco TAC for more information on this.'
+	# 				check_action = 'Server hardware size may need to be changed according to the rate of incoming DPI data.'
+	# 			else:
+	# 				check_result = 'SUCCESSFUL'
+	# 				check_analysis = 'The rate of daily incoming DPI data is within limits.'
+	# 				check_action = None
 
-				elif dpi_estimate_ondeday_gb > 50.0 and dpi_estimate_ondeday_gb <= 100.0:
-					if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-						check_result = 'Failed'
-						check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-						check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	# 		elif server_type == 'on-prem':
+	# 			if dpi_estimate_ondeday_gb <= 50.0:
+	# 				if cpu_count < 32 or  memory_size < 128:
+	# 					check_result = 'Failed'
+	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-				elif dpi_estimate_ondeday_gb > 100.0 and total_devices < 1000:
-					if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-						check_result = 'Failed'
-						check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-						check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	# 			elif dpi_estimate_ondeday_gb > 50.0 and dpi_estimate_ondeday_gb <= 100.0:
+	# 				if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	# 					check_result = 'Failed'
+	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-				elif dpi_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
-					if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
-						check_result = 'Failed'
-						check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-						check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	# 			elif dpi_estimate_ondeday_gb > 100.0 and total_devices < 1000:
+	# 				if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	# 					check_result = 'Failed'
+	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-				else:
-					check_result = 'SUCCESSFUL'
-					check_analysis = '''The rate of daily incoming DPI data is within limits.'''
-					check_action = None
+	# 			elif dpi_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
+	# 				if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
+	# 					check_result = 'Failed'
+	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+
+	# 			else:
+	# 				check_result = 'SUCCESSFUL'
+	# 				check_analysis = '''The rate of daily incoming DPI data is within limits.'''
+	# 				check_action = None
 
 	return  appr_estimate_ondeday, dpi_estimate_ondeday, check_result, check_analysis, check_action
 
