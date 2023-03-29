@@ -2054,7 +2054,7 @@ def infoChecktwo(vsmart_count, vbond_count):
 
 
 #03:Check:Controllers:Validate all controllers are reachable
-def infoChecktthree(controllers_info):
+def infoCheckthree(controllers_info):
 	unreach_controllers = []
 	for controller in controllers_info:
 		if (controllers_info[controller][3]) != 'reachable' :
@@ -4632,7 +4632,7 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			unreach_controllers,check_result, check_analysis, check_action = infoChecktthree(controllers_info)
+			unreach_controllers,check_result, check_analysis, check_action = infoCheckthree(controllers_info)
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -5758,41 +5758,6 @@ if __name__ == "__main__":
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
 			log_file_logger.exception('{}\n'.format(e))
 
-		#Check:vManage:Validate there are no empty password users
-		check_count += 1
-		check_count_zfill = zfill_converter(check_count)
-		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
-		if args.debug == True or args.verbose == True:
-			print(' #{}:Checking:vManage:Validate there are no empty password users'.format(check_count_zfill))
-		check_name = '#{}:Check:vManage:Validate there are no empty password users'.format(check_count_zfill)
-		pre_check(log_file_logger, check_name)
-		try:
-
-			users_emptypass, check_result, check_analysis, check_action = warningChecksix(version_tuple)
-			if check_result == 'Failed':
-				warning_checks[check_name] = [ check_analysis, check_action]
-				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				log_file_logger.error('#{}: Users with empty passwords: {}\n'.format(check_count_zfill, users_emptypass))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
-				if args.debug == True:
-					print('\033[1;31m WARNING: {} \033[0;0m \n\n '.format(check_analysis))
-			else:
-				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-				if args.debug == True:
-					print(' INFO:{}\n\n'.format(check_analysis))
-			json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															'log type': '{}'.format(result_log['Warning'][check_result]),
-															'result': '{}'.format(check_analysis),
-															'action': '{}'.format(check_action),
-															'status': '{}'.format(check_result),
-															'document': ''})
-		except Exception as e:
-			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
-			log_file_logger.exception('{}\n'.format(e))
-
-
 		#Check:Controllers:Controller versions
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
@@ -6014,7 +5979,7 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			unreach_controllers,check_result, check_analysis, check_action = infoChecktthree(controllers_info)
+			unreach_controllers,check_result, check_analysis, check_action = infoCheckthree(controllers_info)
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
