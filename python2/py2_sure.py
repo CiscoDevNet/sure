@@ -615,8 +615,28 @@ def vmanage_tenancy_mode():
 	elif version_tuple[0:2] >= ('19','2') and version_tuple[0:2] < ('20','5'):
 		service_details = json.loads(getRequest(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
 	mode = service_details['data']['mode']
-
 	return mode
+
+def checkUtilization():
+	resource_usage = executeCommand('ps aux --sort -rss -ww | head -n 5')
+	resource_usage=resource_usage.split('vmanage  ')
+	wildfly_data= [match for match in resource_usage if "wildfly" in match]
+	wildfly_data=wildfly_data[0].split(' ')
+	wildfly_data=list(filter(None,wildfly_data))
+	wildfly_cpu =wildfly_data[1]
+	wildfly_mem = wildfly_data[2]
+	neo4j_data= [match for match in resource_usage if "neo4j" in match]
+	neo4j_data=neo4j_data[0].split(' ')
+	neo4j_data=list(filter(None,neo4j_data))
+	neo4j_cpu =neo4j_data[1]
+	neo4j_mem = neo4j_data[2]
+	elasticSearch_data= [match for match in resource_usage if "elasticsearch" in match]
+	elasticSearch_data=elasticSearch_data[0].split(' ')
+	elasticSearch_data=list(filter(None,elasticSearch_data))
+	elasticSearch_cpu =elasticSearch_data[1]
+	elasticSearch_mem = elasticSearch_data[2]
+	return wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem
+
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
 
@@ -634,7 +654,7 @@ def criticalCheckone(version):
 
 	#vmanage version
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-	elif vmanage_version == 20.4:
+	if vmanage_version == 20.4:
 		#print('between 20.3 and 20.6')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, Direct Upgrade to to release in 20.9 and For cluster upgrade make sure to perform procedure**: request nms configuration-db upgrade'
@@ -1818,7 +1838,7 @@ def infoChecktwo(vsmart_count, vbond_count):
 
 
 #03:Check:Controllers:Validate all controllers are reachable
-def infoChecktthree(controllers_info):
+def infoCheckthree(controllers_info):
 	unreach_controllers = []
 	for controller in controllers_info:
 		if (controllers_info[controller][3]) != 'reachable' :
@@ -2026,6 +2046,14 @@ if __name__ == "__main__":
 			vsmart_count = len(vsmart_info)
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
+
+			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
+			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
+			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
+			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
+			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
+			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
+			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
 
 			total_devices = len(controllers_info) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
@@ -2992,7 +3020,7 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			unreach_controllers,check_result, check_analysis, check_action = infoChecktthree(controllers_info)
+			unreach_controllers,check_result, check_analysis, check_action = infoCheckthree(controllers_info)
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -3305,6 +3333,14 @@ if __name__ == "__main__":
 			vsmart_count = len(vsmart_info)
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
+
+			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
+			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
+			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
+			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
+			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
+			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
+			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
 
 			total_devices = len(controllers_info) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
@@ -4380,7 +4416,7 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			unreach_controllers,check_result, check_analysis, check_action = infoChecktthree(controllers_info)
+			unreach_controllers,check_result, check_analysis, check_action = infoCheckthree(controllers_info)
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
