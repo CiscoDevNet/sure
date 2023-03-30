@@ -12,7 +12,7 @@ All rights reserved.
 ------------------------------------------------------------------
 """
 
-__sure_version =  "2.0.0"
+__sure_version =  "3.0.0"
 
 #Common Imports
 import os
@@ -237,9 +237,12 @@ def CSRFToken(vManageIP,JSessionID,Port):
 	else:
 		command = 'curl --insecure -s https://{}:{}/dataservice/client/token?json=true -H "Cookie: JSESSIONID={}"'.format(vManageIP, Port, JSessionID)
 		tokenid= executeCommand(command)
-	tokenid = json.loads(tokenid)
-	tokenid = tokenid["token"]
-	return tokenid
+	try:
+		tokenid = json.loads(tokenid)
+		tokenid = tokenid["token"]
+		return tokenid
+	except: 
+		return tokenid
 
 
 def getRequest(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenID = None):
@@ -758,22 +761,27 @@ def criticalCheckone(version):
 	#vmanage version
 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
 	if vmanage_version > 20.9:
+		#print('>20.9')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, which is the latest version.'.format(version)
 		check_action = None
 	elif vmanage_version == 20.9:
+		#print('20.9')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, and Direct Upgrade to release 20.10 is possible'.format(version)
 		check_action = None
 	elif vmanage_version == 20.8:
+		#print('20.8')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, and Direct Upgrade to 20.9 is possible AND Step upgrade from 20.9.x to 20.10'.format(version)
 		check_action = None
 	elif vmanage_version == 20.7:
+		#print('20.7')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, and Direct Upgrade to 20.9 is possible AND Step upgrade from 20.9.x to 20.10'.format(version)
 		check_action = None
 	elif vmanage_version == 20.6:
+		#print('20.6')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, and Direct Upgrade to release 20.9 is possible OR Step upgrade from 20.6.1, 20.6.2, and 20.6.3 either to 20.6.4 or 20.9.x to 20.10 '.format(version)
 		check_action = None
@@ -783,7 +791,7 @@ def criticalCheckone(version):
 		check_analysis = 'Current vManage version is {}, and Step upgrade from 20.6 or 20.9 to release 20.10'.format(version)
 		check_action = None
 	elif vmanage_version == 20.4:
-		#print('between 20.3 and 20.6')
+		#print('20.4')
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, Direct Upgrade to to release in 20.9 and For cluster upgrade make sure to perform procedure**: request nms configuration-db upgrade'
 		check_action = None
@@ -797,7 +805,7 @@ def criticalCheckone(version):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, Step Upgrade through 20.3 to release 20.9 is possible'
 		check_action = None
-	elif vmanage_version >= 18.3 and    vmanage_version <= 19.2:
+	elif vmanage_version >= 18.3 and    vmanage_version <= 19.3:
 		#print('between 18.3 and 19.2')
 		if boot_partition_size_Gig <= 2.0:
 			#print(boot_partition_size_Gig)
@@ -849,43 +857,43 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 	if dpi_status == 'enable' and server_type == 'on-prem':
 		if memory_size < 128:
 			check_result = 'Failed'
-			check_analysis = 'Memory size is below the hardware size recommendations when DPI is enabled. Memory size should be 128 GB.\n For more information please check: https://www.cisco.com/c/en/us/td/docs/routers/sdwan/release/notes/compatibility-and-server-recommendations/ch-server-recs-20-3.html'
+			check_analysis = 'Memory size is {} GB, it is below the hardware size recommendations when DPI is enabled. Memory size should be 128 GB.\n For more information please check: https://www.cisco.com/c/en/us/td/docs/routers/sdwan/release/notes/compatibility-and-server-recommendations/ch-server-recs-20-3.html'.format(memory_size)
 			check_action = 'Correct the memory available to the server'
 	elif dpi_status != 'enable' and server_type == 'on-prem':
 		if cluster_size == 1:
 			if memory_size < 32:
 				check_result = 'Failed'
-				check_analysis = '''The current memory size does not meet minimum hardware recommendations.\n
-									Memory size must be 32 GB or higher.'''
+				check_analysis = '''The current memory size is {} GB, it does not meet minimum hardware recommendations.\n
+									Memory size must be 32 GB or higher.'''.format(memory_size)
 				check_action = 'Correct the memory available to the server'
 			elif vedge_count > 250 and vedge_count <= 1000 and memory_size < 64:
 				check_result = 'Failed'
-				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
-									Memory size should be 64 GB or higher, as per documented hardware recommendations.'''
+				check_analysis = '''Current memory size is {} GB. Because of current vEdge device count, the memory size is insufficient to perform upgrade.\n
+									Memory size should be 64 GB or higher, as per documented hardware recommendations.'''.format(memory_size)
 				check_action = 'Correct the memory available to the server'
 			elif vedge_count > 1000 and vedge_count <= 1500 and memory_size < 128:
 				check_result = 'Failed'
-				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
-									Memory size should be 128 GB, as per documented hardware recommendations.'''
+				check_analysis = '''Current memory size is {} GB. Because of current vEdge device count, the memory size is insufficient to perform upgrade.\n
+									Memory size should be 128 GB, as per documented hardware recommendations.'''.format(memory_size)
 				check_action = 'Correct the memory available to the server'
 			elif vedge_count > 1500:
 				check_result = 'Failed'
-				check_analysis = 'xEdge device count is more than 1500, it exceeds supported scenarios.'
+				check_analysis = 'Current memory size is {} GB. But vEdge device count is more than 1500, it exceeds supported scenarios.'.format(memory_size)
 				check_action = 'Please implement network changes to bring the scale into supported range'
 		elif cluster_size>1:
 			if vedge_count <= 2000 and memory_size < 64:
 				check_result = 'Failed'
-				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
-									Memory size should be 64 GB or higher, as per documented hardware recommendations.'''
+				check_analysis = '''Current memory size is {} GB. Because of current vEdge device count, the memory size is insufficient to perform upgrade.\n
+									Memory size should be 64 GB or higher, as per documented hardware recommendations.'''.format(memory_size)
 				check_action = 'Correct the memory available to the server'
 			elif vedge_count > 2000 and vedge_count <= 5000 and memory_size < 128:
 				check_result = 'Failed'
-				check_analysis = '''Because of current xEdge device count, the memory size is insufficient to perform upgrade.\n
-									Memory size should be 128 GB, as per documented hardware recommendations.'''
+				check_analysis = '''Current memory size is {} GB. Because of current vEdge device count, the memory size is insufficient to perform upgrade.\n
+									Memory size should be 128 GB, as per documented hardware recommendations.'''.format(memory_size)
 				check_action = 'Correct the memory available to the server'
 			elif vedge_count > 5000:
 				check_result = 'Failed'
-				check_analysis = 'xEdge device count is more than 5000, it exceeds supported scenarios.'
+				check_analysis = 'Current memory size is {} GB. But vEdge device count is more than 5000, it exceeds supported scenarios.'.format(memory_size)
 				check_action = 'Please evaluate current overlay design.'
 	else:
 		check_result = 'SUCCESSFUL'
@@ -1350,32 +1358,38 @@ def criticalCheckeighteen(version_tuple):
 #12:Check:vManage:Validate ConfigDB Size is less than 5GB
 #32:Check: Add warning incase DB Slicing is required. 
 
-def criticalChecknineteen():
-	db_data = showCommand('request nms configuration-db diagnostics')
-	if 'Disk space used by configuration' in db_data:
-		db_size = db_data.split('\n')[-2]
-		db_size = match(db_size, '\d+\.?\d*[BKMGT]')
-		if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
-			check_result = 'Failed'
-			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup/slicing'
-		elif db_size[-1] == 'G' and float(db_size[0:-1]) >= 5.0:
-			check_result = 'Failed'
-			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup/slicing'
-		elif db_size[-1] == 'T' and float(db_size[0:-1])*1000 >= 5.0:
-			check_result = 'Failed'
-			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
-			check_action = 'Contact TAC  to do DB cleanup/slicing'
-		else:
-			check_result = 'SUCCESSFUL'
-			check_analysis = 'The ConfigDB size is {} which is within limits i.e less than 5GB'.format(db_size)
-			check_action = None
-	else:
+def criticalChecknineteen(version_tuple):
+	if version_tuple[0:2] <= ('19','3'):
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Check is not required on version 19.2 and below.'
+		check_action = None
 		db_size = 'unknown'
-		check_result = 'Failed'
-		check_analysis = 'Error retrieving the ConfigDB size.'
-		check_action = 'Investigate why the command (request nms configuration-db diagnostics) is not returning appropriate data.'
+	else:	
+		db_data = showCommand('request nms configuration-db diagnostics')
+		if 'Disk space used by configuration' in db_data:
+			db_size = db_data.split('\n')[-2]
+			db_size = match(db_size, '\d+\.?\d*[BKMGT]')
+			if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
+				check_result = 'Failed'
+				check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
+				check_action = 'Contact TAC  to do DB cleanup/slicing'
+			elif db_size[-1] == 'G' and float(db_size[0:-1]) >= 5.0:
+				check_result = 'Failed'
+				check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
+				check_action = 'Contact TAC  to do DB cleanup/slicing'
+			elif db_size[-1] == 'T' and float(db_size[0:-1])*1000 >= 5.0:
+				check_result = 'Failed'
+				check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
+				check_action = 'Contact TAC  to do DB cleanup/slicing'
+			else:
+				check_result = 'SUCCESSFUL'
+				check_analysis = 'The ConfigDB size is {} which is within limits i.e less than 5GB'.format(db_size)
+				check_action = None
+		else:
+			db_size = 'unknown'
+			check_result = 'Failed'
+			check_analysis = 'Error retrieving the ConfigDB size.'
+			check_action = 'Investigate why the command (request nms configuration-db diagnostics) is not returning appropriate data.'
 	table_data.append(['Config DB size',str(db_size),"5GB",check_result,check_analysis,str(check_action)])
 	return db_size, check_result, check_analysis, check_action
 
@@ -2012,7 +2026,7 @@ def warningCheckten(vsmart_count, vbond_count):
 		check_action = None
 	return control_sum_tab, discrepancy, check_result, check_analysis, check_action
 
-#11:Check:xEdge:Version compatibility
+#11:Check:vEdge:Version compatibility
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -2194,16 +2208,6 @@ if __name__ == "__main__":
 	else:
 		log_file_logger.info('Executing the script in Normal execution mode')
 
-#Execution of modes
-	if args.quiet == True:
-		log_file_logger.info('Executing the script in quiet execution mode')
-	elif args.verbose == True:
-		log_file_logger.info('Executing the script in Verbose execution mode')
-	elif args.debug == True:
-		log_file_logger.info('Executing the script in Debug execution mode')
-	else:
-		log_file_logger.info('Executing the script in Normal execution mode')
-
 	#version below 19.2
 	if version_tuple[0:2] < ('19','2'):
 			#Creating a session
@@ -2234,14 +2238,14 @@ if __name__ == "__main__":
 			table_data.append(['vManage System IP address',str(system_ip)])
 
 			cpu_speed = cpuSpeed()
-			table_data.append(['vManage System IP address',str(cpu_speed)])
+			table_data.append(['vManage CPU Speed',str(cpu_speed)])
 
 			cpu_count = cpuCount()
 			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 			vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-			table_data.append(['xEdge Count',str(vedge_count)])	
+			table_data.append(['vEdge Count',str(vedge_count)])	
 
 			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
 			table_data.append(['vManage Cluster Size',str(cluster_size)])	
@@ -2319,7 +2323,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: version: {}'.format(check_count_zfill, version))
 				log_file_logger.error('#{}: Boot Partition Size: {}\n'.format(check_count_zfill, boot_partition_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -2356,7 +2360,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: /opt/data Used: {}'.format(check_count_zfill, optdata_partition_size))
 				log_file_logger.error('#{}: /rootfs.rw Used: {}\n'.format(check_count_zfill, rootfs_partition_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2394,7 +2398,7 @@ if __name__ == "__main__":
 				log_file_logger.error('#{}: /rootfs.rw Used: {}'.format(check_count_zfill, rootfs_partition_size))
 				log_file_logger.error('#{}: Server Type: {}'.format(check_count_zfill, server_type))
 				log_file_logger.error('#{}: vEdge Count: {}\n'.format(check_count_zfill, vedge_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -2429,7 +2433,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: CPU Count: {}\n'.format(check_count_zfill, cpu_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2470,7 +2474,7 @@ if __name__ == "__main__":
 			if check_result_one == 'Failed' and check_result_two == 'Failed':
 				critical_checks[check_name] = [ check_analysis_two, check_action_two]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis_two))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -2523,7 +2527,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2558,7 +2562,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: List of services that are enabled but not running:\n{}'.format(check_count_zfill, nms_failed))
 				log_file_logger.error('#{}: Status of all services  :\n{}\n'.format(check_count_zfill, nms_data))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -2595,7 +2599,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: List of indices with older versions  :\n{}\n'.format(check_count_zfill, version_list))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2632,7 +2636,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Daily incoming DPI data : {}'.format(check_count_zfill, dpi_estimate_ondeday))
 				log_file_logger.error('#{}: Daily incoming Approute data : {}\n'.format(check_count_zfill, appr_estimate_ondeday))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2667,7 +2671,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Devices with invalid ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonworking))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2701,7 +2705,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2731,12 +2735,12 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:vManage:Validate ConfigDB Size is less than 5GB'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			db_size, check_result, check_analysis, check_action = criticalChecknineteen()
+			db_size, check_result, check_analysis, check_action = criticalChecknineteen(version_tuple)
 			if check_result == 'Failed':
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2789,7 +2793,7 @@ if __name__ == "__main__":
 				log_file_logger.error('#{}: vSmarts with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vsmarts))
 				log_file_logger.error('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
 				log_file_logger.error('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2820,7 +2824,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
@@ -2831,7 +2835,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2854,7 +2858,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Network Card type'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Network Card type'.format(check_count_zfill)
@@ -2865,7 +2869,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Ethercardswith e1000 card types: {}\n'.format(check_count_zfill, eth_drivers))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2887,7 +2891,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Backup status'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Backup status'.format(check_count_zfill)
@@ -2898,7 +2902,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Last Backup was performed on: {}\n'.format(check_count_zfill, date_time_obj))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2921,7 +2925,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Evaluate Neo4j performance'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Evaluate Neo4j performance'.format(check_count_zfill)
@@ -2931,7 +2935,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2954,7 +2958,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Confirm there are no pending tasks'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Confirm there are no pending tasks'.format(check_count_zfill)
@@ -2966,7 +2970,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Tasks still running: {}\n'.format(check_count_zfill, tasks_running))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -2989,7 +2993,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Validate there are no empty password users'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Validate there are no empty password users'.format(check_count_zfill)
@@ -3000,7 +3004,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Users with empty passwords: {}\n'.format(check_count_zfill, users_emptypass))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3022,7 +3026,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:Controller versions'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Controller versions'.format(check_count_zfill)
@@ -3032,7 +3036,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3054,7 +3058,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
@@ -3065,7 +3069,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Controllers with certificates close to expiration:\n{}\n'.format(check_count_zfill,controllers_exp))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3087,7 +3091,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:vEdge list sync'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:vEdge list sync'.format(check_count_zfill)
@@ -3098,7 +3102,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Controllers with inconsistent state_vedgeList: {}\n'.format(check_count_zfill, state_vedgeList))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3121,7 +3125,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers: Confirm control connections'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers: Confirm control connections'.format(check_count_zfill)
@@ -3132,7 +3136,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Control  Connections Summary: \n{}\n'.format(check_count_zfill, control_sum_tab))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3159,9 +3163,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:vManage:Disk controller type'.format(check_count_zfill))
+			print(' #{}:Checking:vManage:Disk controller type'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Disk controller type'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -3170,7 +3174,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Disk Controller type: {}\n'.format(check_count_zfill, disk_controller))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3194,9 +3198,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:Controllers:Validate there is at minimum vBond, vSmart present '.format(check_count_zfill))
+			print(' #{}:Checking:Controllers:Validate there is at minimum vBond, vSmart present '.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Validate there is at minimum vBond, vSmart present'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -3206,7 +3210,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: vSmart Count: {}'.format(check_count_zfill, vsmart_count))
 				log_file_logger.error('#{}: vBond Count: {}\n'.format(check_count_zfill, vbond_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3230,9 +3234,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
+			print(' #{}:Checking:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -3241,7 +3245,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Unreachable Controllers: {}\n'.format(check_count_zfill, unreach_controllers))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3264,13 +3268,14 @@ if __name__ == "__main__":
 			cluster_checks = {}
 
 			log_file_logger.info('*** Performing Cluster Checks')
-			print('\n**** Performing Cluster checks\n')
+			if args.quiet == False:
+				print('\n**** Performing Cluster checks\n')
 
 			#Check:Cluster:Version consistency
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Version consistency'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Version consistency'.format(check_count_zfill)
@@ -3281,7 +3286,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: vManage info: {}\n'.format(check_count_zfill, vmanage_info))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -3305,7 +3310,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Cluster health'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Cluster health'.format(check_count_zfill)
@@ -3316,7 +3321,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Relevant cluster services that are down: {}\n'.format(check_count_zfill, services_down))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -3340,7 +3345,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Cluster ConfigDB topology'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Cluster ConfigDB topology'.format(check_count_zfill)
@@ -3351,7 +3356,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: No. of configDB servers in the cluster: {}\n'.format(check_count_zfill, configDB_count))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -3375,7 +3380,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Messaging server'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Messaging server'.format(check_count_zfill)
@@ -3386,7 +3391,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Servers with messaging service down: {}\n'.format(check_count_zfill, cluster_msdown))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -3409,7 +3414,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:DR replication status'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:DR replication status'.format(check_count_zfill)
@@ -3421,7 +3426,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: DR Replication status: {}\n'.format(check_count_zfill, dr_status))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -3444,7 +3449,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Intercluster communication'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Intercluster communication'.format(check_count_zfill)
@@ -3459,7 +3464,7 @@ if __name__ == "__main__":
 						cluster_checks[check_name] = [ check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 						log_file_logger.error('#{}: Cluster nodes with ping failure: {}\n'.format(check_count_zfill, ping_output_failed))
-						report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+						report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 						if args.debug == True:
 							print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 					else:
@@ -3521,14 +3526,14 @@ if __name__ == "__main__":
 			table_data.append(['vManage System IP address',str(system_ip)])
 
 			cpu_speed = cpuSpeed()
-			table_data.append(['vManage System IP address',str(cpu_speed)])
+			table_data.append(['vManage CPU Speed',str(cpu_speed)])
 
 			cpu_count = cpuCount()
 			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 			vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
 			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-			table_data.append(['xEdge Count',str(vedge_count)])	
+			table_data.append(['vEdge Count',str(vedge_count)])	
 
 			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
 			table_data.append(['vManage Cluster Size',str(cluster_size)])	
@@ -3609,7 +3614,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: version: {}'.format(check_count_zfill, version))
 				log_file_logger.error('#{}: Boot Partition Size: {}\n'.format(check_count_zfill, boot_partition_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3646,7 +3651,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: /opt/data Used: {}'.format(check_count_zfill, optdata_partition_size))
 				log_file_logger.error('#{}: /rootfs.rw Used: {}\n'.format(check_count_zfill, rootfs_partition_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3685,7 +3690,7 @@ if __name__ == "__main__":
 				log_file_logger.error('#{}: /rootfs.rw Used: {}'.format(check_count_zfill, rootfs_partition_size))
 				log_file_logger.error('#{}: Server Type: {}'.format(check_count_zfill, server_type))
 				log_file_logger.error('#{}: vEdge Count: {}\n'.format(check_count_zfill, vedge_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3719,7 +3724,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: CPU Count: {}\n'.format(check_count_zfill, cpu_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3759,7 +3764,7 @@ if __name__ == "__main__":
 			if check_result_one == 'Failed' and check_result_two == 'Failed':
 				critical_checks[check_name] = [ check_analysis_two, check_action_two]
 				check_error_logger(log_file_logger, check_result_two, check_action_two, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis_two,str(check_action_two)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis_two,str(check_action_two)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis_two))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -3809,7 +3814,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3844,7 +3849,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: List of services that are enabled but not running:\n{}\n'.format(check_count_zfill, nms_failed))
 				log_file_logger.error('#{}: Status of all services  :\n{}\n'.format(check_count_zfill, nms_data))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -3881,7 +3886,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: List of indices with older versions  :\n{}\n'.format(check_count_zfill, version_list))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -3918,7 +3923,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Daily incoming DPI data : {}'.format(check_count_zfill, dpi_estimate_ondeday))
 				log_file_logger.error('#{}: Daily incoming Approute data : {}\n'.format(check_count_zfill, appr_estimate_ondeday))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3953,7 +3958,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Devices with invalid ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonworking))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -3986,7 +3991,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4015,12 +4020,12 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:vManage:Validate ConfigDB Size is less than 5GB'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			db_size, check_result, check_analysis, check_action = criticalChecknineteen()
+			db_size, check_result, check_analysis, check_action = criticalChecknineteen(version_tuple)
 			if check_result == 'Failed':
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4073,7 +4078,7 @@ if __name__ == "__main__":
 				log_file_logger.error('#{}: vSmarts with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vsmarts))
 				log_file_logger.error('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
 				log_file_logger.error('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4107,7 +4112,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4141,7 +4146,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4175,7 +4180,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4206,7 +4211,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
@@ -4217,7 +4222,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4240,7 +4245,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Network Card type'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Network Card type'.format(check_count_zfill)
@@ -4251,7 +4256,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Ethercardswith e1000 card types: {}\n'.format(check_count_zfill, eth_drivers))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4274,7 +4279,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Backup status'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Backup status'.format(check_count_zfill)
@@ -4285,7 +4290,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Last Backup was performed on:{}\n'.format(check_count_zfill, date_time_obj))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4308,7 +4313,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Evaluate Neo4j performance'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Evaluate Neo4j performance'.format(check_count_zfill)
@@ -4318,7 +4323,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4341,7 +4346,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Confirm there are no pending tasks'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Confirm there are no pending tasks'.format(check_count_zfill)
@@ -4353,7 +4358,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Tasks still running: {}\n'.format(check_count_zfill, tasks_running))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4377,7 +4382,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Validate there are no empty password users'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Validate there are no empty password users'.format(check_count_zfill)
@@ -4388,7 +4393,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Users with empty passwords: {}\n'.format(check_count_zfill, users_emptypass))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n '.format(check_analysis))
 			else:
@@ -4411,7 +4416,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:Controller versions'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Controller versions'.format(check_count_zfill)
@@ -4421,7 +4426,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4444,7 +4449,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
@@ -4455,7 +4460,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -4479,7 +4484,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:vEdge list sync'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:vEdge list sync'.format(check_count_zfill)
@@ -4490,7 +4495,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Controllers with inconsistent state_vedgeList: {}\n'.format(check_count_zfill, state_vedgeList))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4514,7 +4519,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers: Confirm control connections'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers: Confirm control connections'.format(check_count_zfill)
@@ -4525,7 +4530,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Control  Connections Summary: \n{}\n'.format(check_count_zfill, control_sum_tab))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4554,9 +4559,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:vManage:Disk controller type'.format(check_count_zfill))
+			print(' #{}:Checking:vManage:Disk controller type'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Disk controller type'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -4565,7 +4570,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Disk Controller type: {}\n'.format(check_count_zfill, disk_controller))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m\n\n'.format(check_analysis))
 			else:
@@ -4588,9 +4593,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:Controllers:Validate there is at minimum vBond, vSmart present '.format(check_count_zfill))
+			print(' #{}:Checking:Controllers:Validate there is at minimum vBond, vSmart present '.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Validate there is at minimum vBond, vSmart present'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -4600,7 +4605,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: vSmart Count: {}'.format(check_count_zfill, vsmart_count))
 				log_file_logger.error('#{}: vBond Count: {}\n'.format(check_count_zfill, vbond_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4626,9 +4631,9 @@ if __name__ == "__main__":
 		check_count_zfill = zfill_converter(check_count)
 
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
+			print(' #{}:Checking:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -4637,7 +4642,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Unreachable Controllers: {}\n'.format(check_count_zfill, unreach_controllers))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -4660,13 +4665,14 @@ if __name__ == "__main__":
 			cluster_checks = {}
 
 			log_file_logger.info('*** Performing Cluster Checks')
-			print('\n**** Performing Cluster checks\n')
+			if args.quiet == False:
+				print('\n**** Performing Cluster checks\n')
 
 			#Check:Cluster:Version consistency
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Version consistency'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Version consistency'.format(check_count_zfill)
@@ -4677,7 +4683,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: vManage info: {}\n'.format(check_count_zfill, vmanage_info))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -4701,7 +4707,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Cluster health'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Cluster health'.format(check_count_zfill)
@@ -4712,7 +4718,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Relevant cluster services that are down: {}\n'.format(check_count_zfill, services_down))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 				else:
@@ -4735,7 +4741,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Cluster ConfigDB topology'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Cluster ConfigDB topology'.format(check_count_zfill)
@@ -4746,7 +4752,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: No. of configDB servers in the cluster: {}\n'.format(check_count_zfill, configDB_count))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 				else:
@@ -4769,7 +4775,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Messaging server'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Messaging server'.format(check_count_zfill)
@@ -4802,7 +4808,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:DR replication status'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:DR replication status'.format(check_count_zfill)
@@ -4814,7 +4820,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: DR Replication status: {}\n'.format(check_count_zfill, dr_status))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 
@@ -4839,7 +4845,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Intercluster communication'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Intercluster communication'.format(check_count_zfill)
@@ -4854,13 +4860,13 @@ if __name__ == "__main__":
 						cluster_checks[check_name] = [ check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 						log_file_logger.error('#{}: Cluster nodes with ping failure: {}\n'.format(check_count_zfill, ping_output_failed))
-						report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+						report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 						if args.debug == True:
 							print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
 					else:
 						check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-						log_file_logger.info('#{}: Cluster nodes details: {}\n'.format(ping_output))
+						log_file_logger.info('#{}: Cluster nodes details: {}\n'.format(check_count_zfill, ping_output))
 						report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 						if args.debug == True:
 							print(' INFO:{}\n\n'.format(check_analysis))
@@ -4916,14 +4922,14 @@ if __name__ == "__main__":
 			table_data.append(['vManage System IP address',str(system_ip)])	
 
 			cpu_speed = cpuSpeed()
-			table_data.append(['vManage System IP address',str(cpu_speed)])	
+			table_data.append(['vManage CPU Speed',str(cpu_speed)])	
 
 			cpu_count = cpuCount()
 			table_data.append(['vManage CPU Count',str(cpu_count)])	
 
 			vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
 			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-			table_data.append(['xEdge Count',str(vedge_count)])	
+			table_data.append(['vEdge Count',str(vedge_count)])	
 
 			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
 			table_data.append(['vManage Cluster Size',str(cluster_size)])	
@@ -5006,7 +5012,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: version: {}'.format(check_count_zfill, version))
 				log_file_logger.error('#{}: Boot Partition Size: {}\n'.format(check_count_zfill, boot_partition_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5042,7 +5048,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: /opt/data Used: {}'.format(check_count_zfill, optdata_partition_size))
 				log_file_logger.error('#{}: /rootfs.rw Used: {}\n'.format(check_count_zfill, rootfs_partition_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5081,7 +5087,7 @@ if __name__ == "__main__":
 				log_file_logger.error('#{}: /rootfs.rw Used: {}'.format(check_count_zfill, rootfs_partition_size))
 				log_file_logger.error('#{}: Server Type: {}'.format(check_count_zfill, server_type))
 				log_file_logger.error('#{}: vEdge Count: {}\n'.format(check_count_zfill, vedge_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5115,7 +5121,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: CPU Count: {}\n'.format(check_count_zfill, cpu_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5154,7 +5160,7 @@ if __name__ == "__main__":
 			if check_result_one == 'Failed' and check_result_two == 'Failed':
 				critical_checks[check_name] = [ check_analysis_two, check_action_two]
 				check_error_logger(log_file_logger, check_result, check_analysis_two, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis_two))
 				json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
@@ -5203,7 +5209,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5237,7 +5243,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: List of services that are enabled but not running:\n{}'.format(check_count_zfill, nms_failed))
 				log_file_logger.error('#{}: Status of all services  :\n{}\n'.format(check_count_zfill, nms_data))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -5272,7 +5278,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: List of indices with older versions  :\n{}\n'.format(check_count_zfill, version_list))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -5308,7 +5314,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Daily incoming DPI data : {}'.format(check_count_zfill, dpi_estimate_ondeday))
 				log_file_logger.error('#{}: Daily incoming Approute data : {}\n'.format(check_count_zfill, appr_estimate_ondeday))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5342,7 +5348,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Devices with invalid ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonworking))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5375,7 +5381,7 @@ if __name__ == "__main__":
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Neo4j Store version: {}\n'.format(check_count_zfill, nodestore_version))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5404,12 +5410,12 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:vManage:Validate ConfigDB Size is less than 5GB'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			db_size, check_result, check_analysis, check_action = criticalChecknineteen()
+			db_size, check_result, check_analysis, check_action = criticalChecknineteen(version_tuple)
 			if check_result == 'Failed':
 				critical_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: ConfigDB Size: {}\n'.format(check_count_zfill, db_size))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5462,7 +5468,7 @@ if __name__ == "__main__":
 				log_file_logger.error('#{}: vSmarts with insufficient CPU count: \n{}'.format(check_count_zfill, failed_vsmarts))
 				log_file_logger.error('#{}: All vBonds info with total_cpu_count: \n{}'.format(check_count_zfill, vbond_info))
 				log_file_logger.error('#{}: All vSmarts info with total_cpu_count: \n{}\n'.format(check_count_zfill, vsmart_info))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5496,7 +5502,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5530,7 +5536,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5564,7 +5570,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				critical_checks[check_name] = [check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5595,7 +5601,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
@@ -5606,7 +5612,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill,cpu_speed))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 
@@ -5629,7 +5635,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Network Card type'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Network Card type'.format(check_count_zfill)
@@ -5640,7 +5646,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Ethercardswith e1000 card types: {}\n'.format(check_count_zfill, eth_drivers))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5663,7 +5669,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Backup status'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Backup status'.format(check_count_zfill)
@@ -5674,7 +5680,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Last Backup was performed on:{}\n'.format(check_count_zfill, date_time_obj))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5696,7 +5702,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Evaluate Neo4j performance'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Evaluate Neo4j performance'.format(check_count_zfill)
@@ -5706,7 +5712,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5728,7 +5734,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:vManage:Confirm there are no pending tasks'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Confirm there are no pending tasks'.format(check_count_zfill)
@@ -5740,7 +5746,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Tasks still running: {}\n'.format(check_count_zfill, tasks_running))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5762,7 +5768,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:Controller versions'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Controller versions'.format(check_count_zfill)
@@ -5772,7 +5778,7 @@ if __name__ == "__main__":
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5795,7 +5801,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Confirm Certificate Expiration Dates'.format(check_count_zfill)
@@ -5806,7 +5812,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Controllers with certificates close to expiration: \n{}\n'.format(check_count_zfill, controllers_exp))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5828,7 +5834,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers:vEdge list sync'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:vEdge list sync'.format(check_count_zfill)
@@ -5839,7 +5845,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Controllers with inconsistent state_vedgeList: \n{}\n'.format(check_count_zfill, state_vedgeList))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5862,7 +5868,7 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Warning Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
 			print(' #{}:Checking:Controllers: Confirm control connections'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers: Confirm control connections'.format(check_count_zfill)
@@ -5873,7 +5879,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Control  Connections Summary: \n{}\n'.format(check_count_zfill, control_sum_tab))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5903,9 +5909,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:vManage:Disk controller type'.format(check_count_zfill))
+			print(' #{}:Checking:vManage:Disk controller type'.format(check_count_zfill))
 		check_name = '#{}:Check:vManage:Disk controller type'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -5914,7 +5920,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Disk Controller type: {}\n'.format(check_count_zfill, disk_controller))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m\n\n'.format(check_analysis))
 			else:
@@ -5937,9 +5943,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:Controllers:Validate there is at minimum vBond, vSmart present'.format(check_count_zfill))
+			print(' #{}:Checking:Controllers:Validate there is at minimum vBond, vSmart present'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Validate there is at minimum vBond, vSmart present'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -5949,7 +5955,7 @@ if __name__ == "__main__":
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: vSmart Count: {}'.format(check_count_zfill, vsmart_count))
 				log_file_logger.error('#{}: vBond Count: {}\n'.format(check_count_zfill, vbond_count))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -5973,9 +5979,9 @@ if __name__ == "__main__":
 		check_count += 1
 		check_count_zfill = zfill_converter(check_count)
 		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Critical Check:#{}'.format(check_count_zfill))
+			print(' Informational Check:#{}'.format(check_count_zfill))
 		if args.debug == True or args.verbose == True:
-			print(' #{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
+			print(' #{}:Checking:Controllers:Validate all controllers are reachable'.format(check_count_zfill))
 		check_name = '#{}:Check:Controllers:Validate all controllers are reachable'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
@@ -5984,7 +5990,7 @@ if __name__ == "__main__":
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 				log_file_logger.error('#{}: Unreachable Controllers: {}\n'.format(check_count_zfill, unreach_controllers))
-				report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 				if args.debug == True:
 					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 			else:
@@ -6006,13 +6012,14 @@ if __name__ == "__main__":
 			cluster_checks = {}
 
 			log_file_logger.info('*** Performing Cluster Checks')
-			print('\n**** Performing Cluster checks\n')
+			if args.quiet == False:
+				print('\n**** Performing Cluster checks\n')
 
 			#Check:Cluster:Version consistency
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Version consistency'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Version consistency'.format(check_count_zfill)
@@ -6023,7 +6030,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: vManage info: {}\n'.format(check_count_zfill, vmanage_info))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
 				else:
@@ -6046,7 +6053,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Cluster health'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Cluster health'.format(check_count_zfill)
@@ -6057,7 +6064,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Relevant cluster services that are down: {}\n'.format(check_count_zfill, services_down))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 				else:
@@ -6080,7 +6087,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Cluster ConfigDB topology'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Cluster ConfigDB topology'.format(check_count_zfill)
@@ -6091,7 +6098,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: No. of configDB servers in the cluster: {}\n'.format(check_count_zfill, configDB_count))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 				else:
@@ -6115,7 +6122,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Messaging server'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Messaging server'.format(check_count_zfill)
@@ -6126,7 +6133,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: Servers with messaging service down: {}\n'.format(check_count_zfill, cluster_msdown))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 				else:
@@ -6148,7 +6155,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:DR replication status'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:DR replication status'.format(check_count_zfill)
@@ -6160,7 +6167,7 @@ if __name__ == "__main__":
 					cluster_checks[check_name] = [ check_analysis, check_action]
 					check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 					log_file_logger.error('#{}: DR Replication status: {}\n'.format(check_count_zfill, dr_status))
-					report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+					report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 					if args.debug == True:
 						print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 				else:
@@ -6184,7 +6191,7 @@ if __name__ == "__main__":
 			check_count += 1
 			check_count_zfill = zfill_converter(check_count)
 			if args.quiet == False and args.debug == False and args.verbose == False:
-				print(' Critical Check:#{}'.format(check_count_zfill))
+				print(' Cluster Check:#{}'.format(check_count_zfill))
 			if args.debug == True or args.verbose == True:
 				print(' #{}:Checking:Cluster:Intercluster communication'.format(check_count_zfill))
 			check_name = '#{}:Check:Cluster:Intercluster communication'.format(check_count_zfill)
@@ -6199,7 +6206,7 @@ if __name__ == "__main__":
 						cluster_checks[check_name] = [ check_analysis, check_action]
 						check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
 						log_file_logger.error('#{}: Cluster nodes with ping failure: {}\n'.format(check_count_zfill, ping_output_failed))
-						report_data.append([str(check_count),check_name.split(':')[-1],"Error",check_analysis,str(check_action)])
+						report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 						if args.debug == True:
 							print('\033[1;31m ERROR: {} \033[0;0m\n\n'.format(check_analysis))
 					else:
