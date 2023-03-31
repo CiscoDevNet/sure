@@ -384,7 +384,7 @@ def is_vmanage():
 
 #vManage Version
 def vManageVersion():
-	version = showCommand('show version')
+	version = showCommand('show version').strip()
 	version_tuple = tuple(version.split('.'))
 	return version,version_tuple
 

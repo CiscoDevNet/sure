@@ -201,78 +201,6 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 
 	return response.text.encode('utf8')
 
-### NOT SURE TO DELETE
-# def generateSessionID(vManageIP,Username,Password,Port):
-# 	if Port==None:
-# 		command = "curl --insecure -i -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'j_username={}' --data-urlencode 'j_password={}' https://{}:8443/j_security_check".format(Username, Password,vManageIP)
-# 		login = executeCommand(command)
-# 	else:
-# 		command = "curl --insecure -i -s -X POST -H 'Content-Type: application/x-www-form-urlencoded' --data-urlencode 'j_username={}' --data-urlencode 'j_password={}' https://{}:{}/j_security_check".format(Username, Password,vManageIP, Port)
-# 		login = executeCommand(command)
-
-# 	login = login.split(' ')
-# 	try:
-# 		if int(login[1]) == 200:
-# 			jsessionid = (login[3].split('=')[1][0:-1])
-# 			return jsessionid
-# 	except:
-# 		if int(login[1]) == 200:
-# 			jsessionid = (login[5].split('=')[1][0:-1])
-# 			return jsessionid
-# 	else:
-# 		print('  Error creating JsessionID, verify if  the information provided is correct')
-
-
-# def CSRFToken(vManageIP,JSessionID,Port):
-# 	if Port==None:
-# 		command = 'curl --insecure -s https://{}:8443/dataservice/client/token?json=true -H "Cookie: JSESSIONID={}"'.format(vManageIP, JSessionID)
-# 		tokenid= executeCommand(command)
-
-# 	else:
-# 		command = 'curl --insecure -s https://{}:{}/dataservice/client/token?json=true -H "Cookie: JSESSIONID={}"'.format(vManageIP, Port, JSessionID)
-# 		tokenid= executeCommand(command)
-# 	tokenid = json.loads(tokenid)
-# 	tokenid = tokenid["token"]
-# 	return tokenid
-
-
-# def getRequest(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenID = None):
-# 	if version_tuple[0:2] < ('19','2'):
-# 		if Port==None:
-# 			command = 'curl -s --insecure "https://{}:8443/dataservice/{}" -H "Cookie: JSESSIONID={}" '.format(vManageIP, mount_point,JSessionID )
-# 			data = executeCommand(command)
-# 		else:
-# 			command = 'curl -s --insecure "https://{}:{}/dataservice/{}" -H "Cookie: JSESSIONID={}"'.format(vManageIP,Port,mount_point,JSessionID )
-# 			data = executeCommand(command)
-# 	else:
-# 		if Port==None:
-# 			command = 'curl -s "https://{}:8443/dataservice/{}" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP,mount_point,JSessionID, tokenID)
-# 			data = executeCommand(command)
-# 		else:
-# 			command = 'curl -s "https://{}:{}/dataservice/{}" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP,Port, mount_point,JSessionID, tokenID)
-# 			data = executeCommand(command)
-
-# 	return data
-
-
-
-
-# def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
-# 	if version_tuple[0:2] < ('19','2'):
-# 		if Port==None:
-# 			command = 'curl --insecure -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP,JSessionID )
-# 			executeCommand(command)
-# 		else:
-# 			command = 'curl --insecure -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}'.format(vManageIP, Port, JSessionID)
-# 			executeCommand(command)
-# 	else:
-# 		if Port==None:
-# 			command = 'curl -s "https://{}:8443/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, JSessionID, tokenid)
-# 			executeCommand(command)
-# 		else:
-# 			command = 'curl -s "https://{}:{}/logout" -H "Cookie: JSESSIONID={}" --insecure -H "X-XSRF-TOKEN={}"'.format(vManageIP, Port, JSessionID, tokenid)
-# 			executeCommand(command)
-
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Print Output Table
 def findColumnLength(maxChars,rows, cols,tabledata):
@@ -375,7 +303,7 @@ def is_vmanage():
 
 #vManage Version
 def vManageVersion():
-	version = showCommand('show version')
+	version = showCommand('show version').strip()
 	version_tuple = tuple(version.split('.'))
 	return version,version_tuple
 
@@ -1504,72 +1432,6 @@ def criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger):
 	#except Exception as e:
 	#   log_file_logger.exception(e)
 
-
-# def threaded(f, daemon=False):
-
-# 	def wrapped_f(q, *args, **kwargs):
-# 		'''this function calls the decorated function and puts the
-# 		result in a queue'''
-# 		ret = f(*args, **kwargs)
-# 		q.put(ret)
-
-# 	def wrap(*args, **kwargs):
-# 		'''this is the function returned from the decorator. It fires off
-# 		wrapped_f in a new thread and returns the thread object with
-# 		the result queue attached'''
-# 		q = Queue.Queue()
-
-# 		t = threading.Thread(target=wrapped_f, args=(q,)+args, kwargs=kwargs)
-# 		t.daemon = daemon
-# 		t.start()
-# 		all_processes.append(t)
-# 		t.result_queue = q
-# 		return t
-# 	return wrap
-
-
-# @threaded
-# def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
-# 	try:
-# 		ping_output = {}
-# 		ping_output_failed = {}
-# 		'''
-# 		my_hostname = socket.gethostname()
-# 		for device in cluster_health_data['data'][0]['data']:
-# 			vmanage_cluster_ip = device['configJson']['deviceIP']
-# 			vmanage_host_name = device['configJson']['host-name']
-# 			#if vmanage_host_name != my_hostname:
-# 		'''
-# 		count = 0
-# 		for device in cluster_health_data['data']:
-# 			count += 1
-# 			vmanage_system_ip = device['system-ip']
-# 			vmanage_cluster_ip = device['deviceIP']
-# 			if vmanage_system_ip != system_ip:
-# 				output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
-# 				output = output.split('\n')[-3:]
-# 				xmit_stats = output[0].split(",")
-# 				timing_stats = xmit_stats[3]
-# 				packet_loss = float(xmit_stats[2].split("%")[0])
-# 				ping_output[count] = vmanage_cluster_ip, packet_loss, timing_stats
-# 				if packet_loss != 0:
-# 					ping_output_failed[count] = vmanage_cluster_ip, packet_loss, timing_stats
-# 			else:
-# 				continue
-
-# 		if len(ping_output_failed) == 0:
-# 			check_result = 'SUCCESSFUL'
-# 			check_analysis = 'Intercluster communication is ok, ping to cluster nodes successful'
-# 			check_action = None
-# 		else:
-# 			check_result = 'Failed'
-# 			check_analysis = 'Intercluster connectivity issues found'
-# 			check_action = 'Review network used between cluster members, and resolve any connectivity issues before upgrade process '
-# 		return ping_output, ping_output_failed,check_result,check_analysis,check_action
-# 	except Exception as e:
-# 		log_file_logger.exception(e)
-
-
 #20:Check:vManage:Validate Server Configs file - uuid
 def criticalChecktwenty(version):
 	success, analysis = validateServerConfigsUUID()
@@ -2099,9 +1961,6 @@ if __name__ == "__main__":
 		log_file_logger.info('vSmart info: {}'.format(vbond_info))
 		log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-		total_devices = len(controllers_info.keys()) + vedge_count
-		table_data.append(['Total devices',str(total_devices)])
-
 		wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
 		table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
 		table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
@@ -2109,6 +1968,9 @@ if __name__ == "__main__":
 		table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
 		table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
 		table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
+
+		total_devices = len(controllers_info.keys()) + vedge_count
+		table_data.append(['Total devices',str(total_devices)])
 
 		json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
 																			"Software Version":"{}".format(version),
