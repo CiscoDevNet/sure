@@ -567,18 +567,12 @@ def validateIps(serviceToDeviceIp, vmanage_ips):
 
 # vManage: Validate server_configs.json
 def validateServerConfigsFile():
-	if version_tuple[0:2] == ('19', '2'):
-		services = ["neo4j", "elasticsearch", "zookeeper", "wildfly"]
-	elif version_tuple[0:2] > ('19', '2') and version_tuple[0:2] < ('20', '6'):
+	if version_tuple[0:2] >= ('20', '3') and version_tuple[0:2] < ('20', '6'):
 		services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
 	elif version_tuple[0:2] > ('20', '5'):
 		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
 
-	cluster_uuid = True
-	if version_tuple[0:2] == ('19', '2'):
-		cluster_uuid = False
-
-	server_config_dict, success, check_analysis = _parse_local_server_config(services, cluster_uuid)
+	server_config_dict, success, check_analysis = _parse_local_server_config(services)
 	vmanage_ips, vmanage_ids, vmanage_uuids = vmanage_service_list()
 	check_action = None
 
@@ -593,13 +587,12 @@ def validateServerConfigsFile():
 				return success, check_analysis, check_action
 
 			# Check cluster
-			if cluster_uuid:
-				uuid = server_config_dict['clusterUUID']
-				if uuid not in vmanage_uuids:
-					success = False
-					check_analysis = "Failed to validate cluster from server_configs.json."
-					check_action = "Check the correctness of cluster at server_configs.json."
-					return success, check_analysis, check_action
+			uuid = server_config_dict['clusterUUID']
+			if uuid not in vmanage_uuids:
+				success = False
+				check_analysis = "Failed to validate cluster from server_configs.json."
+				check_action = "Check the correctness of cluster at server_configs.json."
+				return success, check_analysis, check_action
 
 			# Check mode
 			mode = server_config_dict['mode']
@@ -1709,9 +1702,7 @@ def criticalCheckseventeen(cluster_health_data, system_ip, log_file_logger):
 
 #20:Check:vManage:Validate Server Configs file - uuid
 def criticalChecktwenty(version):
-	#vmanage version
-	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-	if vmanage_version == 19.2:
+	if version_tuple[0:2] < ('20', '3'):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check is not required for the current version'
 		check_action = None
@@ -1732,6 +1723,13 @@ def criticalChecktwenty(version):
 
 #21:Check:vManage:Validate server_configs.json
 def criticalChecktwentyone(version):
+
+	if version_tuple[0:2] < ('20', '3'):
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'Check is not required for the current version'
+		check_action = None
+		return check_result, check_analysis, check_action
+
 	success, analysis, action = validateServerConfigsFile()
 	if not success:
 		check_result = 'Failed'

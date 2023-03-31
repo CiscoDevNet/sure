@@ -557,7 +557,7 @@ def validateIps(serviceToDeviceIp, vmanage_ips):
 
 # vManage: Validate server_configs.json
 def validateServerConfigsFile():
-	if version_tuple[0:2] >= ('19', '2') and version_tuple[0:2] < ('20', '6'):
+	if version_tuple[0:2] >= ('20', '3') and version_tuple[0:2] < ('20', '6'):
 		services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
 	elif version_tuple[0:2] > ('20', '5'):
 		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
