@@ -508,7 +508,7 @@ def validateServerConfigsUUID():
                 configs = json.load(config_file)
                 uuid = configs['cluster']
                 vmanageID = configs['vmanageID']
-                if vmanageID == '0':
+                if vmanageID == '0' and uuid != "vmanage-upgraded":
                    if uuid == uuid_val:
                         success = True
                         check_analysis = None
@@ -589,11 +589,12 @@ def validateServerConfigsFile():
 
 			# Check cluster
 			uuid = server_config_dict['clusterUUID']
-			if uuid not in vmanage_uuids:
-				success = False
-				check_analysis = "Failed to validate cluster from server_configs.json."
-				check_action = "Check the correctness of cluster at server_configs.json."
-				return success, check_analysis, check_action
+			if uuid != "vmanage-upgraded":
+				if uuid not in vmanage_uuids:
+					success = False
+					check_analysis = "Failed to validate cluster from server_configs.json."
+					check_action = "Check the correctness of cluster at server_configs.json."
+					return success, check_analysis, check_action
 
 			# Check mode
 			mode = server_config_dict['mode']
@@ -847,6 +848,9 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 
 	memory_size_gb = str(memory_size_gb).split()
 	memory_size = int(memory_size_gb[1])
+	check_result = 'SUCCESSFUL'
+	check_analysis = 'Server meets hardware recommendations'
+	check_action = None
 
 	if dpi_status == 'enable' and server_type == 'on-prem':
 		if memory_size < 128:
@@ -899,6 +903,9 @@ def criticalCheckthree(vedge_count, dpi_status, server_type, cluster_size, versi
 
 #04:Check:vManage:CPU Count
 def criticalCheckfour(cpu_count, vedge_count, dpi_status, server_type):
+	check_result = 'SUCCESSFUL'
+	check_analysis = 'No. of Processors is sufficient for the upgrade,  CPU count is {}.'.format(cpu_count)
+	check_action = None
 	if dpi_status == 'enable' and server_type == 'on-prem':
 		if cpu_count < 32:
 			check_result = 'Failed'
