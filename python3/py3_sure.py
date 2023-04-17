@@ -1872,12 +1872,12 @@ if __name__ == "__main__":
 	json_final_result = {}
 	json_final_result['json_data_pdf'] = {}
 	json_final_result['json_data_pdf']['title'] =  "AURA SDWAN Report"
-	json_final_result['json_data_pdf']['information'] =  {"disclaimer":"Cisco SDWAN AURA command line tool performes a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.",
+	json_final_result['json_data_pdf']['information'] =  {"disclaimer":"Cisco SDWAN AURA command line tool performs a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.",
 															"AURA Version":"{}".format(__sure_version)}
 	json_final_result['json_data_pdf']['feedback'] = "sure-tool@cisco.com"
 
 	writeFile(report_file, 'Cisco SDWAN AURA v{} Report\n\n'.format(__sure_version))
-	writeFile(report_file,  '''Cisco SDWAN AURA command line tool performes a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.
+	writeFile(report_file,  '''Cisco SDWAN AURA command line tool performs a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.
 							 \nReach out to sure-tool@cisco.com  if you have any questions or feedback\n\n''')
 	writeFile(report_file, 'Summary of the Results:\n')
 	writeFile(report_file, '-----------------------------------------------------------------------------------------------------------------\n\n\n')
@@ -3308,7 +3308,9 @@ if __name__ == "__main__":
 	'        Total Checks with Errors:   {}\n'.format(critical_checks_count),
 	'        Total Checks with Warnings: {}\n\n'.format(warning_checks_count),
 	'-----------------------------------------------------------------------------------------------------------------\n\n',
-	'Detailed list of failed checks, and actions recommended\n\n',printTable(failed_check_data),"\n\n"
+	'Detailed list of failed checks, and actions recommended\n\n',printTable(failed_check_data),"\n\n",
+	'-----------------------------------------------------------------------------------------------------------------\n\n',
+	'Preliminary Tabulated data:\n\n',printTable(table_data),"\n\n"
 	]
 
 	full_lst = [
