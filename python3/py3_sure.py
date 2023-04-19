@@ -1112,22 +1112,30 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 #10:Check:vManage:NTP status across network
 def criticalCheckten(version_tuple, controllers_info):
 	ntp_nonworking = []
+	ntp_nonreachable=[]
 	for key in controllers_info:
 		if controllers_info[key][0] != 'vbond':
-			ntp_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'device/ntp/associations?deviceId=%s'%(controllers_info[key][1]), args.vmanage_port, tokenid))
-			if 'data' not in ntp_data.keys() or ntp_data['data'] == []:
-				ntp_nonworking.append(controllers_info[key][1])
-			else:
-				continue
-	if len(ntp_nonworking) == 0:
+			try:
+				ntp_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'device/ntp/associations?deviceId=%s'%(controllers_info[key][1]), args.vmanage_port, tokenid))
+				if 'data' not in ntp_data.keys() or ntp_data['data'] == []:
+					ntp_nonworking.append(controllers_info[key][1])
+			except TypeError as e:
+					ntp_nonreachable.append(controllers_info[key][1])
+		else:
+			continue
+	if len(ntp_nonworking) == 0 and len(ntp_nonreachable) == 0:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'All controllers (vSmart\'s and vManage\'s) have valid ntp association'
+		check_action = None
+	elif len(ntp_nonworking) == 0 and len(ntp_nonreachable) !=0:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'The controllers which are reachable have valid ntp association. Some of the devices are not reachable'
 		check_action = None
 	elif len(ntp_nonworking) != 0:
 		check_result = 'Failed'
 		check_analysis = 'Devices with invalid ntp association found'
-		check_action = 'Please validate the NTP time synchronization across the network '
-	return ntp_nonworking, check_result, check_analysis, check_action
+		check_action = 'Please validate the NTP time synchronization across the network'
+	return ntp_nonworking,ntp_nonreachable, check_result, check_analysis, check_action
 
 
 #11:Check:vManage:Validate Neo4j Store version
@@ -2360,7 +2368,7 @@ if __name__ == "__main__":
 	check_name = '#{}:Check:vManage:NTP status across network'.format(check_count_zfill)
 	pre_check(log_file_logger, check_name)
 	try:
-		ntp_nonworking, check_result, check_analysis, check_action = criticalCheckten(version_tuple, controllers_info)
+		ntp_nonworking, ntp_nonreachable, check_result, check_analysis, check_action = criticalCheckten(version_tuple, controllers_info)
 		if check_result == 'Failed':
 			critical_checks[check_name] = [ check_analysis, check_action]
 			check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -2373,6 +2381,9 @@ if __name__ == "__main__":
 			report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 			if args.debug == True:
 				print(' INFO:{}\n\n'.format(check_analysis))
+		if len(ntp_nonreachable) != 0:
+			print('  #{}: Devices which are not reachble for ntp associations: \n  {}\n'.format(check_count_zfill, ntp_nonreachable))
+			log_file_logger.error('#{}: Devices which are not reachble for ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonreachable))
 		json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 														'log type': '{}'.format(result_log['Critical'][check_result]),
 														'result': '{}'.format(check_analysis),
