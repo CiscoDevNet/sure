@@ -126,7 +126,10 @@ def generateSessionIDpy3(vManageIP,Username,Password,Port):
 	else:
 		login = "https://{}:{}/j_security_check".format(vManageIP,Port)
 
-	payload = 'j_username={}&j_password={}'.format(Username,Password)
+	payload ={
+		"j_username":Username,
+		"j_password":Password
+	}
 
 	headers = {
 			  'Content-Type': 'application/x-www-form-urlencoded'
