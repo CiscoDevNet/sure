@@ -126,7 +126,10 @@ def generateSessionIDpy3(vManageIP,Username,Password,Port):
 	else:
 		login = "https://{}:{}/j_security_check".format(vManageIP,Port)
 
-	payload = 'j_username={}&j_password={}'.format(Username,Password)
+	payload ={
+		"j_username":Username,
+		"j_password":Password
+	}
 
 	headers = {
 			  'Content-Type': 'application/x-www-form-urlencoded'
@@ -163,7 +166,7 @@ def getRequestpy3(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenI
 	else:
 		url = "https://{}:{}/dataservice/{}".format(vManageIP, Port, mount_point)
 
-	if version_tuple[0:2] < ('19','2'):
+	if version_tuple[0:2] < (19,2):
 		headers = {
 					'Cookie': JSessionID
 					}
@@ -187,7 +190,7 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 	else:
 		url = "https://{}:{}/logout".format(vManageIP,Port)
 
-	if version_tuple[0:2] < ('19','2'):
+	if version_tuple[0:2] < (19,2):
 		headers = {
 					'Cookie': JSessionID
 					}
@@ -305,6 +308,7 @@ def is_vmanage():
 def vManageVersion():
 	version = showCommand('show version').strip()
 	version_tuple = tuple(version.split('.'))
+	version_tuple =tuple([int(i) for i in version_tuple])
 	return version,version_tuple
 
 #vManage Loopback IP
@@ -485,9 +489,9 @@ def validateIps(serviceToDeviceIp, vmanage_ips):
 
 # vManage: Validate server_configs.json
 def validateServerConfigsFile():
-	if version_tuple[0:2] >= ('20', '3') and version_tuple[0:2] < ('20', '6'):
+	if version_tuple[0:2] >= (20, 3) and version_tuple[0:2] < (20, 6):
 		services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
-	elif version_tuple[0:2] > ('20', '5'):
+	elif version_tuple[0:2] > (20, 5):
 		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
 
 	server_config_dict, success, check_analysis = _parse_local_server_config(services)
@@ -915,16 +919,32 @@ def criticalCheckeight(version_tuple):
 			third_digit = int(version[3:5])
 			version = str(first_digit)+'.'+str(second_digit)
 			version = float(version)
-			if version <= 3.0:
+			if version < 5.0 and version_tuple[0:2] < (20, 3):
+				version_list[es] = version	
+			elif version < 6.0 and version_tuple[0:2] < (20, 11):
 				version_list[es] = version
-
-		if len(version_list) != 0:
+			elif version < 7.0 and version_tuple[0:2] >= (20, 11):
+				version_list[es] = version
+		if len(version_list) != 0 and version_tuple[0:2] < (20, 3):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB indices with version 2.0 found'
+			check_analysis = 'StatsDB indices with version below than 5.0 found for vManage version{}'.format(version_tuple)
+			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
+		if len(version_list) != 0 and version_tuple[0:2] < (20, 11):
+			check_result = 'Failed'
+			check_analysis = 'StatsDB indices with version below than 6.0 found for vManage version{}'.format(version_tuple)
+			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
+		if len(version_list) != 0 and version_tuple[0:2] >= (20, 11):
+			check_result = 'Failed'
+			check_analysis = 'StatsDB indices with version below than 7.0 found for vManage version{}'.format(version_tuple)
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
 		elif len(version_list) == 0:
 			check_result = 'SUCCESSFUL'
-			check_analysis = 'Version of all the Elasticsearch Indices is greater than 2.0'
+			if version_tuple[0:2] < (20, 3):
+				check_analysis = 'Version of all the Elasticsearch Indices is greater than 5.0'
+			elif version_tuple[0:2] < (20, 11):
+				check_analysis = 'Version of all the Elasticsearch Indices is greater than 6.0'
+			else:
+				check_analysis = 'Version of all the Elasticsearch Indices is greater than 7.0'
 			check_action = None
 	else:
 		version_list = {}
@@ -1112,27 +1132,35 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 #10:Check:vManage:NTP status across network
 def criticalCheckten(version_tuple, controllers_info):
 	ntp_nonworking = []
+	ntp_nonreachable=[]
 	for key in controllers_info:
 		if controllers_info[key][0] != 'vbond':
-			ntp_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'device/ntp/associations?deviceId=%s'%(controllers_info[key][1]), args.vmanage_port, tokenid))
-			if 'data' not in ntp_data.keys() or ntp_data['data'] == []:
-				ntp_nonworking.append(controllers_info[key][1])
-			else:
-				continue
-	if len(ntp_nonworking) == 0:
+			try:
+				ntp_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'device/ntp/associations?deviceId=%s'%(controllers_info[key][1]), args.vmanage_port, tokenid))
+				if 'data' not in ntp_data.keys() or ntp_data['data'] == []:
+					ntp_nonworking.append(controllers_info[key][1])
+			except TypeError as e:
+					ntp_nonreachable.append(controllers_info[key][1])
+		else:
+			continue
+	if len(ntp_nonworking) == 0 and len(ntp_nonreachable) == 0:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'All controllers (vSmart\'s and vManage\'s) have valid ntp association'
+		check_action = None
+	elif len(ntp_nonworking) == 0 and len(ntp_nonreachable) !=0:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'The controllers which are reachable have valid ntp association. Some of the devices are not reachable'
 		check_action = None
 	elif len(ntp_nonworking) != 0:
 		check_result = 'Failed'
 		check_analysis = 'Devices with invalid ntp association found'
-		check_action = 'Please validate the NTP time synchronization across the network '
-	return ntp_nonworking, check_result, check_analysis, check_action
+		check_action = 'Please validate the NTP time synchronization across the network'
+	return ntp_nonworking,ntp_nonreachable, check_result, check_analysis, check_action
 
 
 #11:Check:vManage:Validate Neo4j Store version
 def criticalCheckeighteen(version_tuple):
-	if version_tuple[0:2] >= ('20', '6'):
+	if version_tuple[0:2] >= (20, 6):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check will be available in the next release.'
 		check_action = None
@@ -1147,7 +1175,7 @@ def criticalCheckeighteen(version_tuple):
 		elif os.path.isfile('/var/log/nms/debug.log') == True:
 			control_sum_tab = executeCommand('grep NodeStore /var/log/nms/debug.log')
 			nodestore_version  = match(control_sum_tab,'(v\d|\D.\d)\.(\D|\d)\.(\d)' )
-			if version_tuple[0:2] >= ('20','5') and version_tuple[0:2] <= ('20','6') and 'SF4.0.0' not in nodestore_version:
+			if version_tuple[0:2] >= (20,5) and version_tuple[0:2] <= (20,6) and 'SF4.0.0' not in nodestore_version:
 				check_result = 'Failed'
 				check_analysis = 'The Neo4j Store version is {}, it should be SF4.0.0.'.format(nodestore_version)
 				check_action = 'Execute the following command to upgrade it: "request nms configuration-db upgrade"'
@@ -1558,7 +1586,7 @@ def warningCheckthree():
 
 #04:Check:vManage:Evaluate Neo4j performance
 def warningCheckfour():
-	if version_tuple[0:2] >= ('20', '6'):
+	if version_tuple[0:2] >= (20, 6):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check will be available in the next release.'
 		check_action = None
@@ -1872,12 +1900,12 @@ if __name__ == "__main__":
 	json_final_result = {}
 	json_final_result['json_data_pdf'] = {}
 	json_final_result['json_data_pdf']['title'] =  "AURA SDWAN Report"
-	json_final_result['json_data_pdf']['information'] =  {"disclaimer":"Cisco SDWAN AURA command line tool performes a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.",
+	json_final_result['json_data_pdf']['information'] =  {"disclaimer":"Cisco SDWAN AURA command line tool performs a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.",
 															"AURA Version":"{}".format(__sure_version)}
 	json_final_result['json_data_pdf']['feedback'] = "sure-tool@cisco.com"
 
 	writeFile(report_file, 'Cisco SDWAN AURA v{} Report\n\n'.format(__sure_version))
-	writeFile(report_file,  '''Cisco SDWAN AURA command line tool performes a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.
+	writeFile(report_file,  '''Cisco SDWAN AURA command line tool performs a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay.
 							 \nReach out to sure-tool@cisco.com  if you have any questions or feedback\n\n''')
 	writeFile(report_file, 'Summary of the Results:\n')
 	writeFile(report_file, '-----------------------------------------------------------------------------------------------------------------\n\n\n')
@@ -2360,7 +2388,7 @@ if __name__ == "__main__":
 	check_name = '#{}:Check:vManage:NTP status across network'.format(check_count_zfill)
 	pre_check(log_file_logger, check_name)
 	try:
-		ntp_nonworking, check_result, check_analysis, check_action = criticalCheckten(version_tuple, controllers_info)
+		ntp_nonworking, ntp_nonreachable, check_result, check_analysis, check_action = criticalCheckten(version_tuple, controllers_info)
 		if check_result == 'Failed':
 			critical_checks[check_name] = [ check_analysis, check_action]
 			check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -2373,6 +2401,9 @@ if __name__ == "__main__":
 			report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
 			if args.debug == True:
 				print(' INFO:{}\n\n'.format(check_analysis))
+		if len(ntp_nonreachable) != 0:
+			print('  #{}: Devices which are not reachble for ntp associations: \n  {}\n'.format(check_count_zfill, ntp_nonreachable))
+			log_file_logger.error('#{}: Devices which are not reachble for ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonreachable))
 		json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 														'log type': '{}'.format(result_log['Critical'][check_result]),
 														'result': '{}'.format(check_analysis),
@@ -3308,7 +3339,9 @@ if __name__ == "__main__":
 	'        Total Checks with Errors:   {}\n'.format(critical_checks_count),
 	'        Total Checks with Warnings: {}\n\n'.format(warning_checks_count),
 	'-----------------------------------------------------------------------------------------------------------------\n\n',
-	'Detailed list of failed checks, and actions recommended\n\n',printTable(failed_check_data),"\n\n"
+	'Detailed list of failed checks, and actions recommended\n\n',printTable(failed_check_data),"\n\n",
+	'-----------------------------------------------------------------------------------------------------------------\n\n',
+	'Preliminary Tabulated data:\n\n',printTable(table_data),"\n\n"
 	]
 
 	full_lst = [
