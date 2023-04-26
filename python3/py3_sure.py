@@ -166,7 +166,7 @@ def getRequestpy3(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenI
 	else:
 		url = "https://{}:{}/dataservice/{}".format(vManageIP, Port, mount_point)
 
-	if version_tuple[0:2] < ('19','2'):
+	if version_tuple[0:2] < (19,2):
 		headers = {
 					'Cookie': JSessionID
 					}
@@ -190,7 +190,7 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 	else:
 		url = "https://{}:{}/logout".format(vManageIP,Port)
 
-	if version_tuple[0:2] < ('19','2'):
+	if version_tuple[0:2] < (19,2):
 		headers = {
 					'Cookie': JSessionID
 					}
@@ -308,6 +308,7 @@ def is_vmanage():
 def vManageVersion():
 	version = showCommand('show version').strip()
 	version_tuple = tuple(version.split('.'))
+	version_tuple =tuple([int(i) for i in version_tuple])
 	return version,version_tuple
 
 #vManage Loopback IP
@@ -488,9 +489,9 @@ def validateIps(serviceToDeviceIp, vmanage_ips):
 
 # vManage: Validate server_configs.json
 def validateServerConfigsFile():
-	if version_tuple[0:2] >= ('20', '3') and version_tuple[0:2] < ('20', '6'):
+	if version_tuple[0:2] >= (20, 3) and version_tuple[0:2] < (20, 6):
 		services = ["nats", "neo4j", "elasticsearch", "zookeeper", "wildfly"]
-	elif version_tuple[0:2] > ('20', '5'):
+	elif version_tuple[0:2] > (20, 5):
 		services = ["messaging-server", "configuration-db", "statistics-db", "coordination-server", "application-server"]
 
 	server_config_dict, success, check_analysis = _parse_local_server_config(services)
@@ -918,16 +919,32 @@ def criticalCheckeight(version_tuple):
 			third_digit = int(version[3:5])
 			version = str(first_digit)+'.'+str(second_digit)
 			version = float(version)
-			if version <= 3.0:
+			if version < 5.0 and version_tuple[0:2] < (20, 3):
+				version_list[es] = version	
+			elif version < 6.0 and version_tuple[0:2] < (20, 11):
 				version_list[es] = version
-
-		if len(version_list) != 0:
+			elif version < 7.0 and version_tuple[0:2] >= (20, 11):
+				version_list[es] = version
+		if len(version_list) != 0 and version_tuple[0:2] < (20, 3):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB indices with version 2.0 found'
+			check_analysis = 'StatsDB indices with version below than 5.0 found for vManage version{}'.format(version_tuple)
+			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
+		if len(version_list) != 0 and version_tuple[0:2] < (20, 11):
+			check_result = 'Failed'
+			check_analysis = 'StatsDB indices with version below than 6.0 found for vManage version{}'.format(version_tuple)
+			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
+		if len(version_list) != 0 and version_tuple[0:2] >= (20, 11):
+			check_result = 'Failed'
+			check_analysis = 'StatsDB indices with version below than 7.0 found for vManage version{}'.format(version_tuple)
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
 		elif len(version_list) == 0:
 			check_result = 'SUCCESSFUL'
-			check_analysis = 'Version of all the Elasticsearch Indices is greater than 2.0'
+			if version_tuple[0:2] < (20, 3):
+				check_analysis = 'Version of all the Elasticsearch Indices is greater than 5.0'
+			elif version_tuple[0:2] < (20, 11):
+				check_analysis = 'Version of all the Elasticsearch Indices is greater than 6.0'
+			else:
+				check_analysis = 'Version of all the Elasticsearch Indices is greater than 7.0'
 			check_action = None
 	else:
 		version_list = {}
@@ -1143,7 +1160,7 @@ def criticalCheckten(version_tuple, controllers_info):
 
 #11:Check:vManage:Validate Neo4j Store version
 def criticalCheckeighteen(version_tuple):
-	if version_tuple[0:2] >= ('20', '6'):
+	if version_tuple[0:2] >= (20, 6):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check will be available in the next release.'
 		check_action = None
@@ -1158,7 +1175,7 @@ def criticalCheckeighteen(version_tuple):
 		elif os.path.isfile('/var/log/nms/debug.log') == True:
 			control_sum_tab = executeCommand('grep NodeStore /var/log/nms/debug.log')
 			nodestore_version  = match(control_sum_tab,'(v\d|\D.\d)\.(\D|\d)\.(\d)' )
-			if version_tuple[0:2] >= ('20','5') and version_tuple[0:2] <= ('20','6') and 'SF4.0.0' not in nodestore_version:
+			if version_tuple[0:2] >= (20,5) and version_tuple[0:2] <= (20,6) and 'SF4.0.0' not in nodestore_version:
 				check_result = 'Failed'
 				check_analysis = 'The Neo4j Store version is {}, it should be SF4.0.0.'.format(nodestore_version)
 				check_action = 'Execute the following command to upgrade it: "request nms configuration-db upgrade"'
@@ -1569,7 +1586,7 @@ def warningCheckthree():
 
 #04:Check:vManage:Evaluate Neo4j performance
 def warningCheckfour():
-	if version_tuple[0:2] >= ('20', '6'):
+	if version_tuple[0:2] >= (20, 6):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check will be available in the next release.'
 		check_action = None
