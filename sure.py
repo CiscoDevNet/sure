@@ -1774,8 +1774,10 @@ def criticalChecktwentyone(version):
 	success, analysis, action = validateServerConfigsFile()
 	if not success:
 		check_result = 'Failed'
-		check_analysis = 'Failed to validate the server_configs.json.'
-		check_action = '{}'.format(analysis)
+		# check_analysis = 'Failed to validate the server_configs.json.'
+		# check_action = '{}'.format(analysis)
+		check_analysis = analysis
+		check_action = action
 	else:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Validated the server_configs.json.'
