@@ -47,8 +47,8 @@ Obtain file content from this site, then copy via SCP to the server. <br>
 
 **Option 2. WGET** <br>
 
->wget  https://raw.githubusercontent.com/CiscoDevNet/sure/main/python3/py3_sure.py
->wget https://raw.githubusercontent.com/CiscoDevNet/sure/main/python2/py2_sure.py
+>wget  https://raw.githubusercontent.com/CiscoDevNet/sure/main/python3/py3_sure.py  <br>
+>wget https://raw.githubusercontent.com/CiscoDevNet/sure/main/python2/py2_sure.py <br>
 
 ## How to Run
 
