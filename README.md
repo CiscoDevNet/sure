@@ -45,6 +45,10 @@ Obtain file content from this site, then copy via SCP to the server. <br>
 * Open vi, press Esc and then i (letter i), then paste the content
 * Press Esc, :wq (symbol : and letters w,q) to save it
 
+**Option 2. WGET** <br>
+
+>wget  https://raw.githubusercontent.com/CiscoDevNet/sure/main/python3/py3_sure.py
+>wget https://raw.githubusercontent.com/CiscoDevNet/sure/main/python2/py2_sure.py
 
 ## How to Run
 
