@@ -1048,15 +1048,15 @@ def criticalCheckseven():
 	for nms in nms_status:
 		if 'true' in nms  and 'not running' in nms:
 			nms_failed.append(nms.split('\t')[0].strip())
-			check_result = 'Failed'
-			check_analysis = 'Enabled service/s not running'
-			check_action = 'It is advisable to investigate why a service is being reported as failed. Please  restart the process or contact TAC for further help'
-		else:
-			check_result = 'SUCCESSFUL'
-			check_analysis = 'All enabled services are running'
-			check_action = None
+	if len(nms_failed) >0 :     
+		check_result = 'Failed'
+		check_analysis = 'Enabled service/s not running'
+		check_action = 'It is advisable to investigate why a service is being reported as failed. Please  restart the process or contact TAC for further help'
+	else:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'All enabled services are running'
+		check_action = None
 	return nms_status1, nms_failed, check_result,check_analysis,check_action
-
 
 #08:Check:vManage:Elasticsearch Indices version
 def criticalCheckeight(version_tuple):
