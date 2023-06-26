@@ -526,7 +526,7 @@ def validateServerConfigsUUID():
     return success, check_analysis
 
 #vManage: Parse server_configs.json
-def _parse_local_server_config(services, cluster_uuid):
+def _parse_local_server_config(services):
     server_configs_file = '/opt/web-app/etc/server_configs.json'
     server_config_dict = {}
     if os.path.isfile(server_configs_file) == True:
@@ -534,8 +534,7 @@ def _parse_local_server_config(services, cluster_uuid):
             with open(server_configs_file, 'r') as data_dict:
                 server_configs_data = json.load(data_dict)
                 server_config_dict['vmanageID'] = server_configs_data['vmanageID']
-                if cluster_uuid:
-                        server_config_dict['clusterUUID'] = server_configs_data['cluster']
+                server_config_dict['clusterUUID'] = server_configs_data['cluster']
                 server_config_dict['mode'] = server_configs_data['mode']
                 services_data_dict = server_configs_data["services"]
                 for service in services:
