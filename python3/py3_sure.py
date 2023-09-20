@@ -16,12 +16,7 @@ __sure_version =  "3.0.0"
 
 #Common Imports
 import os
-try:
-	import json
-except ImportError:
-	print(" Tool could not find the required libraries, please try running the tool with 'python3 sure.py'.  ")
-	exit()
-
+import json
 import re
 from datetime import datetime, timedelta
 from argparse import ArgumentParser
@@ -35,7 +30,11 @@ import platform
 import getpass
 import csv
 import requests
-import queue
+
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 try:
 	requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
@@ -323,16 +322,22 @@ def getLoip():
 #Controllers info
 def controllersInfo(controllers):
 	controllers_info = {}
+	controllers_missinginfo = {}
 	count = 1
 	for device in controllers['data']:
 		if device['deviceState'] == 'READY':		
 			if 'state_vedgeList' not in device.keys():
 				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), 'no-vedges']
+				controllers_missinginfo[device['deviceIP']] = 'state_vedgeList entry not found'
+				count += 1
+			elif 'version' not in device.keys():
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),'no-version' ,(device['reachability']),(device['globalState']), (device['state_vedgeList'])]
+				controllers_missinginfo[device['deviceIP']] = 'version entry not found'
 				count += 1
 			else:
 				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), (device['state_vedgeList'])]
 				count += 1
-	return controllers_info
+	return controllers_info, controllers_missinginfo
 
 #Certificate Info
 def certificateInfo(certificate):
@@ -363,13 +368,14 @@ def vedgeCount(vedges):
 	vedge_info = {}
 	if 'data' in vedges.keys(): #Condition to on retrieve info if endpoint returns data
 		for vedge in vedges['data']:
-			vedge_count+=1
-			if 'version' in vedge.keys():
-				vedge_count_active +=1
-				vedge_info[(vedge['host-name'])] = [vedge['version'] ,
-													vedge['validity'],
-													vedge['reachability']
-												   ]
+			if vedge['device-type'] == 'vedge':
+				vedge_count+=1
+				if 'version' in vedge.keys():
+					vedge_count_active +=1
+					vedge_info[(vedge['host-name'])] = [vedge['version'] ,
+														vedge['validity'],
+														vedge['reachability']
+													   ]
 
 	return vedge_count, vedge_count_active, vedge_info
 
@@ -407,10 +413,14 @@ def  dpiStatus(dpi_stats):
 def serverType():
 	server_type = str(executeCommand('cat /sys/devices/virtual/dmi/id/sys_vendor'))
 
-	if 'VMware' in server_type or 'Red Hat' in server_type:   #add red hat kvm type
-		return 'on-prem'
-	elif 'Amazon'in server_type or 'Microsoft' in server_type:
-		return 'on-cloud'
+	if 'VMware' in server_type:
+		return 'on-prem', 'VMware'
+	elif 'Red Hat' in server_type:   #add red hat kvm type
+		return 'on-prem', 'Red Hat'
+	elif 'Amazon'in server_type:
+		return 'on-cloud', 'Amazon'
+	elif 'Microsoft' in server_type:
+		return 'on-cloud', 'Microsoft'
 
 #vManage: Validate server_configs.json
 def validateServerConfigsUUID():
@@ -465,6 +475,7 @@ def _parse_local_server_config(services):
                         serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in services_data_dict[service]['hosts'].values()]
                         serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in services_data_dict[service]['clients'].values()]
                         serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
+                        serviceToDeviceIpMap['server'] = services_data_dict[service]["server"]
                         server_config_dict[service] = serviceToDeviceIpMap
                 success = True
                 check_analysis = None
@@ -480,8 +491,8 @@ def _parse_local_server_config(services):
     return server_config_dict, success, check_analysis
 
 def validateIps(serviceToDeviceIp, vmanage_ips):
-	if len(serviceToDeviceIp) == len(vmanage_ips):
-		check = all(item in serviceToDeviceIp for item in vmanage_ips)
+	if len(serviceToDeviceIp) == len(vmanage_ips) or len(serviceToDeviceIp) == 3:
+		check = all(item in  vmanage_ips  for item in serviceToDeviceIp)
 		if check is True:
 			return True
 
@@ -528,15 +539,16 @@ def validateServerConfigsFile():
 
 			# Check services
 			for service_name in services:
-				if (validateIps(server_config_dict[service_name]['hosts'], vmanage_ips) and validateIps(server_config_dict[service_name]['clients'], vmanage_ips) and server_config_dict[service_name]['deviceIP'] in vmanage_ips):
-					success = True
-					check_analysis = None
-					check_action = None
-				else:
-					success = False
-					check_analysis = "Failed to validate host/client/device IPs from server_configs.json for service_name:" + service_name
-					check_action = "Check the correctness of host/client/device IPs at server_configs.json for service_name:" + service_name
-					break
+				if server_config_dict[service_name]['server'] == True:
+					if (validateIps(server_config_dict[service_name]['hosts'], vmanage_ips) and validateIps(server_config_dict[service_name]['clients'], vmanage_ips) and server_config_dict[service_name]['deviceIP'] in vmanage_ips and server_config_dict[service_name]['hosts'] == server_config_dict[service_name]['clients']):
+						success = True
+						check_analysis = None
+						check_action = None
+					else:
+						success = False
+						check_analysis = "Failed to validate host/client/device IPs from server_configs.json for service_name:" + service_name
+						check_action = "Check the correctness of host/client/device IPs at server_configs.json for service_name:" + service_name
+						break
 
 		except:
 			success = False
@@ -625,25 +637,31 @@ def vmanage_tenancy_mode():
 	return mode
 
 def checkUtilization():
-	resource_usage = executeCommand('ps aux --sort -rss -ww | head -n 5')
-	resource_usage=resource_usage.split('vmanage  ')
-	wildfly_data= [match for match in resource_usage if "wildfly" in match]
-	wildfly_data=wildfly_data[0].split(' ')
-	wildfly_data=list(filter(None,wildfly_data))
-	wildfly_cpu =wildfly_data[1]
-	wildfly_mem = wildfly_data[2]
-	neo4j_data= [match for match in resource_usage if "neo4j" in match]
-	neo4j_data=neo4j_data[0].split(' ')
-	neo4j_data=list(filter(None,neo4j_data))
-	neo4j_cpu =neo4j_data[1]
-	neo4j_mem = neo4j_data[2]
-	elasticSearch_data= [match for match in resource_usage if "elasticsearch" in match]
-	elasticSearch_data=elasticSearch_data[0].split(' ')
-	elasticSearch_data=list(filter(None,elasticSearch_data))
-	elasticSearch_cpu =elasticSearch_data[1]
-	elasticSearch_mem = elasticSearch_data[2]
-	return wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem
+	resource_usage = executeCommand('ps aux --sort -rss -ww | head -n 6')
 
+	# Split the output into lines
+	lines = resource_usage.strip().split('\n')
+	processes = []
+	for line in lines[1:]:
+	    fields = re.split(r'\s+', line.strip())
+	    pid = fields[1]
+	    cpu_percent = fields[2]
+	    mem_percent = fields[3]
+	    process_name = ' '.join(fields[10:])
+	    
+	    # Extract process name from the COMMAND field
+	    process_name_match = re.search(r'/var/lib/([^/]+)', process_name)
+	    if process_name_match:
+	        process_name = process_name_match.group(1)
+	    
+	    processes.append({
+	        'PID': pid,
+	        'CPU %': cpu_percent,
+	        'MEM %': mem_percent,
+	        'Process Name': process_name
+	    })
+	return processes
+	
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
 
@@ -1192,7 +1210,7 @@ def criticalCheckeighteen(version_tuple):
 
 def criticalChecknineteen():
 	db_data = showCommand('request nms configuration-db diagnostics')
-	if 'Disk space used by configuration' in db_data:
+	if 'space used by configuration-db' in db_data:
 		db_size = db_data.split('\n')[-2]
 		db_size = match(db_size, '\d+\.?\d*[BKMGT]')
 		if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
@@ -1520,8 +1538,12 @@ def criticalChecktwentytwo(version):
 #Warning Checks
 
 #01:Check:vManage:CPU Speed
-def warningCheckone(cpu_speed):
-	if cpu_speed < 2.8:
+def warningCheckone(cpu_speed, server_company):
+	if server_company == 'Microsoft' and cpu_speed < 2.6:
+		check_result = 'Failed'
+		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
+		check_action = 'Upgrade the hardware type'
+	elif cpu_speed < 2.8:
 		check_result = 'Failed'
 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
 		check_action = 'Upgrade the hardware type'
@@ -1958,9 +1980,11 @@ if __name__ == "__main__":
 
 	try:
 		controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
-		controllers_info = controllersInfo(controllers)
+		controllers_info, controllers_missinginfo = controllersInfo(controllers)
 		log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-
+		if controllers_missinginfo:
+			log_file_logger.error('Controllers missing information: {}'.format(controllers_missinginfo))
+		
 		certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 		certificate_info=certificateInfo(certificate)
 		log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
@@ -1975,7 +1999,7 @@ if __name__ == "__main__":
 		cpu_count = cpuCount()
 		table_data.append(['vManage CPU Count',str(cpu_count)])	
 
-		vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/vedges', args.vmanage_port , tokenid))
+		vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device', args.vmanage_port , tokenid))
 		vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
 		table_data.append(['xEdge Count',str(vedge_count)])	
 
@@ -1990,7 +2014,7 @@ if __name__ == "__main__":
 		dpi_status = dpiStatus(dpi_stats)
 		table_data.append(['DPI Status',str(dpi_status)])
 
-		server_type = serverType()
+		server_type, server_company  = serverType()
 		table_data.append(['Server Type',str(server_type)])
 
 		vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
@@ -1999,14 +2023,11 @@ if __name__ == "__main__":
 		log_file_logger.info('vSmart info: {}'.format(vbond_info))
 		log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-		wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
-		table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
-		table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
-		table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
-		table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
-		table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
-		table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
-
+		processes=checkUtilization()
+		for process in processes:
+			table_data.append(["{} CPU Utilization(RSS)".format(process['Process Name']), str(process['CPU %']) + "%"])
+			table_data.append(["{} Memory Utilization(RSS)".format(process['Process Name']), str(process['MEM %']) + "%"])
+		
 		total_devices = len(controllers_info.keys()) + vedge_count
 		table_data.append(['Total devices',str(total_devices)])
 
@@ -2658,7 +2679,7 @@ if __name__ == "__main__":
 	check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
 	pre_check(log_file_logger, check_name)
 	try:
-		check_result,check_analysis,check_action = warningCheckone(cpu_speed)
+		check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
 		if check_result == 'Failed':
 			warning_checks[check_name] = [ check_analysis, check_action]
 			check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
