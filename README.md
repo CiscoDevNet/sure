@@ -27,8 +27,8 @@ Identify which python version file to execute based on the vManage version.<br>
 
 | vManage version | Python version  | Python File to execute |
 |-----------------|-----------------|------------------------|
-| 18.4 to 20.5    | Python2         | python2/py2_sure.py    |
-| 20.6 onwards    | Python3         | python3/py3_sure.py    |
+| below 20.5      | Python2         | python2/py2_sure.py    |
+| 20.5 onwards    | Python3         | python3/py3_sure.py    |
 
 Download the respective Python version file. <br>
 **Note: The application can be downloaded under any desired directory, typically it is downloaded under the user home directory.**
