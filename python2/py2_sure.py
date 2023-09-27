@@ -34,7 +34,11 @@ import sys
 import platform
 import getpass
 import csv
-import Queue
+
+try:
+	import Queue
+except ImportError:
+	import queue as Queue
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -190,57 +194,57 @@ def sessionLogout(vManageIP,JSessionID, Port, tokenID= None):
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Print Output Table
 def findColumnLength(maxChars,rows, cols,tabledata):
-    columnLength = []
-    for colcount in range(cols):
-        currColumnLength=0
-        for rowcount in range(rows):    
-            currColumnLength = len(str(tabledata[rowcount][colcount])) if len(str(tabledata[rowcount][colcount])) > currColumnLength  else currColumnLength
-        columnLength.append(currColumnLength if currColumnLength < maxChars else maxChars)
-    return columnLength
+	columnLength = []
+	for colcount in range(cols):
+		currColumnLength=0
+		for rowcount in range(rows):    
+			currColumnLength = len(str(tabledata[rowcount][colcount])) if len(str(tabledata[rowcount][colcount])) > currColumnLength  else currColumnLength
+		columnLength.append(currColumnLength if currColumnLength < maxChars else maxChars)
+	return columnLength
 
 def maxCharactersCol(maxChars,cols,tabledata):
-    temp=""
-    rowcount=0
-    while rowcount < len(tabledata):
-        for colcount in range(cols):
-            while(len(str(tabledata[rowcount][colcount]))>maxChars):
-                temp=tabledata[rowcount]
-                tabledata[rowcount][colcount]=str(tabledata[rowcount][colcount]).replace('\n','')
-                tabledata.insert(rowcount,["" for x in range(cols)])
-                tabledata[rowcount+1]=[string[maxChars:] for string in temp]
-                tabledata[rowcount]=[string[0:maxChars] for string in temp]
-                rowcount+=1
-        rowcount+=1
-    return len(tabledata)
-            
+	temp=""
+	rowcount=0
+	while rowcount < len(tabledata):
+		for colcount in range(cols):
+			while(len(str(tabledata[rowcount][colcount]))>maxChars):
+				temp=tabledata[rowcount]
+				tabledata[rowcount][colcount]=str(tabledata[rowcount][colcount]).replace('\n','')
+				tabledata.insert(rowcount,["" for x in range(cols)])
+				tabledata[rowcount+1]=[string[maxChars:] for string in temp]
+				tabledata[rowcount]=[string[0:maxChars] for string in temp]
+				rowcount+=1
+		rowcount+=1
+	return len(tabledata)
+			
 def AddLines(rows, cols, columnLength, rowLength, tabledata, finalTable):
-    for rowcount in range(rows):
-        currentRow="|"
-        checkEmpty=""
-        for colcount in range(cols):
-                if(tabledata[rowcount][colcount]==""):
-                    checkEmpty="Yes"
-                currentRow += " " + tabledata[rowcount][colcount] + " " * (columnLength[colcount] - len(tabledata[rowcount][colcount]) + 1) + "|"  
-                rowUnderFields= "+"
-        if(checkEmpty!="Yes"):
-            for colcount in range(cols):
-                rowUnderFields += ("-" * (columnLength[colcount] + 2)+"+")
-            finalTable.append(rowUnderFields) 
-        finalTable.append(currentRow)
-    finalTable.append(finalTable[0])
-        
+	for rowcount in range(rows):
+		currentRow="|"
+		checkEmpty=""
+		for colcount in range(cols):
+				if(tabledata[rowcount][colcount]==""):
+					checkEmpty="Yes"
+				currentRow += " " + tabledata[rowcount][colcount] + " " * (columnLength[colcount] - len(tabledata[rowcount][colcount]) + 1) + "|"  
+				rowUnderFields= "+"
+		if(checkEmpty!="Yes"):
+			for colcount in range(cols):
+				rowUnderFields += ("-" * (columnLength[colcount] + 2)+"+")
+			finalTable.append(rowUnderFields) 
+		finalTable.append(currentRow)
+	finalTable.append(finalTable[0])
+		
 def printTable(tabledata):
-    rows = len(tabledata)
-    cols = len(tabledata[0])
-    maxChars=50
-    finalTable = []
-    columnLength=findColumnLength(maxChars,rows, cols,tabledata)
-    rows=maxCharactersCol(maxChars,cols,tabledata)
-    AddLines(rows, cols, columnLength, rows, tabledata, finalTable)
-    output=""
-    for row in finalTable:
-        output+=""+row+"\n"
-    return output
+	rows = len(tabledata)
+	cols = len(tabledata[0])
+	maxChars=50
+	finalTable = []
+	columnLength=findColumnLength(maxChars,rows, cols,tabledata)
+	rows=maxCharactersCol(maxChars,cols,tabledata)
+	AddLines(rows, cols, columnLength, rows, tabledata, finalTable)
+	output=""
+	for row in finalTable:
+		output+=""+row+"\n"
+	return output
 table_data=[["Parameters","Value"]]
 report_data=[["Check no","Check Name","Check Result","Check Analysis","Check Actions"]]
 failed_check_data=[["Check no","Check Name","Check Result","Check Actions"]]
@@ -305,16 +309,22 @@ def getLoip():
 #Controllers info
 def controllersInfo(controllers):
 	controllers_info = {}
+	controllers_missinginfo = {}
 	count = 1
 	for device in controllers['data']:
-		if device['deviceState'] == 'READY':		
+		if device['deviceState'] == 'READY':        
 			if 'state_vedgeList' not in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), 'no-vedges']
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), 'no-vedges', (device['serialNumber']) ]
+				controllers_missinginfo[device['deviceIP']] = 'state_vedgeList entry not found'
+				count += 1
+			elif 'version' not in device.keys():
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),'no-version' ,(device['reachability']),(device['globalState']), (device['state_vedgeList']), (device['serialNumber']) ]
+				controllers_missinginfo[device['deviceIP']] = 'version entry not found'
 				count += 1
 			else:
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), (device['state_vedgeList'])]
+				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), (device['state_vedgeList']), (device['serialNumber']) ]
 				count += 1
-	return controllers_info
+	return controllers_info, controllers_missinginfo
 
 #Certificate Info
 def certificateInfo(certificate):
@@ -345,13 +355,15 @@ def vedgeCount(vedges):
 	vedge_info = {}
 	if 'data' in vedges.keys(): #Condition to on retrieve info if endpoint returns data
 		for vedge in vedges['data']:
-			vedge_count+=1
-			if 'version' in vedge.keys():
-				vedge_count_active +=1
-				vedge_info[(vedge['host-name'])] = [vedge['version'] ,
-													vedge['validity'],
-													vedge['reachability']
-												   ]
+			if vedge['device-type'] == 'vedge':
+				vedge_count+=1
+				if 'version' in vedge.keys():
+					vedge_count_active +=1
+					vedge_info[(vedge['host-name'])] = [vedge['system-ip'],
+														vedge['version'] ,
+														vedge['validity'],
+														vedge['reachability']
+													   ]
 
 	return vedge_count, vedge_count_active, vedge_info
 
@@ -389,81 +401,86 @@ def  dpiStatus(dpi_stats):
 def serverType():
 	server_type = str(executeCommand('cat /sys/devices/virtual/dmi/id/sys_vendor'))
 
-	if 'VMware' in server_type or 'Red Hat' in server_type:   #add red hat kvm type
-		return 'on-prem'
-	elif 'Amazon'in server_type or 'Microsoft' in server_type:
-		return 'on-cloud'
+	if 'VMware' in server_type:
+		return 'on-prem', 'VMware'
+	elif 'Red Hat' in server_type:   #add red hat kvm type
+		return 'on-prem', 'Red Hat'
+	elif 'Amazon'in server_type:
+		return 'on-cloud', 'Amazon'
+	elif 'Microsoft' in server_type:
+		return 'on-cloud', 'Microsoft'
 
 #vManage: Validate server_configs.json
 def validateServerConfigsUUID():
-    success = False
-    server_configs_file = '/opt/web-app/etc/server_configs.json'
-    uuid_file = '/etc/viptela/uuid'
-    if os.path.isfile(uuid_file) == True:
-        with open(uuid_file) as uuid_f:
-            uuid_val = uuid_f.read().strip()
-    elif os.path.isfile(uuid_file) == False:
-        check_analysis = uuid_file + " file not found."
-        return success, check_analysis
+	success = False
+	server_configs_file = '/opt/web-app/etc/server_configs.json'
+	uuid_file = '/etc/viptela/uuid'
+	if os.path.isfile(uuid_file) == True:
+		with open(uuid_file) as uuid_f:
+			uuid_val = uuid_f.read().strip()
+	elif os.path.isfile(uuid_file) == False:
+		check_analysis = uuid_file + " file not found."
+		return success, check_analysis
 
-    if os.path.isfile(server_configs_file) == True:
-        with open(server_configs_file, 'r') as config_file:
-            try:
-                configs = json.load(config_file)
-                uuid = configs['cluster']
-                vmanageID = configs['vmanageID']
-                if vmanageID == '0' and uuid != "vmanage-upgraded":
-                   if uuid == uuid_val:
-                        success = True
-                        check_analysis = None
-                   else:
-                        success = False
-                        check_analysis = "Failed to validate the uuid from server_configs.json."
-                else:
-                    success = True
-                    check_analysis = "Validation of uuid from server_configs.json does not apply"
-            except:
-                success = False
-                check_analysis = "Failed to validate uuid from server configs file."
-    elif os.path.isfile(server_configs_file) == False :
-        check_analysis = server_configs_file + " file not found."
+	if os.path.isfile(server_configs_file) == True:
+		with open(server_configs_file, 'r') as config_file:
+			try:
+				configs = json.load(config_file)
+				uuid = configs['cluster']
+				vmanageID = configs['vmanageID']
+				if vmanageID == '0' and uuid != "vmanage-upgraded":
+				   if uuid == uuid_val:
+						success = True
+						check_analysis = None
+				   else:
+						success = False
+						check_analysis = "Failed to validate the uuid from server_configs.json."
+				else:
+					success = True
+					check_analysis = "Validation of uuid from server_configs.json does not apply"
+			except:
+				success = False
+				check_analysis = "Failed to validate uuid from server configs file."
+	elif os.path.isfile(server_configs_file) == False :
+		check_analysis = server_configs_file + " file not found."
 
-    return success, check_analysis
+	return success, check_analysis
 
 #vManage: Parse server_configs.json
 def _parse_local_server_config(services):
-    server_configs_file = '/opt/web-app/etc/server_configs.json'
-    server_config_dict = {}
-    if os.path.isfile(server_configs_file) == True:
-        try:
-            with open(server_configs_file, 'r') as data_dict:
-                server_configs_data = json.load(data_dict)
-                server_config_dict['vmanageID'] = server_configs_data['vmanageID']
-                server_config_dict['clusterUUID'] = server_configs_data['cluster']
-                server_config_dict['mode'] = server_configs_data['mode']
-                services_data_dict = server_configs_data["services"]
-                for service in services:
-                        serviceToDeviceIpMap = {}
-                        serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in services_data_dict[service]['hosts'].values()]
-                        serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in services_data_dict[service]['clients'].values()]
-                        serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
-                        server_config_dict[service] = serviceToDeviceIpMap
-                success = True
-                check_analysis = None
-        except Exception:
-            success = False
-            check_analysis = "Error while processing read server_configs.json."
-            log_file_logger.error("Error while processing read server_configs.json.")
+	server_configs_file = '/opt/web-app/etc/server_configs.json'
+	server_config_dict = {}
+	if os.path.isfile(server_configs_file) == True:
+		try:
+			with open(server_configs_file, 'r') as data_dict:
+				server_configs_data = json.load(data_dict)
+				server_config_dict['vmanageID'] = server_configs_data['vmanageID']
+				server_config_dict['clusterUUID'] = server_configs_data['cluster']
+				server_config_dict['mode'] = server_configs_data['mode']
+				services_data_dict = server_configs_data["services"]
+				for service in services:
+						serviceToDeviceIpMap = {}
+						serviceToDeviceIpMap['hosts'] = [node.split(":")[0] for node in services_data_dict[service]['hosts'].values()]
+						serviceToDeviceIpMap['clients'] = [node.split(":")[0] for node in services_data_dict[service]['clients'].values()]
+						serviceToDeviceIpMap['deviceIP'] = services_data_dict[service]["deviceIP"].split(":")[0]
+						serviceToDeviceIpMap['server'] = services_data_dict[service]["server"]
+						server_config_dict[service] = serviceToDeviceIpMap
+				success = True
+				check_analysis = None
+		except Exception:
+			success = False
+			check_analysis = "Error while processing read server_configs.json."
+			log_file_logger.error("Error while processing read server_configs.json.")
 
-    elif os.path.isfile(server_configs_file) == False:
-        success = False
-        check_analysis = server_configs_file + " file not found."
+	elif os.path.isfile(server_configs_file) == False:
+		success = False
+		check_analysis = server_configs_file + " file not found."
 
-    return server_config_dict, success, check_analysis
+	return server_config_dict, success, check_analysis
 
 def validateIps(serviceToDeviceIp, vmanage_ips):
-	if len(serviceToDeviceIp) == len(vmanage_ips):
-		check = all(item in serviceToDeviceIp for item in vmanage_ips)
+	if len(serviceToDeviceIp) == len(vmanage_ips) or len(serviceToDeviceIp) == 3:
+		check = all(item in  vmanage_ips  for item in serviceToDeviceIp)
 		if check is True:
 			return True
 
@@ -510,15 +527,16 @@ def validateServerConfigsFile():
 
 			# Check services
 			for service_name in services:
-				if (validateIps(server_config_dict[service_name]['hosts'], vmanage_ips) and validateIps(server_config_dict[service_name]['clients'], vmanage_ips) and server_config_dict[service_name]['deviceIP'] in vmanage_ips):
-					success = True
-					check_analysis = None
-					check_action = None
-				else:
-					success = False
-					check_analysis = "Failed to validate host/client/device IPs from server_configs.json for service_name:" + service_name
-					check_action = "Check the correctness of host/client/device IPs at server_configs.json for service_name:" + service_name
-					break
+				if server_config_dict[service_name]['server'] == True:
+					if (validateIps(server_config_dict[service_name]['hosts'], vmanage_ips) and validateIps(server_config_dict[service_name]['clients'], vmanage_ips) and server_config_dict[service_name]['deviceIP'] in vmanage_ips and server_config_dict[service_name]['hosts'] == server_config_dict[service_name]['clients']):
+						success = True
+						check_analysis = None
+						check_action = None
+					else:
+						success = False
+						check_analysis = "Failed to validate host/client/device IPs from server_configs.json for service_name:" + service_name
+						check_action = "Check the correctness of host/client/device IPs at server_configs.json for service_name:" + service_name
+						break
 
 		except:
 			success = False
@@ -616,24 +634,31 @@ def vmanage_tenancy_mode():
 	return mode
 
 def checkUtilization():
-	resource_usage = executeCommand('ps aux --sort -rss -ww | head -n 5')
-	resource_usage=resource_usage.split('vmanage  ')
-	wildfly_data= [match for match in resource_usage if "wildfly" in match]
-	wildfly_data=wildfly_data[0].split(' ')
-	wildfly_data=list(filter(None,wildfly_data))
-	wildfly_cpu =wildfly_data[1]
-	wildfly_mem = wildfly_data[2]
-	neo4j_data= [match for match in resource_usage if "neo4j" in match]
-	neo4j_data=neo4j_data[0].split(' ')
-	neo4j_data=list(filter(None,neo4j_data))
-	neo4j_cpu =neo4j_data[1]
-	neo4j_mem = neo4j_data[2]
-	elasticSearch_data= [match for match in resource_usage if "elasticsearch" in match]
-	elasticSearch_data=elasticSearch_data[0].split(' ')
-	elasticSearch_data=list(filter(None,elasticSearch_data))
-	elasticSearch_cpu =elasticSearch_data[1]
-	elasticSearch_mem = elasticSearch_data[2]
-	return wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem
+	resource_usage = executeCommand('ps aux --sort -rss -ww | head -n 6')
+
+	# Split the output into lines
+	lines = resource_usage.strip().split('\n')
+	processes = []
+	for line in lines[1:]:
+		fields = re.split(r'\s+', line.strip())
+		pid = fields[1]
+		cpu_percent = fields[2]
+		mem_percent = fields[3]
+		process_name = ' '.join(fields[10:])
+		
+		# Extract process name from the COMMAND field
+		process_name_match = re.search(r'/var/lib/([^/]+)', process_name)
+		if process_name_match:
+			process_name = process_name_match.group(1)
+		
+		processes.append({
+			'PID': pid,
+			'CPU %': cpu_percent,
+			'MEM %': mem_percent,
+			'Process Name': process_name
+		})
+	return processes
+
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -955,7 +980,7 @@ def criticalCheckeight(version_tuple):
 			version = str(first_digit)+'.'+str(second_digit)
 			version = float(version)
 			if version < 5.0 and version_tuple[0:2] < ('20', '3'):
-				version_list[es] = version	
+				version_list[es] = version  
 			elif version < 6.0 and version_tuple[0:2] < ('20', '6'):
 				version_list[es] = version
 		if len(version_list) != 0 and version_tuple[0:2] < ('20', '3'):
@@ -992,164 +1017,164 @@ def criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, tota
 	check_action = None
 
 	# try:
-	# 	api_returned_data = True
-	# 	if dpi_status != 'enable':
-	# 		dpi_estimate_ondeday = 0
-	# 		for index in (es_indices_est[1]['Per index disk space ']):
-	# 			if index['index'] == 'Approute' and index['status'] != 'success':
-	# 					appr_estimate_ondeday = None
-	# 			elif index['index'] == 'Approute' and index['status'] == 'success':
-	# 					appr_estimate_ondeday = index['estimation']['1 day   ']
-	# 					if 'KB' in appr_estimate_ondeday:
-	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
-	# 					elif 'MB' in appr_estimate_ondeday:
-	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
-	# 					elif 'GB' in appr_estimate_ondeday:
-	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
-	# 					elif 'TB' in appr_estimate_ondeday:
-	# 						appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
+	#   api_returned_data = True
+	#   if dpi_status != 'enable':
+	#       dpi_estimate_ondeday = 0
+	#       for index in (es_indices_est[1]['Per index disk space ']):
+	#           if index['index'] == 'Approute' and index['status'] != 'success':
+	#                   appr_estimate_ondeday = None
+	#           elif index['index'] == 'Approute' and index['status'] == 'success':
+	#                   appr_estimate_ondeday = index['estimation']['1 day   ']
+	#                   if 'KB' in appr_estimate_ondeday:
+	#                       appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
+	#                   elif 'MB' in appr_estimate_ondeday:
+	#                       appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
+	#                   elif 'GB' in appr_estimate_ondeday:
+	#                       appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
+	#                   elif 'TB' in appr_estimate_ondeday:
+	#                       appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
 
-	# 		if appr_estimate_ondeday == None:
-	# 			check_result = 'Failed'
-	# 			check_analysis = 'It was not possible to retrieve index data.'
-	# 			check_action = 'Check if there is any server side error, related to API execution'
+	#       if appr_estimate_ondeday == None:
+	#           check_result = 'Failed'
+	#           check_analysis = 'It was not possible to retrieve index data.'
+	#           check_action = 'Check if there is any server side error, related to API execution'
 
-	# 		elif appr_estimate_ondeday != None:
-	# 			if server_type == 'on-cloud' :
-	# 				if appr_estimate_ondeday_gb > 500.0:
-	# 					check_result = 'Failed'
-	# 					check_analysis = '''The rate of incoming Approute data is higher than expected.\n
-	# 										DPI is disabled.'''
+	#       elif appr_estimate_ondeday != None:
+	#           if server_type == 'on-cloud' :
+	#               if appr_estimate_ondeday_gb > 500.0:
+	#                   check_result = 'Failed'
+	#                   check_analysis = '''The rate of incoming Approute data is higher than expected.\n
+	#                                       DPI is disabled.'''
 
-	# 					check_action = 'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
-	# 				else:
-	# 					check_result = 'SUCCESSFUL'
-	# 					check_analysis = '''The rate of daily incoming Approute data is within limits.\n
-	# 										DPI is disabled.'''
-	# 					check_action = None
+	#                   check_action = 'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	#               else:
+	#                   check_result = 'SUCCESSFUL'
+	#                   check_analysis = '''The rate of daily incoming Approute data is within limits.\n
+	#                                       DPI is disabled.'''
+	#                   check_action = None
 
-	# 			elif server_type == 'on-prem':
-	# 				if appr_estimate_ondeday_gb <= 50.0:
-	# 					if cpu_count < 32 or  memory_size < 128:
-	# 						check_result = 'Failed'
-	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-	# 											DPI is disabled.'''
-	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	#           elif server_type == 'on-prem':
+	#               if appr_estimate_ondeday_gb <= 50.0:
+	#                   if cpu_count < 32 or  memory_size < 128:
+	#                       check_result = 'Failed'
+	#                       check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	#                                           DPI is disabled.'''
+	#                       check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 
-	# 				elif appr_estimate_ondeday_gb > 50.0 and appr_estimate_ondeday_gb <= 100.0:
-	# 					if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-	# 						check_result = 'Failed'
-	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-	# 											DPI is disabled.'''
-	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	#               elif appr_estimate_ondeday_gb > 50.0 and appr_estimate_ondeday_gb <= 100.0:
+	#                   if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	#                       check_result = 'Failed'
+	#                       check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	#                                           DPI is disabled.'''
+	#                       check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 
-	# 				elif appr_estimate_ondeday_gb > 100.0 and total_devices < 1000:
-	# 					if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-	# 						check_result = 'Failed'
-	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-	# 											DPI is disabled.'''
-	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	#               elif appr_estimate_ondeday_gb > 100.0 and total_devices < 1000:
+	#                   if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	#                       check_result = 'Failed'
+	#                       check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	#                                           DPI is disabled.'''
+	#                       check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
 
-	# 				elif appr_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
-	# 					if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
-	# 						check_result = 'Failed'
-	# 						check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
-	# 											DPI is disabled.'''
-	# 						check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
-	# 				else:
-	# 					check_result = 'SUCCESSFUL'
-	# 					check_analysis = '''The rate of daily incoming Approute data is within limits.\n
-	# 										DPI is disabled.'''
-	# 					check_action = None
+	#               elif appr_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
+	#                   if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
+	#                       check_result = 'Failed'
+	#                       check_analysis = '''The CPU Count/Memory size is insufficient for the daily incoming Approute data.\n
+	#                                           DPI is disabled.'''
+	#                       check_action =  'Server hardware size may need to be changed according to the rate of daily incoming Approute data.'
+	#               else:
+	#                   check_result = 'SUCCESSFUL'
+	#                   check_analysis = '''The rate of daily incoming Approute data is within limits.\n
+	#                                       DPI is disabled.'''
+	#                   check_action = None
 
-	# 	elif dpi_status == 'enable':
-	# 		for index in (es_indices_est[1]['Per index disk space ']):
-	# 			if index['index'] == 'DPI' and index['status'] != 'success':
-	# 				dpi_estimate_ondeday = None
+	#   elif dpi_status == 'enable':
+	#       for index in (es_indices_est[1]['Per index disk space ']):
+	#           if index['index'] == 'DPI' and index['status'] != 'success':
+	#               dpi_estimate_ondeday = None
 
-	# 			elif index['index'] == 'Approute' and index['status'] != 'success':
-	# 				appr_estimate_ondeday = None
-	# 				dpi_estimate_ondeday = None
+	#           elif index['index'] == 'Approute' and index['status'] != 'success':
+	#               appr_estimate_ondeday = None
+	#               dpi_estimate_ondeday = None
 
-	# 			elif index['index'] == 'DPI' and index['status'] == 'success':
-	# 				dpi_estimate_ondeday = index['estimation']['1 day   ']
-	# 				if 'KB' in dpi_estimate_ondeday:
-	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024**2)
-	# 				elif 'MB' in dpi_estimate_ondeday:
-	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024)
-	# 				elif 'GB' in dpi_estimate_ondeday:
-	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])
-	# 				elif 'TB' in dpi_estimate_ondeday:
-	# 					dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])*(1024)
+	#           elif index['index'] == 'DPI' and index['status'] == 'success':
+	#               dpi_estimate_ondeday = index['estimation']['1 day   ']
+	#               if 'KB' in dpi_estimate_ondeday:
+	#                   dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024**2)
+	#               elif 'MB' in dpi_estimate_ondeday:
+	#                   dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])/(1024)
+	#               elif 'GB' in dpi_estimate_ondeday:
+	#                   dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])
+	#               elif 'TB' in dpi_estimate_ondeday:
+	#                   dpi_estimate_ondeday_gb = float(dpi_estimate_ondeday.split(' ')[0])*(1024)
 
-	# 			elif index['index'] == 'Approute' and index['status'] == 'success':
-	# 				appr_estimate_ondeday = index['estimation']['1 day   ']
-	# 				if 'KB' in appr_estimate_ondeday:
-	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
-	# 				elif 'MB' in appr_estimate_ondeday:
-	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
-	# 				elif 'GB' in appr_estimate_ondeday:
-	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
-	# 				elif 'TB' in appr_estimate_ondeday:
-	# 					appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
+	#           elif index['index'] == 'Approute' and index['status'] == 'success':
+	#               appr_estimate_ondeday = index['estimation']['1 day   ']
+	#               if 'KB' in appr_estimate_ondeday:
+	#                   appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024**2)
+	#               elif 'MB' in appr_estimate_ondeday:
+	#                   appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])/(1024)
+	#               elif 'GB' in appr_estimate_ondeday:
+	#                   appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])
+	#               elif 'TB' in appr_estimate_ondeday:
+	#                   appr_estimate_ondeday_gb = float(appr_estimate_ondeday.split(' ')[0])*(1024)
 
 	# except:
-	# 	dpi_estimate_ondeday = None
-	# 	appr_estimate_ondeday = None
-	# 	api_returned_data = False
+	#   dpi_estimate_ondeday = None
+	#   appr_estimate_ondeday = None
+	#   api_returned_data = False
 
 	# if api_returned_data == False:
-	# 	check_result = 'Failed'
-	# 	check_analysis = 'Error retrieving data using the endpoint: https://<vManage-IPAddress>:<vManage-Port>/dataservice/management/elasticsearch/index/size/estimate'
-	# 	check_action = 'Investigate why the API is not returning appropriate data.'
+	#   check_result = 'Failed'
+	#   check_analysis = 'Error retrieving data using the endpoint: https://<vManage-IPAddress>:<vManage-Port>/dataservice/management/elasticsearch/index/size/estimate'
+	#   check_action = 'Investigate why the API is not returning appropriate data.'
 	# elif api_returned_data == True:
-	# 	if dpi_estimate_ondeday == None:
-	# 		check_result = 'Failed'
-	# 		check_analysis = 'The status of Index-DPI is not success'
-	# 		check_action = 'Investigate why the Index-DPI status is not "success"'
+	#   if dpi_estimate_ondeday == None:
+	#       check_result = 'Failed'
+	#       check_analysis = 'The status of Index-DPI is not success'
+	#       check_action = 'Investigate why the Index-DPI status is not "success"'
 
-	# 	elif dpi_estimate_ondeday != None:
-	# 		total_estimate_oneday_gb = dpi_estimate_ondeday_gb + appr_estimate_ondeday_gb
+	#   elif dpi_estimate_ondeday != None:
+	#       total_estimate_oneday_gb = dpi_estimate_ondeday_gb + appr_estimate_ondeday_gb
 
-	# 		if server_type == 'on-cloud' :
-	# 			if total_estimate_oneday_gb > 500.0:
-	# 				check_result = 'Failed'
-	# 				check_analysis = 'The incoming rate of DPI is higher than expected.Consider using vAnalytics for DPI. Contact Cisco TAC for more information on this.'
-	# 				check_action = 'Server hardware size may need to be changed according to the rate of incoming DPI data.'
-	# 			else:
-	# 				check_result = 'SUCCESSFUL'
-	# 				check_analysis = 'The rate of daily incoming DPI data is within limits.'
-	# 				check_action = None
+	#       if server_type == 'on-cloud' :
+	#           if total_estimate_oneday_gb > 500.0:
+	#               check_result = 'Failed'
+	#               check_analysis = 'The incoming rate of DPI is higher than expected.Consider using vAnalytics for DPI. Contact Cisco TAC for more information on this.'
+	#               check_action = 'Server hardware size may need to be changed according to the rate of incoming DPI data.'
+	#           else:
+	#               check_result = 'SUCCESSFUL'
+	#               check_analysis = 'The rate of daily incoming DPI data is within limits.'
+	#               check_action = None
 
-	# 		elif server_type == 'on-prem':
-	# 			if dpi_estimate_ondeday_gb <= 50.0:
-	# 				if cpu_count < 32 or  memory_size < 128:
-	# 					check_result = 'Failed'
-	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	#       elif server_type == 'on-prem':
+	#           if dpi_estimate_ondeday_gb <= 50.0:
+	#               if cpu_count < 32 or  memory_size < 128:
+	#                   check_result = 'Failed'
+	#                   check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	#                   check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-	# 			elif dpi_estimate_ondeday_gb > 50.0 and dpi_estimate_ondeday_gb <= 100.0:
-	# 				if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-	# 					check_result = 'Failed'
-	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	#           elif dpi_estimate_ondeday_gb > 50.0 and dpi_estimate_ondeday_gb <= 100.0:
+	#               if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	#                   check_result = 'Failed'
+	#                   check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	#                   check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-	# 			elif dpi_estimate_ondeday_gb > 100.0 and total_devices < 1000:
-	# 				if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
-	# 					check_result = 'Failed'
-	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	#           elif dpi_estimate_ondeday_gb > 100.0 and total_devices < 1000:
+	#               if cluster_size < 3 or cpu_count < 32 or memory_size < 128:
+	#                   check_result = 'Failed'
+	#                   check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	#                   check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-	# 			elif dpi_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
-	# 				if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
-	# 					check_result = 'Failed'
-	# 					check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
-	# 					check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
+	#           elif dpi_estimate_ondeday_gb > 100.0 and total_devices >= 1000:
+	#               if cluster_size < 6 or cpu_count < 32 or memory_size < 128:
+	#                   check_result = 'Failed'
+	#                   check_analysis = 'The CPU Count/Memory size is insufficient for the daily incoming DPI data.'
+	#                   check_action =  'Server hardware size may need to be changed according to the DPI incoming rate.'
 
-	# 			else:
-	# 				check_result = 'SUCCESSFUL'
-	# 				check_analysis = '''The rate of daily incoming DPI data is within limits.'''
-	# 				check_action = None
+	#           else:
+	#               check_result = 'SUCCESSFUL'
+	#               check_analysis = '''The rate of daily incoming DPI data is within limits.'''
+	#               check_action = None
 
 	return  appr_estimate_ondeday, dpi_estimate_ondeday, check_result, check_analysis, check_action
 
@@ -1235,9 +1260,9 @@ def criticalChecknineteen(version_tuple):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Check is not required on version 19.2 and below.'
 		check_action = None
-	else:	
+	else:   
 		db_data = showCommand('request nms configuration-db diagnostics')
-		if 'Disk space used by configuration' in db_data:
+		if 'space used by configuration-db' in db_data:
 			db_size = db_data.split('\n')[-2]
 			db_size = match(db_size, '\d+\.?\d*[BKMGT]')
 			if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
@@ -1270,17 +1295,17 @@ def criticalCheckeleven(total_devices, vbond_info, vsmart_info):
 	failed_vsmarts = {}
 
 	for vsmart in vsmart_info:
-		if vsmart_info[vsmart][6] < 2 and total_devices <= 50:
+		if vsmart_info[vsmart][7] < 2 and total_devices <= 50:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
-		elif vsmart_info[vsmart][6] < 4 and total_devices > 50 and  total_devices <= 1000:
+		elif vsmart_info[vsmart][7] < 4 and total_devices > 50 and  total_devices <= 1000:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
-		elif vsmart_info[vsmart][6] < 8 and total_devices > 1000:
+		elif vsmart_info[vsmart][7] < 8 and total_devices > 1000:
 			failed_vsmarts[vsmart] = vsmart_info[vsmart]
 
 	for vbond in vbond_info:
-		if vbond_info[vbond][6] < 2 and total_devices <= 1000:
+		if vbond_info[vbond][7] < 2 and total_devices <= 1000:
 			failed_vbonds[vbond] = vbond_info[vbond]
-		elif vbond_info[vbond][6] < 4 and total_devices > 1000:
+		elif vbond_info[vbond][7] < 4 and total_devices > 1000:
 			failed_vbonds[vbond] = vbond_info[vbond]
 
 	if len(failed_vbonds) != 0 or len(failed_vsmarts) != 0:
@@ -1574,12 +1599,38 @@ def criticalChecktwentytwo(version):
 
 	return check_result, check_analysis, check_action
 
+#17:Check:Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge
+def criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip):
+	if cedge_ip == None:
+		check_result = 'SUCCESSFUL'
+		check_analysis = 'There are no cEdge devices connected hence this check is not required.'
+		check_action = None
+		api_sn = None
+		controllers_info_sn = None
+	else:   
+		api_sn = [item["serial-number"] for item in cedge_validvsmarts_info['data']]
+		controllers_info_sn = [item[6] for item in controllers_info.values() if item[3] == "reachable" and item[0] in ['vmanage', 'vsmart']]
+		if len(api_sn) == len(controllers_info_sn) and api_sn == controllers_info_sn:
+			check_result = 'SUCCESSFUL'
+			check_analysis = 'The vManage+vSmart UUIDs are consistent in cEdges'
+			check_action = None
+		else:
+			check_result = 'Failed'
+			check_analysis = 'The vManage+vSmart UUIDs are not consistent in cEdges'
+			check_action = 'Contact TAC to find out why there are inconsistencies in the vManage+vSmart UUIDS in cEdges'
+		
+	return api_sn, controllers_info_sn, check_result, check_analysis, check_action
+
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
 
 #01:Check:vManage:CPU Speed
-def warningCheckone(cpu_speed):
-	if cpu_speed < 2.8:
+def warningCheckone(cpu_speed, server_company):
+	if server_company == 'Microsoft' and cpu_speed < 2.6:
+		check_result = 'Failed'
+		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
+		check_action = 'Upgrade the hardware type'
+	elif cpu_speed < 2.8:
 		check_result = 'Failed'
 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
 		check_action = 'Upgrade the hardware type'
@@ -1770,7 +1821,7 @@ def warningCheckeight(certificate_info):
 			elif timedelta(seconds=certificate_info[controller][1]) > timedelta(seconds=2592000):
 				controllers_notexp[controller] = str(time_remaining)
 		except:
-			controllers_exp[controller] = 'unknown'	
+			controllers_exp[controller] = 'unknown' 
 	if len(controllers_exp) == 0:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Certificates are ok'
@@ -1895,12 +1946,12 @@ def infoCheckthree(controllers_info):
 # This function is not used in version less than 20.5
 #04:Check:vManage:Persona type: COMPUTE/DATA/COMPUTE_AND_DATA
 # def infoCheckfour(version):
-# 	#vmanage version
-# 	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-# 	check_result = 'SUCCESSFUL'
-# 	check_analysis = 'Check is not required for the current version'
-# 	check_action = None
-# 	return check_result, check_analysis, check_action, persona_type
+#   #vmanage version
+#   vmanage_version = float('.'.join((version.split('.'))[0:2]))
+#   check_result = 'SUCCESSFUL'
+#   check_analysis = 'Check is not required for the current version'
+#   check_action = None
+#   return check_result, check_analysis, check_action, persona_type
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -2045,9 +2096,11 @@ if __name__ == "__main__":
 
 		try:
 			controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
-			controllers_info = controllersInfo(controllers)
+			controllers_info, controllers_missinginfo = controllersInfo(controllers)
 			log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-			
+			if controllers_missinginfo:
+				log_file_logger.error('Controllers missing information: {}'.format(controllers_missinginfo))
+
 			certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port))
 			certificate_info=certificateInfo(certificate)
 			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
@@ -2060,15 +2113,15 @@ if __name__ == "__main__":
 			table_data.append(['vManage CPU Speed',str(cpu_speed)])
 
 			cpu_count = cpuCount()
-			table_data.append(['vManage CPU Count',str(cpu_count)])	
+			table_data.append(['vManage CPU Count',str(cpu_count)]) 
 
-			vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
+			vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device', args.vmanage_port))
 			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-			table_data.append(['vEdge Count',str(vedge_count)])	
+			table_data.append(['vEdge Count',str(vedge_count)]) 
 
 			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-			table_data.append(['vManage Cluster Size',str(cluster_size)])	
-			table_data.append(['vManage Server Mode',str(server_mode)])	
+			table_data.append(['vManage Cluster Size',str(cluster_size)])   
+			table_data.append(['vManage Server Mode',str(server_mode)]) 
 
 			disk_controller = diskController()
 			table_data.append(['vManage Disk Controller Type',str(disk_controller)])
@@ -2077,7 +2130,7 @@ if __name__ == "__main__":
 			dpi_status = dpiStatus(dpi_stats)
 			table_data.append(['DPI Status',str(dpi_status)])
 
-			server_type = serverType()
+			server_type, server_company  = serverType()
 			table_data.append(['Server Type',str(server_type)])
 
 			vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
@@ -2086,13 +2139,11 @@ if __name__ == "__main__":
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
-			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
-			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
-			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
-			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
-			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
-			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
+			processes=checkUtilization()
+			for process in processes:
+				table_data.append(["{} CPU Utilization(RSS)".format(process['Process Name']), str(process['CPU %']) + "%"])
+				table_data.append(["{} Memory Utilization(RSS)".format(process['Process Name']), str(process['MEM %']) + "%"])
+		
 
 			total_devices = len(controllers_info) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
@@ -2652,7 +2703,7 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			check_result,check_analysis,check_action = warningCheckone(cpu_speed)
+			check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
@@ -3313,7 +3364,7 @@ if __name__ == "__main__":
 		writeFile(report_file, '{}'.format(printTable(report_data)))
 
 	#version above 19.2 and less than 20.5
-	elif version_tuple[0:2] >= (19,2) and version_tuple[0:2] < (20,5):
+	elif version_tuple[0:2] >= (19,2) and version_tuple[0:2] <= (20,5):
 		try:
 			log_file_logger.info('Generating a JSessionID')
 			jsessionid = generateSessionID(vmanage_lo_ip, args.username, password, args.vmanage_port)
@@ -3336,9 +3387,11 @@ if __name__ == "__main__":
 
 		try:
 			controllers = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/controllers', args.vmanage_port))
-			controllers_info = controllersInfo(controllers)
+			controllers_info, controllers_missinginfo = controllersInfo(controllers)
 			log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
-			
+			if controllers_missinginfo:
+				log_file_logger.error('Controllers missing information: {}'.format(controllers_missinginfo))
+
 			certificate=json.loads(getRequest(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
 			certificate_info=certificateInfo(certificate)
 			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
@@ -3351,15 +3404,15 @@ if __name__ == "__main__":
 			table_data.append(['vManage CPU Speed',str(cpu_speed)])
 
 			cpu_count = cpuCount()
-			table_data.append(['vManage CPU Count',str(cpu_count)])	
+			table_data.append(['vManage CPU Count',str(cpu_count)]) 
 
-			vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'system/device/vedges', args.vmanage_port))
+			vedges = json.loads(getRequest(version_tuple, vmanage_lo_ip , jsessionid,'device', args.vmanage_port))
 			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-			table_data.append(['vEdge Count',str(vedge_count)])	
+			table_data.append(['vEdge Count',str(vedge_count)]) 
 
 			cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
-			table_data.append(['vManage Cluster Size',str(cluster_size)])	
-			table_data.append(['vManage Server Mode',str(server_mode)])	
+			table_data.append(['vManage Cluster Size',str(cluster_size)])   
+			table_data.append(['vManage Server Mode',str(server_mode)]) 
 
 			disk_controller = diskController()
 			table_data.append(['vManage Disk Controller Type',str(disk_controller)])
@@ -3368,7 +3421,7 @@ if __name__ == "__main__":
 			dpi_status = dpiStatus(dpi_stats)
 			table_data.append(['DPI Status',str(dpi_status)])
 
-			server_type = serverType()
+			server_type, server_company  = serverType()
 			table_data.append(['Server Type',str(server_type)])
 
 			vbond_info, vsmart_info = vbondvmartInfo(controllers_info)
@@ -3377,14 +3430,11 @@ if __name__ == "__main__":
 			log_file_logger.info('vSmart info: {}'.format(vbond_info))
 			log_file_logger.info('vBond info: {}'.format(vsmart_info))
 
-			wildfly_cpu, wildfly_mem, elasticSearch_cpu, elasticSearch_mem,neo4j_cpu,neo4j_mem=checkUtilization()
-			table_data.append(['Wildfly process CPU Utilization(RSS)',str(wildfly_cpu+"")+"%"])
-			table_data.append(['Wildfly process Memory Utilization(RSS)',str(wildfly_mem)+"%"])
-			table_data.append(['neo4j process CPU Utilization(RSS)',str(neo4j_cpu)+"%"])
-			table_data.append(['neo4j process Memory Utilization(RSS)',str(neo4j_mem)+"%"])
-			table_data.append(['elasticSearch process CPU Utilization(RSS)',str(elasticSearch_cpu)+"%"])
-			table_data.append(['elasticSearch process Memory Utilization(RSS) ',str(elasticSearch_mem)+"%"])
-
+			processes=checkUtilization()
+			for process in processes:
+				table_data.append(["{} CPU Utilization(RSS)".format(process['Process Name']), str(process['CPU %']) + "%"])
+				table_data.append(["{} Memory Utilization(RSS)".format(process['Process Name']), str(process['MEM %']) + "%"])
+		
 			total_devices = len(controllers_info) + vedge_count
 			table_data.append(['Total devices',str(total_devices)])
 			json_final_result['json_data_pdf']['vmanage execution info'] = {"vManage Details":{
@@ -4026,6 +4076,51 @@ if __name__ == "__main__":
 					check_name, log_file_path))
 			log_file_logger.exception('{}\n'.format(e))
 
+		#Check:Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge
+		check_count += 1
+		check_count_zfill = zfill_converter(check_count)
+		if args.quiet == False and args.debug == False and args.verbose == False:
+			print(' Critical Check:#{}'.format(check_count_zfill))
+		if args.debug == True or args.verbose == True:
+			print(' #{}:Checking:Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge'.format(check_count_zfill))
+		check_name = '#{}:Check::Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge'.format(check_count_zfill)
+		pre_check(log_file_logger, check_name)
+		try:
+			if vedge_info:
+				cedge_ip = next(iter(vedge_info.values()))[0]
+				cedge_validvsmarts_info = json.loads(getRequest( version_tuple, vmanage_lo_ip,jsessionid, 'device/control/validvsmarts?deviceId={}'.format(cedge_ip), args.vmanage_port,tokenid))
+			else:
+				cedge_ip = None
+				cedge_validvsmarts_info = None
+			api_sn, controllers_info_sn, check_result, check_analysis, check_action = criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip) 
+			if check_result == 'Failed':
+				critical_checks[check_name] = [check_analysis, check_action]
+				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				log_file_logger.error('#{}: List of UUIDs retrieved from cEdge {}: \n{}'.format(check_count_zfill, cedge_ip, api_sn))
+				log_file_logger.error('#{}: List of UUIDs of vSmarts and vManages: \n{}'.format(check_count_zfill, controllers_info_sn))
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+				if args.debug == True:
+					print('\033[1;31m ERROR: {} \033[0;0m \n\n'.format(check_analysis))
+			else:
+				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+				log_file_logger.info('#{}: List of UUIDs retrieved from cEdge {}: \n{}'.format(check_count_zfill, cedge_ip, api_sn))
+				log_file_logger.info('#{}: List of UUIDs of vSmarts and vManages: \n{}'.format(check_count_zfill, controllers_info_sn))
+				if args.debug == True:
+					print(' INFO:{}\n\n'.format(check_analysis))
+			json_final_result['json_data_pdf']['description']['vManage'].append(
+				{'analysis type': '{}'.format(check_name.split(':')[-1]),
+					'log type': '{}'.format(result_log['Critical'][check_result]),
+					'result': '{}'.format(check_analysis),
+					'action': '{}'.format(check_action),
+					'status': '{}'.format(check_result),
+					'document': ''})
+		except Exception as e:
+			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
+					check_name, log_file_path))
+			log_file_logger.exception('{}\n'.format(e))
+
+
 		#Warning Checks
 		if args.quiet == False:
 			print('\n**** Performing Warning checks\n')
@@ -4042,7 +4137,7 @@ if __name__ == "__main__":
 		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
 		pre_check(log_file_logger, check_name)
 		try:
-			check_result,check_analysis,check_action = warningCheckone(cpu_speed)
+			check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
 			if check_result == 'Failed':
 				warning_checks[check_name] = [ check_analysis, check_action]
 				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
