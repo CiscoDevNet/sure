@@ -1601,12 +1601,12 @@ def criticalChecktwentytwo(version):
 
 #17:Check:Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge
 def criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip):
+	api_sn = None
+	controllers_info_sn = None
 	if cedge_ip == None:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'There are no cEdge devices connected hence this check is not required.'
 		check_action = None
-		api_sn = None
-		controllers_info_sn = None
 	else:   
 		api_sn = [item["serial-number"] for item in cedge_validvsmarts_info['data']]
 		controllers_info_sn = [item[6] for item in controllers_info.values() if item[3] == "reachable" and item[0] in ['vmanage', 'vsmart']]
