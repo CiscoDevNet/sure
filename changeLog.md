@@ -1,3 +1,29 @@
+- v3.2.0 (Planned for 4th October 2023)
+  - Total Checks Added: 1
+    - Critical Check - Verify if stale entry of vManage+vSmart UUID present on any one cEdge 
+      https://github.com/CiscoDevNet/sure/issues/106
+      
+  - Total Issues Fixed: 9
+    - Error Collecting Prelimiary Data- vEdge information
+      https://github.com/CiscoDevNet/sure/issues/103
+      https://github.com/CiscoDevNet/sure/issues/104 (Duplicate)
+    - #01:CPU Speed - Permit lower speed for Azure Infrastructure
+      https://github.com/CiscoDevNet/sure/issues/101
+    - checkUtilization failing where wildfly. neo4j and elasticache not in the top 5 processes
+      https://github.com/CiscoDevNet/sure/issues/100
+    - py3 Library Errors on 20.5
+      https://github.com/CiscoDevNet/sure/issues/99
+    - py2 script error for 20.5.x versions
+      https://github.com/CiscoDevNet/sure/issues/98
+    - Text Discrepancy in Critical Check Nineteen
+      https://github.com/CiscoDevNet/sure/issues/97
+    - Preliminary Data: elasticSearch_data IndexError: list index out of range
+      https://github.com/CiscoDevNet/sure/issues/88
+    - KeyError: 'version' when collecting ControllersInfo - Preliminary Data
+      https://github.com/CiscoDevNet/sure/issues/43
+    - Tool fails with ERROR:'version'
+      https://github.com/CiscoDevNet/sure/issues/3
+
 - v3.0.0 (30th March 2023)
   - Total Enhancements: 6
     - Split the script into Python2 and Python3 versions
@@ -19,7 +45,7 @@
     - Critical Check - Validate server configs file on vManage
     - Critical Check - Validate UUID at /etc/viptela/uuid
 
-  - Total Issues: 5
+  - Total Issues Fixed: 5
     - Need to sanitize user input & perform error handling 
       https://github.com/CiscoDevNet/sure/issues/24
     - Keyerror exception on 'timeRemainingForExpiration' 

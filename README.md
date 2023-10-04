@@ -1,5 +1,5 @@
 # AURA-SDWAN (SURE)
-Cisco AURA-SDWAN (SURE) Command Line tool performs a total of 26(Non Cluster Mode) or 32(Cluster Mode) checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
+Cisco AURA-SDWAN (SURE) Command Line tool performs a total of 30(Non Cluster Mode) or 36(Cluster Mode) checks at different levels of the SDWAN overlay. The purpose of the tool is to prevent potential failures and recommend corrective actions for a seamless upgrade process. The tool retrieves data using GET API Calls and show/shell commands.<br>
 
 The objective is to execute without impact the performance of the vManage or other devices.
 
@@ -58,7 +58,7 @@ Obtain file content from this site, then copy via SCP to the server. <br>
 ```sh
 usage: sure.py [-h] [-q] [-v] [-d] -u USERNAME 
 
-SURE - SDWAN Uprade Readiness Engine - v3.0.0
+SURE - SDWAN Uprade Readiness Engine - v3.2.0
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -111,7 +111,7 @@ CLI Output on executing the script in normal mode.
 vmanage-cluster1:~$ python3 py3_sure.py -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.0.0                      ###
+###         SURE – Version 3.2.0                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -134,7 +134,7 @@ In the quiet execution mode it quietly performs all the checks and on completion
 vmanage-cluster1:~$ python3 py3_sure.py -q -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.0.0                      ###
+###         SURE – Version 3.2.0                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -153,7 +153,7 @@ In this mode the progress of the checks being performed can be monitored from th
 vmanage-cluster1:~$ python3 py3_sure.py -v -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.0.0                      ###
+###         SURE – Version 3.2.0                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -176,7 +176,7 @@ vManage Password:
 vmanage-cluster1:~$ python3 py3_sure.py -d -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.0.0                      ###
+###         SURE – Version 3.2.0                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -253,6 +253,7 @@ criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_de
 \#14:Check:vManage:Validate server configs file on vManage<br>
 \#15:Check:vManage:Validate UUID at /etc/viptela/uuid<br>
 \#16:Check:Controllers:Validate vSmart/vBond CPU count for scale<br>
+\#17:Check:Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge<br>
 
 **_Checks with severity level: WARNING_**<br>
 \#1:Check:vManage:CPU Speed<br>
