@@ -312,18 +312,18 @@ def controllersInfo(controllers):
 	controllers_missinginfo = {}
 	count = 1
 	for device in controllers['data']:
-		if device['deviceState'] == 'READY':        
-			if 'state_vedgeList' not in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), 'no-vedges', (device['serialNumber']) ]
-				controllers_missinginfo[device['deviceIP']] = 'state_vedgeList entry not found'
-				count += 1
-			elif 'version' not in device.keys():
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),'no-version' ,(device['reachability']),(device['globalState']), (device['state_vedgeList']), (device['serialNumber']) ]
-				controllers_missinginfo[device['deviceIP']] = 'version entry not found'
-				count += 1
-			else:
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']),(device['version']) ,(device['reachability']),(device['globalState']), (device['state_vedgeList']), (device['serialNumber']) ]
-				count += 1
+		if device['deviceState'] == 'READY':
+			device_type = device.get('deviceType', 'no-deviceType')
+			device_ip = device.get('deviceIP', 'no-deviceIP')
+			version = device.get('version', 'no-version')
+			reachability = device.get('reachability', 'no-reachability')
+			global_state = device.get('globalState', 'no-globalState')
+			state_vedgeList = device.get('state_vedgeList', 'no-vedges')
+			serial_number = device.get('serialNumber', 'no-serialNumber')
+
+			controllers_info[count] = [device_type, device_ip, version, reachability, global_state, state_vedgeList, serial_number]
+
+			count += 1
 	return controllers_info, controllers_missinginfo
 
 #Certificate Info
@@ -658,7 +658,6 @@ def checkUtilization():
 			'Process Name': process_name
 		})
 	return processes
-
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
@@ -2550,7 +2549,7 @@ if __name__ == "__main__":
 				if args.debug == True:
 					print(' INFO:{}\n\n'.format(check_analysis))
 			if len(ntp_nonreachable) != 0:
-				print('  #{}: Devices which are not reachble for ntp associations: \n  {}\n'.format(check_count_zfill, ntp_nonreachable))
+				#print('  #{}: Devices which are not reachble for ntp associations: \n  {}\n'.format(check_count_zfill, ntp_nonreachable))
 				log_file_logger.error('#{}: Devices which are not reachble for ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonreachable))
 			json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 															'log type': '{}'.format(result_log['Critical'][check_result]),

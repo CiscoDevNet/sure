@@ -325,18 +325,18 @@ def controllersInfo(controllers):
 	controllers_missinginfo = {}
 	count = 1
 	for device in controllers['data']:
-		if device['deviceState'] == 'READY':        
-			if 'state_vedgeList' not in device.keys():
-				controllers_info[count] = [(device['deviceType']), (device['deviceIP']), (device['version']),(device['reachability']),(device['globalState']), 'no-vedges', (device['serialNumber']) ]
-				controllers_missinginfo[device['deviceIP']] = 'state_vedgeList entry not found'
-				count += 1
-			elif 'version' not in device.keys():
-				controllers_info[count] = [(device['deviceType']), (device['deviceIP']), 'no-version', (device['reachability']), (device['globalState']), (device['state_vedgeList']), (device['serialNumber']) ]
-				controllers_missinginfo[device['deviceIP']] = 'version entry not found'
-				count += 1
-			else:
-				controllers_info[count] = [(device['deviceType']),(device['deviceIP']), (device['version']), (device['reachability']), (device['globalState']), (device['state_vedgeList']), (device['serialNumber']) ]
-				count += 1
+		if device['deviceState'] == 'READY':
+			device_type = device.get('deviceType', 'no-deviceType')
+			device_ip = device.get('deviceIP', 'no-deviceIP')
+			version = device.get('version', 'no-version')
+			reachability = device.get('reachability', 'no-reachability')
+			global_state = device.get('globalState', 'no-globalState')
+			state_vedgeList = device.get('state_vedgeList', 'no-vedges')
+			serial_number = device.get('serialNumber', 'no-serialNumber')
+
+			controllers_info[count] = [device_type, device_ip, version, reachability, global_state, state_vedgeList, serial_number]
+
+			count += 1
 	return controllers_info, controllers_missinginfo
 
 #Certificate Info
@@ -663,6 +663,24 @@ def checkUtilization():
 		})
 	return processes
 	
+#Compare vManage versions
+def compare_versions(version1, version2):
+	# Split version strings and convert to floats
+	major1, minor1 = map(float, version1.split('.'))
+	major2, minor2 = map(float, version2.split('.'))
+
+	# Compare the major version first
+	if major1 > major2:
+		return False
+	elif major1 < major2:
+		return True
+	
+	# If major versions are equal, compare the minor version
+	if minor1 > minor2:
+		return False
+	elif minor1 < minor2:
+		return True
+	
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
 
@@ -679,8 +697,10 @@ def criticalCheckone(version):
 		boot_partition_size_Gig = ((float(boot_partition_size[0][0]))/1000)/1000
 
 	#vmanage version
-	vmanage_version = float('.'.join((version.split('.'))[0:2]))
-	if vmanage_version > 20.9:
+	vmanage_version_str = '.'.join((version.split('.'))[0:2])
+	vmanage_version = float(vmanage_version_str)
+
+	if compare_versions('20.9', vmanage_version_str) == True:
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, which is the latest version.'.format(version)
 		check_action = None
@@ -710,6 +730,10 @@ def criticalCheckone(version):
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'Current vManage version is {}, Direct Upgrade to to release in 20.9 and For cluster upgrade make sure to perform procedure**: request nms configuration-db upgrade'
 		check_action = None
+	else:
+		check_result = 'Failed'
+		check_analysis = 'Error identifying the vManage Version'
+		check_action = 'Identify the existing version and Upgrade to the recommended version'
 	return (' '.join(boot_partition_size[0])), check_result, check_analysis, check_action
 
 #02:Check:vManage:At minimum 20%  server disk space should be available
@@ -2449,7 +2473,7 @@ if __name__ == "__main__":
 			if args.debug == True:
 				print(' INFO:{}\n\n'.format(check_analysis))
 		if len(ntp_nonreachable) != 0:
-			print('  #{}: Devices which are not reachble for ntp associations: \n  {}\n'.format(check_count_zfill, ntp_nonreachable))
+			#print('  #{}: Devices which are not reachble for ntp associations: \n  {}\n'.format(check_count_zfill, ntp_nonreachable))
 			log_file_logger.error('#{}: Devices which are not reachble for ntp associations: \n{}\n'.format(check_count_zfill, ntp_nonreachable))
 		json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
 														'log type': '{}'.format(result_log['Critical'][check_result]),
