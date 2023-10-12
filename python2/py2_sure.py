@@ -75,7 +75,12 @@ def argumentParser():
 	parser.add_argument('-vp', '--vmanage_port',
 						type=str,
 						required=False,
-						help="vManage Password")
+						help="vManage Port")
+
+	parser.add_argument('-p', '--password',
+                        type=str,
+                        required=False,
+                        help="vManage Password")
 	args = parser.parse_args()
 	return args
 
@@ -1997,7 +2002,11 @@ if __name__ == "__main__":
 
 	#Getting the password and validating it
 	try:
-		password = getpass.getpass('vManage Password (Note: Tool doesn\'t support passwords containing "!") :')
+		if args.password is not None:
+			password = args.password
+		else:
+			password = getpass.getpass('vManage Password (Note: Tool doesn\'t support passwords containing "!") :')
+		
 		if len(password) == 0:
 			raise SystemExit('\033[1;31m \n\nERROR: Invalid Password provided \033[0;0m \n\n')
 		elif '!' in password:
