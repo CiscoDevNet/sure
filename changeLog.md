@@ -1,4 +1,4 @@
-- v3.2.0 (Planned for 4th October 2023)
+- v3.2.0 (4th October 2023)
   - Total Checks Added: 1
     - Critical Check - Verify if stale entry of vManage+vSmart UUID present on any one cEdge 
       https://github.com/CiscoDevNet/sure/issues/106
