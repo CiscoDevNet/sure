@@ -1,3 +1,13 @@
+- v3.2.1 (10th November 2023)
+  - Total Issues Fixed: 3
+    - Server Type 'QEMU' Not known
+      https://github.com/CiscoDevNet/sure/issues/114
+    - Included Check Type in the JSON Summary of each check
+      https://github.com/CiscoDevNet/sure/issues/117
+    - Added -p argument for passing password as an argument 
+      https://github.com/CiscoDevNet/sure/issues/116 
+  - Removed Critical Check: CPU Clock Speed (Not required)
+
 - v3.2.0 (4th October 2023)
   - Total Checks Added: 1
     - Critical Check - Verify if stale entry of vManage+vSmart UUID present on any one cEdge 

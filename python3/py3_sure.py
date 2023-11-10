@@ -103,7 +103,7 @@ def argValidation(args):
 def showCommand(exec_mode_command):
 	exec_mode_command = exec_mode_command+'\n'
 	exec_mode_command = exec_mode_command.encode()
-	p = subprocess.Popen('viptela_cli', shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = subprocess.Popen('viptela_cli'.format(args.username), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	p.stdin.write(exec_mode_command) #passing command
 	stdOutput,stdError = p.communicate()
 	p.stdin.close()
@@ -427,6 +427,8 @@ def serverType():
 		return 'on-cloud', 'Amazon'
 	elif 'Microsoft' in server_type:
 		return 'on-cloud', 'Microsoft'
+	elif 'QEMU' in server_type:
+		return 'on-prem', 'QEMU'
 
 #vManage: Validate server_configs.json
 def validateServerConfigsUUID():
@@ -896,8 +898,8 @@ def criticalCheckfive(es_indices):
 		for index in es_indices:
 			index = index.split(' ')
 			if index[0] != 'green':
-				print(index[0])
-				print(index[2])
+				#print(index[0])
+				#print(index[2])
 				es_index_red.append(index[2])
 	else:
 		es_indices = 'unknown'
@@ -1589,21 +1591,21 @@ def criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
 
-#01:Check:vManage:CPU Speed
-def warningCheckone(cpu_speed, server_company):
-	if server_company == 'Microsoft' and cpu_speed < 2.6:
-		check_result = 'Failed'
-		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
-		check_action = 'Upgrade the hardware type'
-	elif cpu_speed < 2.8:
-		check_result = 'Failed'
-		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
-		check_action = 'Upgrade the hardware type'
-	else:
-		check_result = 'SUCCESSFUL'
-		check_analysis = 'CPU Clock speed is {}, matches hardware recommendations'.format(cpu_speed)
-		check_action = None
-	return check_result,check_analysis,check_action
+# #01:Check:vManage:CPU Speed
+# def warningCheckone(cpu_speed, server_company):
+# 	if server_company == 'Microsoft' and cpu_speed < 2.6:
+# 		check_result = 'Failed'
+# 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
+# 		check_action = 'Upgrade the hardware type'
+# 	elif cpu_speed < 2.8:
+# 		check_result = 'Failed'
+# 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
+# 		check_action = 'Upgrade the hardware type'
+# 	else:
+# 		check_result = 'SUCCESSFUL'
+# 		check_analysis = 'CPU Clock speed is {}, matches hardware recommendations'.format(cpu_speed)
+# 		check_action = None
+# 	return check_result,check_analysis,check_action
 
 #02:Check:vManage:Network Card type
 def warningChecktwo():
@@ -1947,10 +1949,10 @@ if __name__ == "__main__":
 
 
 	#vManage version and loopback ip address
-	try:
-		version, version_tuple = vManageVersion()
-	except:
-		raise SystemExit('\033[1;31m ERROR: Error identifying the current vManage version. \033[0;0m \n\n')
+	#try:
+	version, version_tuple = vManageVersion()
+	#except:
+	#	raise SystemExit('\033[1;31m ERROR: Error identifying the current vManage version. \033[0;0m \n\n')
 
 	try:
 		vmanage_lo_ip = getLoip()
@@ -2108,6 +2110,7 @@ if __name__ == "__main__":
 
 
 	#Critical Checks
+	check_type = 'Critical'
 	if args.quiet == False:
 		print('\n**** Performing Critical checks\n')
 
@@ -2153,6 +2156,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2189,6 +2193,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -2226,6 +2231,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': 'https://www.cisco.com/c/en/us/td/docs/routers/sdwan/release/notes/compatibility-and-server-recommendations/ch-server-recs-20-3.html'})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2260,6 +2266,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2294,6 +2301,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis_two),
 														'action': '{}'.format(check_action_two),
 														'status': '{}'.format(check_result_two),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		elif check_result_one == 'SUCCESSFUL':
 			check_info_logger(log_file_logger, check_result_one, check_analysis_one, check_count_zfill)
@@ -2305,6 +2313,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis_one),
 														'action': '{}'.format(check_action_one),
 														'status': '{}'.format(check_result_one),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		elif check_result_two == 'SUCCESSFUL':
 			check_info_logger(log_file_logger, check_result_two, check_analysis_two, check_count_zfill)
@@ -2316,6 +2325,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis_two),
 														'action': '{}'.format(check_action_two),
 														'status': '{}'.format(check_result_two),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -2348,6 +2358,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2384,6 +2395,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -2418,6 +2430,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2453,6 +2466,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2490,6 +2504,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error perforiming {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2524,6 +2539,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(log_file_path))
@@ -2558,6 +2574,7 @@ if __name__ == "__main__":
 															'result': '{}'.format(check_analysis),
 															'action': '{}'.format(check_action),
 															'status': '{}'.format(check_result),
+															'check type': '{}'.format(check_type),
 															'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
@@ -2612,6 +2629,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2646,6 +2664,7 @@ if __name__ == "__main__":
 				'result': '{}'.format(check_analysis),
 				'action': '{}'.format(check_action),
 				'status': '{}'.format(check_result),
+				'check type': '{}'.format(check_type),
 				'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
@@ -2680,6 +2699,7 @@ if __name__ == "__main__":
 				'result': '{}'.format(check_analysis),
 				'action': '{}'.format(check_action),
 				'status': '{}'.format(check_result),
+				'check type': '{}'.format(check_type),
 				'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(check_name, log_file_path))
@@ -2714,6 +2734,7 @@ if __name__ == "__main__":
 				'result': '{}'.format(check_analysis),
 				'action': '{}'.format(check_action),
 				'status': '{}'.format(check_result),
+				'check type': '{}'.format(check_type),
 				'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
@@ -2758,6 +2779,7 @@ if __name__ == "__main__":
 				'result': '{}'.format(check_analysis),
 				'action': '{}'.format(check_action),
 				'status': '{}'.format(check_result),
+				'check type': '{}'.format(check_type),
 				'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m'.format(
@@ -2767,44 +2789,46 @@ if __name__ == "__main__":
 
 
 	#Warning Checks
+	check_type = 'Warning'
 	if args.quiet == False:
 		print('\n**** Performing Warning checks\n')
 	warning_checks = {}
 	log_file_logger.info('*** Performing Warning Checks')
 
-	#Check:vManage:CPU Speed
-	check_count += 1
-	check_count_zfill = zfill_converter(check_count)
-	if args.quiet == False and args.debug == False and args.verbose == False:
-		print(' Warning Check:#{}'.format(check_count_zfill))
-	if args.debug == True or args.verbose == True:
-		print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
-	check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
-	pre_check(log_file_logger, check_name)
-	try:
-		check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
-		if check_result == 'Failed':
-			warning_checks[check_name] = [ check_analysis, check_action]
-			check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-			log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill,cpu_speed))
-			report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-			if args.debug == True:
-				print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
+	# #Check:vManage:CPU Speed
+	# check_count += 1
+	# check_count_zfill = zfill_converter(check_count)
+	# if args.quiet == False and args.debug == False and args.verbose == False:
+	# 	print(' Warning Check:#{}'.format(check_count_zfill))
+	# if args.debug == True or args.verbose == True:
+	# 	print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
+	# check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
+	# pre_check(log_file_logger, check_name)
+	# try:
+	# 	check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
+	# 	if check_result == 'Failed':
+	# 		warning_checks[check_name] = [ check_analysis, check_action]
+	# 		check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+	# 		log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill,cpu_speed))
+	# 		report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+	# 		if args.debug == True:
+	# 			print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
 
-		else:
-			check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-			report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-			if args.debug == True:
-				print(' INFO:{}\n\n'.format(check_analysis))
-		json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-														'log type': '{}'.format(result_log['Warning'][check_result]),
-														'result': '{}'.format(check_analysis),
-														'action': '{}'.format(check_action),
-														'status': '{}'.format(check_result),
-														'document': ''})
-	except Exception as e:
-		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.failed_vsmarts \033[0;0m \n\n '.format(check_name, log_file_path))
-		log_file_logger.exception('{}\n'.format(e))
+	# 	else:
+	# 		check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+	# 		report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+	# 		if args.debug == True:
+	# 			print(' INFO:{}\n\n'.format(check_analysis))
+	# 	json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+	# 													'log type': '{}'.format(result_log['Warning'][check_result]),
+	# 													'result': '{}'.format(check_analysis),
+	# 													'action': '{}'.format(check_action),
+	# 													'status': '{}'.format(check_result),
+	# 													'check type': '{}'.format(check_type),
+	#													'document': ''})
+	# except Exception as e:
+	# 	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file.failed_vsmarts \033[0;0m \n\n '.format(check_name, log_file_path))
+	# 	log_file_logger.exception('{}\n'.format(e))
 
 	#Check:vManage:Network Card type
 	check_count += 1
@@ -2834,6 +2858,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2868,6 +2893,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2900,6 +2926,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2934,6 +2961,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -2966,6 +2994,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -3000,6 +3029,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -3033,6 +3063,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
@@ -3068,6 +3099,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -3075,6 +3107,7 @@ if __name__ == "__main__":
 
 
 	#Informational Checks
+	check_type = 'Informational'
 	if args.quiet == False:
 		print('\n**** Performing Informational checks\n' )
 
@@ -3109,6 +3142,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -3145,6 +3179,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -3178,6 +3213,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 	except Exception as e:
 		print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
@@ -3219,6 +3255,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		except Exception as e:
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
@@ -3252,6 +3289,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		except Exception as e:
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n '.format(check_name, log_file_path))
@@ -3287,6 +3325,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		except Exception as e:
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
@@ -3321,6 +3360,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		except Exception as e:
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name,log_file_path))
@@ -3356,6 +3396,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		except Exception as e:
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m \n\n'.format(check_name, log_file_path))
@@ -3395,6 +3436,7 @@ if __name__ == "__main__":
 														'result': '{}'.format(check_analysis),
 														'action': '{}'.format(check_action),
 														'status': '{}'.format(check_result),
+														'check type': '{}'.format(check_type),
 														'document': ''})
 		except Exception as e:
 			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
