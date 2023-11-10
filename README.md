@@ -58,7 +58,7 @@ Obtain file content from this site, then copy via SCP to the server. <br>
 ```sh
 usage: sure.py [-h] [-q] [-v] [-d] -u USERNAME 
 
-SURE - SDWAN Uprade Readiness Engine - v3.2.0
+SURE - SDWAN Uprade Readiness Engine - v3.2.1
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -111,7 +111,7 @@ CLI Output on executing the script in normal mode.
 vmanage-cluster1:~$ python3 py3_sure.py -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.2.0                      ###
+###         SURE – Version 3.2.1                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -134,7 +134,7 @@ In the quiet execution mode it quietly performs all the checks and on completion
 vmanage-cluster1:~$ python3 py3_sure.py -q -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.2.0                      ###
+###         SURE – Version 3.2.1                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -153,7 +153,7 @@ In this mode the progress of the checks being performed can be monitored from th
 vmanage-cluster1:~$ python3 py3_sure.py -v -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.2.0                      ###
+###         SURE – Version 3.2.1                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -176,7 +176,7 @@ vManage Password:
 vmanage-cluster1:~$ python3 py3_sure.py -d -u <username> 
 vManage Password:
 #########################################################
-###         SURE – Version 3.2.0                      ###
+###         SURE – Version 3.2.1                      ###
 #########################################################
 ###     Performing SD-WAN Upgrade Readiness Check     ###
 #########################################################
@@ -256,16 +256,15 @@ criticalChecknine(es_indices_est, server_type, cluster_size, cpu_count, total_de
 \#17:Check:Controllers:Verify if stale entry of vManage+vSmart UUID present on any one cEdge<br>
 
 **_Checks with severity level: WARNING_**<br>
-\#1:Check:vManage:CPU Speed<br>
-\#2:Check:vManage:Network Card type<br>
-\#3:Check:vManage:Backup status<br>
-\#4:Check:vManage:Evaluate Neo4j performance<br>
-\#5:Check:vManage:Confirm there are no pending tasks<br>
-\#6:Check:vManage:Validate there are no empty password users<br>
-\#7:Check:Controllers:Controller versions<br>
-\#8:Check:Controllers:Confirm Certificate Expiration Dates<br>
-\#9:Check:Controllers:vEdge list sync<br>
-\#10:Check:Controllers: Confirm control connections<br>
+\#1:Check:vManage:Network Card type<br>
+\#2:Check:vManage:Backup status<br>
+\#3:Check:vManage:Evaluate Neo4j performance<br>
+\#4:Check:vManage:Confirm there are no pending tasks<br>
+\#5:Check:vManage:Validate there are no empty password users<br>
+\#6:Check:Controllers:Controller versions<br>
+\#7:Check:Controllers:Confirm Certificate Expiration Dates<br>
+\#8:Check:Controllers:vEdge list sync<br>
+\#9:Check:Controllers: Confirm control connections<br>
 
 **_Checks with severity level: INFORMATIONAL_**<br>
 \#1:Check:vManage:Disk controller type<br>

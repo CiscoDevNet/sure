@@ -340,12 +340,12 @@ def certificateInfo(certificate):
 		count += 1
 	return certificate_info
 
-#CPU Clock Speed
-def cpuSpeed():
-	cpu_speed = executeCommand('lscpu | grep CPU\ MHz\:')
-	cpu_speed = match(str(cpu_speed),'\d+')
-	cpu_speed = float(cpu_speed)/1000
-	return cpu_speed
+# #CPU Clock Speed
+# def cpuSpeed():
+# 	cpu_speed = executeCommand('lscpu | grep CPU\ MHz\:')
+# 	cpu_speed = match(str(cpu_speed),'\d+')
+# 	cpu_speed = float(cpu_speed)/1000
+# 	return cpu_speed
 
 # CPU Count
 def cpuCount():
@@ -414,6 +414,8 @@ def serverType():
 		return 'on-cloud', 'Amazon'
 	elif 'Microsoft' in server_type:
 		return 'on-cloud', 'Microsoft'
+	elif 'QEMU' in server_type:
+		return 'on-prem', 'QEMU'
 
 #vManage: Validate server_configs.json
 def validateServerConfigsUUID():
@@ -1628,21 +1630,21 @@ def criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Warning Checks
 
-#01:Check:vManage:CPU Speed
-def warningCheckone(cpu_speed, server_company):
-	if server_company == 'Microsoft' and cpu_speed < 2.6:
-		check_result = 'Failed'
-		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
-		check_action = 'Upgrade the hardware type'
-	elif cpu_speed < 2.8:
-		check_result = 'Failed'
-		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
-		check_action = 'Upgrade the hardware type'
-	else:
-		check_result = 'SUCCESSFUL'
-		check_analysis = 'CPU Clock speed is {}, matches hardware recommendations'.format(cpu_speed)
-		check_action = None
-	return check_result,check_analysis,check_action
+# #01:Check:vManage:CPU Speed
+# def warningCheckone(cpu_speed, server_company):
+# 	if server_company == 'Microsoft' and cpu_speed < 2.6:
+# 		check_result = 'Failed'
+# 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
+# 		check_action = 'Upgrade the hardware type'
+# 	elif cpu_speed < 2.8:
+# 		check_result = 'Failed'
+# 		check_analysis = 'CPU clock speed is {}, it is below recommended range as per the hardware guide. CPU clock speed should be greater than 2.8.'.format(cpu_speed)
+# 		check_action = 'Upgrade the hardware type'
+# 	else:
+# 		check_result = 'SUCCESSFUL'
+# 		check_analysis = 'CPU Clock speed is {}, matches hardware recommendations'.format(cpu_speed)
+# 		check_action = None
+# 	return check_result,check_analysis,check_action
 
 #02:Check:vManage:Network Card type
 def warningChecktwo():
@@ -2701,39 +2703,39 @@ if __name__ == "__main__":
 		warning_checks = {}
 		log_file_logger.info('*** Performing Warning Checks')
 
-		#Check:vManage:CPU Speed
-		check_count += 1
-		check_count_zfill = zfill_converter(check_count)
-		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Warning Check:#{}'.format(check_count_zfill))
-		if args.debug == True or args.verbose == True:
-			print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
-		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
-		pre_check(log_file_logger, check_name)
-		try:
-			check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
-			if check_result == 'Failed':
-				warning_checks[check_name] = [ check_analysis, check_action]
-				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-				if args.debug == True:
-					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
-			else:
-				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-				if args.debug == True:
-					print(' INFO:{}\n\n'.format(check_analysis))
-			json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															'log type': '{}'.format(result_log['Warning'][check_result]),
-															'result': '{}'.format(check_analysis),
-															'action': '{}'.format(check_action),
-															'status': '{}'.format(check_result),
-															'document': ''})
+		# #Check:vManage:CPU Speed
+		# check_count += 1
+		# check_count_zfill = zfill_converter(check_count)
+		# if args.quiet == False and args.debug == False and args.verbose == False:
+		# 	print(' Warning Check:#{}'.format(check_count_zfill))
+		# if args.debug == True or args.verbose == True:
+		# 	print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
+		# check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
+		# pre_check(log_file_logger, check_name)
+		# try:
+		# 	check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
+		# 	if check_result == 'Failed':
+		# 		warning_checks[check_name] = [ check_analysis, check_action]
+		# 		check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+		# 		log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
+		# 		report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+		# 		if args.debug == True:
+		# 			print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
+		# 	else:
+		# 		check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+		# 		report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+		# 		if args.debug == True:
+		# 			print(' INFO:{}\n\n'.format(check_analysis))
+		# 	json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+		# 													'log type': '{}'.format(result_log['Warning'][check_result]),
+		# 													'result': '{}'.format(check_analysis),
+		# 													'action': '{}'.format(check_action),
+		# 													'status': '{}'.format(check_result),
+		# 													'document': ''})
 
-		except Exception as e:
-			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
-			log_file_logger.exception('{}\n'.format(e))
+		# except Exception as e:
+		# 	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
+		# 	log_file_logger.exception('{}\n'.format(e))
 
 		#Check:vManage:Network Card type
 		check_count += 1
@@ -4135,38 +4137,38 @@ if __name__ == "__main__":
 		warning_checks = {}
 		log_file_logger.info('*** Performing Warning Checks')
 
-		#Check:vManage:CPU Speed
-		check_count += 1
-		check_count_zfill = zfill_converter(check_count)
-		if args.quiet == False and args.debug == False and args.verbose == False:
-			print(' Warning Check:#{}'.format(check_count_zfill))
-		if args.debug == True or args.verbose == True:
-			print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
-		check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
-		pre_check(log_file_logger, check_name)
-		try:
-			check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
-			if check_result == 'Failed':
-				warning_checks[check_name] = [ check_analysis, check_action]
-				check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-				if args.debug == True:
-					print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
-			else:
-				check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
-				report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
-				if args.debug == True:
-					print(' INFO:{}\n\n'.format(check_analysis))
-			json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
-															'log type': '{}'.format(result_log['Warning'][check_result]),
-															'result': '{}'.format(check_analysis),
-															'action': '{}'.format(check_action),
-															'status': '{}'.format(check_result),
-															'document': ''})
-		except Exception as e:
-			print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
-			log_file_logger.exception('{}\n'.format(e))
+		# #Check:vManage:CPU Speed
+		# check_count += 1
+		# check_count_zfill = zfill_converter(check_count)
+		# if args.quiet == False and args.debug == False and args.verbose == False:
+		# 	print(' Warning Check:#{}'.format(check_count_zfill))
+		# if args.debug == True or args.verbose == True:
+		# 	print(' #{}:Checking:vManage:CPU Speed'.format(check_count_zfill))
+		# check_name = '#{}:Check:vManage:CPU Speed'.format(check_count_zfill)
+		# pre_check(log_file_logger, check_name)
+		# try:
+		# 	check_result,check_analysis,check_action = warningCheckone(cpu_speed, server_company)
+		# 	if check_result == 'Failed':
+		# 		warning_checks[check_name] = [ check_analysis, check_action]
+		# 		check_error_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+		# 		log_file_logger.error('#{}: CPU clock speed: {}\n'.format(check_count_zfill, cpu_speed))
+		# 		report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+		# 		if args.debug == True:
+		# 			print('\033[1;31m WARNING: {} \033[0;0m \n\n'.format(check_analysis))
+		# 	else:
+		# 		check_info_logger(log_file_logger, check_result, check_analysis, check_count_zfill)
+		# 		report_data.append([str(check_count),check_name.split(':')[-1],check_result,check_analysis,str(check_action)])
+		# 		if args.debug == True:
+		# 			print(' INFO:{}\n\n'.format(check_analysis))
+		# 	json_final_result['json_data_pdf']['description']['vManage'].append({'analysis type': '{}'.format(check_name.split(':')[-1]),
+		# 													'log type': '{}'.format(result_log['Warning'][check_result]),
+		# 													'result': '{}'.format(check_analysis),
+		# 													'action': '{}'.format(check_action),
+		# 													'status': '{}'.format(check_result),
+		# 													'document': ''})
+		# except Exception as e:
+		# 	print('\033[1;31m ERROR: Error performing {}. \n Please check error details in log file: {}.\n If needed, please reach out to tool support at: sure-tool@cisco.com, with your report and log file. \033[0;0m  \n\n'.format(check_name, log_file_path))
+		# 	log_file_logger.exception('{}\n'.format(e))
 
 
 		#Check:vManage:Network Card type
