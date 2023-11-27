@@ -12,7 +12,7 @@ All rights reserved.
 ------------------------------------------------------------------
 """
 
-__sure_version =  "3.2.0"
+__sure_version =  "3.2.1"
 
 #Common Imports
 import os
@@ -100,27 +100,34 @@ def argValidation(args):
 		raise Exception('Entered more than 1 flag')
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-def showCommand(exec_mode_command):
-	exec_mode_command = exec_mode_command+'\n'
-	exec_mode_command = exec_mode_command.encode()
-	p = subprocess.Popen('viptela_cli'.format(args.username), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	p.stdin.write(exec_mode_command) #passing command
-	stdOutput,stdError = p.communicate()
-	p.stdin.close()
-	return stdOutput.decode()
+# def showCommand(exec_mode_command):
+# 	exec_mode_command = exec_mode_command+'\n'
+# 	exec_mode_command = exec_mode_command.encode()
+# 	p = subprocess.Popen('viptela_cli'.format(args.username), shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# 	p.stdin.write(exec_mode_command) #passing command
+# 	stdOutput,stdError = p.communicate()
+# 	p.stdin.close()
+# 	return stdOutput.decode()
 
+def showCommand(exec_mode_command):
+    exec_mode_command = exec_mode_command + '\n'
+    exec_mode_command = exec_mode_command.encode()
+    # Provide the full path to the 'viptela_cli' executable
+    p = subprocess.Popen(['/usr/sbin/viptela_cli', '-u', args.username], shell=False, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    p.stdin.write(exec_mode_command)
+    stdOutput, stdError = p.communicate()
+    p.stdin.close()
+    return stdOutput.decode()
 
 def executeCommand(command):
 	stream = os.popen(command)
 	output = stream.read()
 	return output
 
-
 def match(data , regex):
 	match = re.search(regex, str(data))
 	matchedData = match.group()
 	return matchedData
-
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -309,11 +316,17 @@ def is_vmanage():
 		return False
 
 #vManage Version
+# def vManageVersion():
+# 	version = showCommand('show version').strip()
+# 	version_tuple = tuple(version.split('.'))
+# 	version_tuple =tuple([int(i) for i in version_tuple])
+# 	return version,version_tuple
+
 def vManageVersion():
-	version = showCommand('show version').strip()
-	version_tuple = tuple(version.split('.'))
-	version_tuple =tuple([int(i) for i in version_tuple])
-	return version,version_tuple
+    version_response = showCommand('show version').strip()
+    version_string = version_response.split('-')[0]
+    version_tuple = tuple(map(int, version_string.split('.')))
+    return version_string, version_tuple
 
 #vManage Loopback IP
 def getLoip():

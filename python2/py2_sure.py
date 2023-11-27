@@ -340,12 +340,12 @@ def certificateInfo(certificate):
 		count += 1
 	return certificate_info
 
-# #CPU Clock Speed
-# def cpuSpeed():
-# 	cpu_speed = executeCommand('lscpu | grep CPU\ MHz\:')
-# 	cpu_speed = match(str(cpu_speed),'\d+')
-# 	cpu_speed = float(cpu_speed)/1000
-# 	return cpu_speed
+#CPU Clock Speed
+def cpuSpeed():
+	cpu_speed = executeCommand('lscpu | grep CPU\ MHz\:')
+	cpu_speed = match(str(cpu_speed),'\d+')
+	cpu_speed = float(cpu_speed)/1000
+	return cpu_speed
 
 # CPU Count
 def cpuCount():
