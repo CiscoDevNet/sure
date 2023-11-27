@@ -700,7 +700,18 @@ def compare_versions(version1, version2):
 		return False
 	elif minor1 < minor2:
 		return True
-	
+
+def lists_match(list1, list2):
+    if len(list1) != len(list2):
+        return False
+    element_count_1 = {}
+    element_count_2 = {}
+    for element in list1:
+        element_count_1[element] = element_count_1.get(element, 0) + 1
+    for element in list2:
+        element_count_2[element] = element_count_2.get(element, 0) + 1
+    return element_count_1 == element_count_2
+
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
 
@@ -1590,7 +1601,7 @@ def criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip
 	else:   
 		api_sn = [item["serial-number"] for item in cedge_validvsmarts_info['data']]
 		controllers_info_sn = [item[6] for item in controllers_info.values() if item[3] == "reachable" and item[0] in ['vmanage', 'vsmart']]
-		if len(api_sn) == len(controllers_info_sn) and api_sn == controllers_info_sn:
+		if lists_match(api_sn, controllers_info_sn):
 			check_result = 'SUCCESSFUL'
 			check_analysis = 'The vManage+vSmart UUIDs are consistent in cEdges'
 			check_action = None
