@@ -2119,8 +2119,8 @@ if __name__ == "__main__":
 			system_ip = system_ip_data['data']['ipAddress']
 			table_data.append(['vManage System IP address',str(system_ip)])
 
-			cpu_speed = cpuSpeed()
-			table_data.append(['vManage CPU Speed',str(cpu_speed)])
+			#cpu_speed = cpuSpeed()
+			#table_data.append(['vManage CPU Speed',str(cpu_speed)])
 
 			cpu_count = cpuCount()
 			table_data.append(['vManage CPU Count',str(cpu_count)]) 
@@ -3410,8 +3410,8 @@ if __name__ == "__main__":
 			system_ip = system_ip_data['data']['ipAddress']
 			table_data.append(['vManage System IP address',str(system_ip)])
 
-			cpu_speed = cpuSpeed()
-			table_data.append(['vManage CPU Speed',str(cpu_speed)])
+			#cpu_speed = cpuSpeed()
+			#table_data.append(['vManage CPU Speed',str(cpu_speed)])
 
 			cpu_count = cpuCount()
 			table_data.append(['vManage CPU Count',str(cpu_count)]) 
