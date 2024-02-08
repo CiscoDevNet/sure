@@ -429,6 +429,8 @@ def serverType():
 		return 'on-cloud', 'Microsoft'
 	elif 'QEMU' in server_type:
 		return 'on-prem', 'QEMU'
+	elif 'Cisco Systems, Inc.' in server_type:
+		return 'on-prem', 'QEMU'		
 
 #vManage: Validate server_configs.json
 def validateServerConfigsUUID():
