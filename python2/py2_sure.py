@@ -955,54 +955,57 @@ def criticalCheckseven():
 def criticalCheckeight(version_tuple):
 	if version_tuple[0:2] < (20,3):
 		try:
-			indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "localhost:9200/*/_settings?pretty"')
+			indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "localhost:9200/*/_settings?filter_path=**.version&pretty"')
 			indices_data = json.loads(indices_data)
 		except:
 			ip_add = (executeCommand("netstat -a -n -o |  grep tcp | awk '{print $4}'| grep :9200")).split()[0]
 			pattern = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):9200"
 			match = re.search(pattern, ip_add)
 			if match:
-				indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "{}/*/_settings?pretty"'.format(ip_add))
+				indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "{}/*/_settings?filter_path=**.version&pretty"'.format(ip_add))
 				indices_data = json.loads(indices_data)
 	else:
 		try:
-			indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "localhost:9200/*/_settings?pretty" -u elasticsearch:s3cureElast1cPass')
+			indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "localhost:9200/*/_settings?filter_path=**.version&pretty" -u elasticsearch:s3cureElast1cPass')
 			indices_data = json.loads(indices_data)
 		except:
 			ip_add = (executeCommand("netstat -a -n -o |  grep tcp | awk '{print $4}'| grep :9200")).split()[0]
 			pattern = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):9200"
 			match = re.search(pattern, ip_add)
 			if match:
-				indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "{}/*/_settings?pretty" -u elasticsearch:s3cureElast1cPass'.format(ip_add))
+				indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "{}/*/_settings?filter_path=**.version&pretty" -u elasticsearch:s3cureElast1cPass'.format(ip_add))
 				indices_data = json.loads(indices_data)
 
 	if indices_data:
 		version_list = {}
 		for es in indices_data:
-			version =  (indices_data[es]['settings']['index']['version']['created'])
-			first_digit = int(version[0])
-			second_digit = int(version[1:3])
-			third_digit = int(version[3:5])
-			version = str(first_digit)+'.'+str(second_digit)
-			version = float(version)
-			if version < 5.0 and version_tuple[0:2] < ('20', '3'):
-				version_list[es] = version  
-			elif version < 6.0 and version_tuple[0:2] < ('20', '6'):
+			version = ""
+			if "upgraded" in indices_data[es]['settings']['index']['version']:
+				version =  (indices_data[es]['settings']['index']['version']['upgraded'])
+			else:
+				version =  (indices_data[es]['settings']['index']['version']['created'])
+			version = int(version[0:5])
+			if version < 50604 and version_tuple[0:2] < ('20', '3'):
+				version_list[es] = version
+			elif version < 60800 and version_tuple[0:2] == ('20', '3'):
+				version_list[es] = version
+			elif version < 60810 and version_tuple[0:2] >= ('20', '4'):
 				version_list[es] = version
 		if len(version_list) != 0 and version_tuple[0:2] < ('20', '3'):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB indices with version below than 5.0 found for vManage version{}'.format(version_tuple)
+			check_analysis = 'StatsDB (Elasticsearch) indices with version below than 5.6.4 found for vManage version{}'.format(version_tuple)
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
-		if len(version_list) != 0 and version_tuple[0:2] < ('20', '6'):
+		if len(version_list) != 0 and version_tuple[0:2] == ('20', '3'):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB indices with version below than 6.0 found for vManage version{}'.format(version_tuple)
+			check_analysis = 'StatsDB (Elasticsearch) indices with version below than 6.8.0 found for vManage version{}'.format(version_tuple)
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
+		if len(version_list) != 0 and version_tuple[0:2] >= ('20', '4'):
+			check_result = 'Failed'
+			check_analysis = 'StatsDB (Elasticsearch) indices with version below than 6.8.10 found for vManage version{}'.format(version_tuple)
+			check_action = 'Upgrade to vManage version 20.9.5.2 (or) delete all legacy version indices, before upgrading to 20.11 or later.'
 		elif len(version_list) == 0:
 			check_result = 'SUCCESSFUL'
-			if version_tuple[0:2] < ('20', '3'):
-				check_analysis = 'Version of all the Elasticsearch Indices is greater than 5.0'
-			else:
-				check_analysis = 'Version of all the Elasticsearch Indices is greater than 6.0'
+			check_analysis = 'All StatsDB (Elasticsearch) indices are in desired version'
 			check_action = None
 	else:
 		version_list = {}
