@@ -1,3 +1,9 @@
+- v3.2.2 (29th May 2024)
+  - Total Issues Fixed: 1
+    - Unable to detect vManage version after upgrading to 20.9.5.1
+      https://github.com/CiscoDevNet/sure/issues/127
+  - Enhanced Elasticsearch version check
+  
 - v3.2.1 (10th November 2023)
   - Total Issues Fixed: 3
     - Server Type 'QEMU' Not known
