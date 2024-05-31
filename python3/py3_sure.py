@@ -966,40 +966,23 @@ def criticalCheckeight(version_tuple):
 	if indices_data:
 		version_list = {}
 		for es in indices_data:
-			version = ""
-			if "upgraded" in indices_data[es]['settings']['index']['version']:
-				version =  (indices_data[es]['settings']['index']['version']['upgraded'])
-			else:
-				version =  (indices_data[es]['settings']['index']['version']['created'])
-			version = int(version[0:5])
-			if version < 50604 and version_tuple[0:2] < (20, 3):
+			version =  (indices_data[es]['settings']['index']['version']['created'])
+			version = int(version[0])
+			if version < 5 and version_tuple[0:2] < (20, 3):
 				version_list[es] = version
-			elif version < 60800 and version_tuple[0:2] == (20, 3):
-				version_list[es] = version
-			elif version < 60810 and version_tuple[0:2] >= (20, 4) and version_tuple[0:2] <= (20, 10):
-				version_list[es] = version
-			elif version < 71706 and version_tuple[0:2] >= (20, 11):
+			elif version <= 5 and version_tuple[0:2] >= (20, 3):
 				version_list[es] = version
 		if len(version_list) != 0 and version_tuple[0:2] < (20, 3):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB (Elasticsearch) indices with version lower than 5.6.4 found for vManage version{}'.format(version_tuple)
+			check_analysis = 'StatsDB (Elasticsearch) indices with legacy version found for vManage version{}'.format(version_tuple)
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
-		if len(version_list) != 0 and version_tuple[0:2] == (20, 3):
+		elif len(version_list) != 0 and version_tuple[0:2] <= (20, 9):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB (Elasticsearch) indices with version lower than 6.8.0 found for vManage version{}'.format(version_tuple)
-			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
-		if len(version_list) != 0 and version_tuple[0:2] >= (20, 4) and version_tuple[0:2] <= (20, 10):
-			if version_tuple[0:2] >= (20, 4) and version_tuple[0:2] <= (20, 9):
-				check_result = 'Failed'
-				check_analysis = 'StatsDB (Elasticsearch) indices with version lower than 6.8.10 found for vManage version{}'.format(version_tuple)
-				check_action = 'Upgrade to vManage version 20.9.5.2 (or) delete all legacy version indices, before upgrading to 20.11 or later.'
-			else:
-				check_result = 'Failed'
-				check_analysis = 'StatsDB (Elasticsearch) indices with version lower than 6.8.10 found for vManage version{}'.format(version_tuple)
-				check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
-		if len(version_list) != 0 and version_tuple[0:2] >= (20, 11):
+			check_analysis = 'StatsDB (Elasticsearch) indices with legacy version found for vManage version{}'.format(version_tuple)
+			check_action = 'Follow upgrade guide to upgrade the vManage to version 20.9.5.2, before upgrading to 20.11 or later'
+		elif len(version_list) != 0 and version_tuple[0:2] >= (20, 10):
 			check_result = 'Failed'
-			check_analysis = 'StatsDB (Elasticsearch) indices with version lower than 7.17.6 found for vManage version{}'.format(version_tuple)
+			check_analysis = 'StatsDB (Elasticsearch) indices with legacy version found for vManage version{}'.format(version_tuple)
 			check_action = 'All legacy version indices should be deleted before attempting an upgrade. Please contact TAC to review and remove them as needed'
 		elif len(version_list) == 0:
 			check_result = 'SUCCESSFUL'
