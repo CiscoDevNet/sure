@@ -12,7 +12,7 @@ All rights reserved.
 ------------------------------------------------------------------
 """
 
-__sure_version =  "3.2.0"
+__sure_version =  "3.2.3"
 
 #Common Imports
 import os
@@ -31,18 +31,26 @@ import getpass
 import csv
 import requests
 
-try:
-	import queue
-except ImportError:
-	import Queue as queue
+import queue
+
+def safe_json_loads(api_response):
+	"""Safely parse JSON response from getRequestpy3, returning None if response is empty or invalid"""
+	if api_response is None:
+		return None
+	try:
+		return json.loads(api_response)
+	except (ValueError, json.JSONDecodeError) as e:
+		logging.warning("Failed to parse JSON response: %s", str(e))
+		return None
 
 try:
+	from requests.packages.urllib3.exceptions import InsecureRequestWarning
 	requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
-except NameError:
+except Exception:
 	try:
-		from requests.packages import urllib3
+		import urllib3
 		urllib3.disable_warnings()
-	except:
+	except Exception:
 		pass #this will only trigger https validation errors.
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -53,19 +61,16 @@ def argumentParser():
 
 
 	parser.add_argument('-q', '--quiet',
-						required=False,
 						action='store_true',
 						help="Quiet execution of the script"
 						)
 
 	parser.add_argument('-v', '--verbose',
-						required=False,
 						action='store_true',
 						help="Verbose execution of the script"
 						)
 
 	parser.add_argument('-d' , '--debug',
-						required=False,
 						action='store_true',
 						help="Debug execution of the script"
 						)
@@ -78,12 +83,10 @@ def argumentParser():
 
 	parser.add_argument('-vp', '--vmanage_port',
 						type=str,
-						required=False,
 						help="vManage Port")
 
 	parser.add_argument('-p', '--password',
 						type=str,
-						required=False,
 						help="vManage Password")
 	args = parser.parse_args()
 	return args
@@ -117,9 +120,11 @@ def executeCommand(command):
 
 
 def match(data , regex):
-	match = re.search(regex, str(data))
-	matchedData = match.group()
-	return matchedData
+	match_obj = re.search(regex, str(data))
+	if match_obj:
+		return match_obj.group()
+	else:
+		return None
 
 
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -142,7 +147,7 @@ def generateSessionIDpy3(vManageIP,Username,Password,Port):
 	JsessionID = requests.request("POST", login, headers=headers, data = payload, verify=False)
 	if JsessionID.status_code == 200:
 		JsessionID = (JsessionID.headers['Set-Cookie']).split(';')
-		return JsessionID[0]
+		return JsessionID[0].strip()
 	else:
 		print("  Error creating JsessionID, verify if  the information provided is correct ")
 
@@ -159,7 +164,9 @@ def CSRFTokenpy3(vManageIP,JSessionID,Port):
 
 	tokenID = requests.request("GET", token, headers=headers, verify = False)
 	if tokenID.status_code==200:
-		return tokenID.text
+		# Clean the token of any whitespace, newlines, or other invalid characters
+		clean_token = tokenID.text.strip().replace('\n', '').replace('\r', '').replace(' ', '')
+		return clean_token
 	else:
 		print("  Please check if the vManage IP/URL is correct and JSessionID is valid ")
 
@@ -176,15 +183,21 @@ def getRequestpy3(version_tuple, vManageIP,JSessionID, mount_point, Port, tokenI
 					}
 	else:
 		headers = {
-					'X-XSRF-TOKEN': tokenID,
+					'X-XSRF-TOKEN': tokenID.strip() if tokenID else '',
 					'Cookie': JSessionID
 					}
 	response = requests.request("GET", url , headers=headers, verify=False)
 	data = response.content
 	if response.status_code==200:
-		return data.decode()
+		response_text = data.decode()
+		if not response_text or response_text.isspace():
+			print('  Warning: API returned empty response for {}'.format(mount_point))
+			return None
+		return response_text
 	else:
-		print('  Please verify if the vManage ip/url is correct and JSessionID/CSRFToken is valid')
+		print('  Error: API request failed with status code {} for {}'.format(response.status_code, mount_point))
+		print('  Response: {}'.format(response.text[:200]))  # First 200 chars for debugging
+		return None
 
 
 
@@ -200,7 +213,7 @@ def sessionLogoutpy3(vManageIP,JSessionID,Port, tokenID= None):
 					}
 	else:
 		headers = {
-					'X-XSRF-TOKEN': tokenID,
+					'X-XSRF-TOKEN': tokenID.strip() if tokenID else '',
 					'Cookie': JSessionID
 					}
 
@@ -355,9 +368,11 @@ def certificateInfo(certificate):
 
 #CPU Clock Speed
 def cpuSpeed():
-	cpu_speed = executeCommand('lscpu | grep CPU\ MHz\:')
-	cpu_speed = match(str(cpu_speed),'\d+')
-	cpu_speed = float(cpu_speed)/1000
+	cpu_speed = executeCommand('cat /proc/cpuinfo | grep "MHz"')
+	cpu_speed_value = match(str(cpu_speed), '\d+')
+	if cpu_speed_value is None:
+		raise Exception('Unable to determine CPU speed from system output.')
+	cpu_speed = float(cpu_speed_value) / 1000
 	return cpu_speed
 
 # CPU Count
@@ -610,8 +625,12 @@ def vmanage_cluster_ips(cluster_health_data):
 def vmanage_service_details(vmanage_cluster_ips):
 	vmanage_service_details = {}
 	for vmanage_cluster_ip in vmanage_cluster_ips:
-		service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/vManage/details/%s'%(vmanage_cluster_ip), args.vmanage_port, tokenid))
-		vmanage_service_details[vmanage_cluster_ip] = service_details['data']
+		service_details_response = getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/vManage/details/%s'%(vmanage_cluster_ip), args.vmanage_port, tokenid)
+		if service_details_response:
+			service_details = json.loads(service_details_response)
+			vmanage_service_details[vmanage_cluster_ip] = service_details['data']
+		else:
+			vmanage_service_details[vmanage_cluster_ip] = []
 	return vmanage_service_details
 
 def es_indices_details():
@@ -627,8 +646,12 @@ def es_indices_details():
 
 #vManage service list for cluster checks
 def vmanage_service_list():
-	service_list = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid))
-	vmanage_service_list = service_list['data'][0]['data']
+	service_list_response = getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/list', args.vmanage_port, tokenid)
+	if service_list_response:
+		service_list = json.loads(service_list_response)
+		vmanage_service_list = service_list['data'][0]['data']
+	else:
+		vmanage_service_list = []
 	vmanage_ips,vmanage_ids, vmanage_uuids = [], [], []
 	for vmanage in vmanage_service_list:
 		vmanageID = vmanage['vmanageID']
@@ -642,8 +665,12 @@ def vmanage_service_list():
 
 #vManage tenancy mode
 def vmanage_tenancy_mode():
-	service_details = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid))
-	mode = service_details['data']['mode']
+	service_details_response = getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'clusterManagement/tenancy/mode', args.vmanage_port, tokenid)
+	if service_details_response:
+		service_details = json.loads(service_details_response)
+		mode = service_details['data']['mode']
+	else:
+		mode = 'Unknown'
 	return mode
 
 def checkUtilization():
@@ -692,6 +719,73 @@ def compare_versions(version1, version2):
 	
 #>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #Critical Checks
+
+# New Warning Check: Alert for deprecated device models for 20.13.x or later
+deprecated_vedge_row = None  # Ensure this is always defined
+def warningCheck_deprecated_vedge_models(vedges):
+	# List of deprecated device models
+	deprecated_models = ["vedge-100-WM", "vedge-100-M", "vedge-100-B", "vedge-1000"]
+	found_devices = []
+	# Always check all vEdge devices in the overlay
+	if 'data' in vedges:
+		for device in vedges['data']:
+			model = device.get("device-model", "")
+			if model in deprecated_models:
+				found_devices.append({
+					"host-name": device.get("host-name", "unknown"),
+					"device-model": model,
+					"system-ip": device.get("system-ip", "unknown")
+				})
+	if found_devices:
+		check_result = 'Failed'
+		check_analysis = ("Warning: The following deprecated device models are present in your overlay and must be removed before upgrading to 20.13.x or later: " + ", ".join([d["device-model"]+" ("+d["host-name"]+", "+d["system-ip"]+")" for d in found_devices]))
+		check_action = "Remove all deprecated device models from the overlay before upgrade to 20.13.x or later."
+	else:
+		check_result = 'SUCCESSFUL'
+		check_analysis = "No deprecated device models (vedge-100-WM, vedge-100-M, vedge-100-B, vedge-1000) found in overlay."
+		check_action = None
+	return found_devices, check_result, check_analysis, check_action
+    
+def run_deprecated_vedge_check(vedges, log_file_logger, report_data, failed_check_data, warning_checks, json_final_result, check_type, result_log):
+	"""
+	Always ensure only one check 33 row is present in failed_check_data, with consistent result values.
+	"""
+	dep_check_name = "Overlay:Deprecated vEdge device models for 20.13.x or later"
+	separate_check_no = "01"
+	found_devices, check_result, check_analysis, check_action = warningCheck_deprecated_vedge_models(vedges)
+	# Compose the row for the summary table
+	if check_result == 'Failed':
+		result_str = "Failed"
+		# Combine warning and action into Check Actions for clarity and to avoid wrapping
+		action_str = f"{check_analysis} {check_action}" if check_action else check_analysis
+	else:
+		result_str = "No action required"
+		action_str = "No action required"
+	# Remove any existing check 01 row
+	failed_check_data[:] = [row for row in failed_check_data if not (len(row) > 0 and row[0] == separate_check_no)]
+	# Append the new row
+	failed_check_data.append([
+		separate_check_no,  # Check no
+		dep_check_name,    # Check Name
+		result_str,        # Check Result
+		action_str.strip() # Check Actions (all text in one cell)
+	])
+	# Add to report_data for completeness
+	report_data.append([separate_check_no, dep_check_name, check_result, check_analysis, str(check_action)])
+	# Add to warning_checks if failed
+	if check_result == 'Failed':
+		warning_checks[dep_check_name] = [check_analysis, check_action]
+	# Add to json_final_result
+	json_final_result['json_data_pdf']['description']['vManage'].append({
+		'analysis type': dep_check_name,
+		'log type': '{}'.format(result_log['Warning'][check_result]),
+		'result': '{}'.format(check_analysis),
+		'action': '{}'.format(check_action),
+		'status': '{}'.format(check_result),
+		'check type': '{}'.format(check_type),
+		'document': ''
+	})
+	# No print statements; only table output
 
 #01:Check:vManage:Validate current version
 def criticalCheckone(version):
@@ -957,12 +1051,24 @@ def criticalCheckeight(version_tuple):
 		indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "localhost:9200/*/_settings?filter_path=**.version&pretty" -u elasticsearch:s3cureElast1cPass')
 		indices_data = json.loads(indices_data)
 	except:
-		ip_add = (executeCommand("netstat -a -n -o |  grep tcp | awk '{print $4}'| grep :9200")).split()[0]
-		pattern = "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):9200"
-		match = re.search(pattern, ip_add)
-		if match:
-			indices_data = executeCommand('curl --connect-timeout 6 --silent -XGET "{}/*/_settings?filter_path=**.version&pretty" -u elasticsearch:s3cureElast1cPass'.format(ip_add))
-			indices_data = json.loads(indices_data)
+		# Use port 9200 for vManage 20.9, port 8123 for 20.10 and above
+		port = '9200'
+		if version_tuple[0] > 20 or (version_tuple[0] == 20 and version_tuple[1] >= 10):
+			port = '8123'
+		ip_add_output = executeCommand(f"netstat -a -n -o |  grep tcp | awk '{{print $4}}'| grep :{port}").strip()
+		if ip_add_output:
+			ip_add = ip_add_output.split()[0]
+			pattern = fr"((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){{3}}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):{port}"
+			match = re.search(pattern, ip_add)
+			if match:
+				indices_data = executeCommand(f'curl --connect-timeout 6 --silent -XGET "{{}}/_*_settings?filter_path=**.version&pretty" -u elasticsearch:s3cureElast1cPass'.format(ip_add))
+				indices_data = json.loads(indices_data)
+		else:
+			version_list = {}
+			check_result = 'Failed'
+			check_analysis = f'Failed to retrieve Elasticsearch Indices version data: No port {port} found.'
+			check_action = f'Check if Elasticsearch is running and accessible on port {port}.'
+			return version_list, check_result, check_analysis, check_action
 	if indices_data:
 		version_list = {}
 		for es in indices_data:
@@ -1178,9 +1284,13 @@ def criticalCheckten(version_tuple, controllers_info):
 	for key in controllers_info:
 		if controllers_info[key][0] != 'vbond':
 			try:
-				ntp_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'device/ntp/associations?deviceId=%s'%(controllers_info[key][1]), args.vmanage_port, tokenid))
-				if 'data' not in ntp_data.keys() or ntp_data['data'] == []:
-					ntp_nonworking.append(controllers_info[key][1])
+				ntp_data_response = getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid, 'device/ntp/associations?deviceId=%s'%(controllers_info[key][1]), args.vmanage_port, tokenid)
+				if ntp_data_response:
+					ntp_data = json.loads(ntp_data_response)
+					if 'data' not in ntp_data.keys() or ntp_data['data'] == []:
+						ntp_nonworking.append(controllers_info[key][1])
+				else:
+					ntp_nonreachable.append(controllers_info[key][1])
 			except TypeError as e:
 					ntp_nonreachable.append(controllers_info[key][1])
 		else:
@@ -1233,9 +1343,26 @@ def criticalCheckeighteen(version_tuple):
 
 def criticalChecknineteen():
 	db_data = showCommand('request nms configuration-db diagnostics')
-	if 'space used by configuration-db' in db_data:
-		db_size = db_data.split('\n')[-2]
-		db_size = match(db_size, '\d+\.?\d*[BKMGT]')
+	# Use correct string for vManage version 20.10 or above
+	db_key = 'Disk space used by configuration-db'
+	if 'version_tuple' in globals():
+		if version_tuple[0] > 20 or (version_tuple[0] == 20 and version_tuple[1] >= 10):
+			db_key = 'Total disk space used by configuration-db:'
+	if db_key in db_data:
+		# Find the line after the key for the size value
+		lines = db_data.split('\n')
+		for idx, line in enumerate(lines):
+			if db_key in line and idx + 1 < len(lines):
+				db_size_line = lines[idx + 1]
+				break
+		else:
+			db_size_line = ''
+		db_size = match(db_size_line, '\d+\.?\d*[BKMGT]')
+		if db_size is None:
+			check_result = 'Failed'
+			check_analysis = 'Could not determine ConfigDB size from diagnostics output.'
+			check_action = 'Investigate why the command output is missing or malformed.'
+			return 'unknown', check_result, check_analysis, check_action
 		if db_size[-1] == 'M' and float(db_size[0:-1])/1000 >= 5.0:
 			check_result = 'Failed'
 			check_analysis = 'ConfigDB size is high, and that a DB clean up is needed'
@@ -1485,15 +1612,26 @@ def criticalCheckseventeenpy3(cluster_health_data,  system_ip, log_file_logger):
 		if vmanage_system_ip != system_ip:
 			output = executeCommand('ping -w 5 {} &'.format(vmanage_cluster_ip))
 			roundtrip_op = output.split("time=")
-			roundtrip = roundtrip_op[1]
+			if len(roundtrip_op) > 1:
+				roundtrip = roundtrip_op[1]
+			else:
+				roundtrip = None
 			# print(roundtrip)
-			output = output.split('\n')[-3:]
-			xmit_stats = output[0].split(",")
-			timing_stats = xmit_stats[3]
-			packet_loss = float(xmit_stats[2].split("%")[0])
-			ping_output[count] = vmanage_cluster_ip, packet_loss, timing_stats, roundtrip
-			if packet_loss != 0:
-				ping_output_failed[count] = vmanage_cluster_ip, packet_loss, timing_stats, roundtrip
+			output_lines = output.split('\n')
+			if len(output_lines) >= 3:
+				output = output_lines[-3:]
+			else:
+				output = output_lines
+			try:
+				xmit_stats = output[0].split(",")
+				timing_stats = xmit_stats[3] if len(xmit_stats) > 3 else None
+				packet_loss = float(xmit_stats[2].split("%")[0]) if len(xmit_stats) > 2 else None
+				ping_output[count] = vmanage_cluster_ip, packet_loss, timing_stats, roundtrip
+				if packet_loss is not None and packet_loss != 0:
+					ping_output_failed[count] = vmanage_cluster_ip, packet_loss, timing_stats, roundtrip
+			except Exception as e:
+				log_file_logger.warning(f"Error parsing ping output for {vmanage_cluster_ip}: {e}")
+				ping_output_failed[count] = vmanage_cluster_ip, None, None, roundtrip
 		else:
 			continue
 
@@ -1515,7 +1653,6 @@ def criticalChecktwenty(version):
 	if not success:
 		check_result = 'Failed'
 		check_analysis = 'Failed to validate uuid from server configs file.'
-		check_action = '{}'.format(analysis)
 		check_action = '{}'.format(analysis)
 	else:
 		check_result = 'SUCCESSFUL'
@@ -1565,6 +1702,10 @@ def criticalChecktwentythree(cedge_validvsmarts_info, controllers_info, cedge_ip
 		check_result = 'SUCCESSFUL'
 		check_analysis = 'There are no cEdge devices connected hence this check is not required.'
 		check_action = 'Since no cEdges are connected, check is not required.'
+	elif cedge_validvsmarts_info is None or 'data' not in cedge_validvsmarts_info:
+		check_result = 'Failed'
+		check_analysis = 'Failed to retrieve validvsmarts information from cEdge device'
+		check_action = 'Check cEdge connectivity and API access. Verify that the cEdge device is reachable and properly authenticated.'
 	else:   
 		api_sn = [item["serial-number"] for item in cedge_validvsmarts_info['data']]
 		controllers_info_sn = [item[6] for item in controllers_info.values() if item[3] == "reachable" and item[0] in ['vmanage', 'vsmart']]
@@ -2029,19 +2170,29 @@ if __name__ == "__main__":
 		print ('****Collecting Preliminary Data\n')
 
 	try:
-		controllers = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid))
+		controllers_response = getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'system/device/controllers', args.vmanage_port, tokenid)
+		if controllers_response is None:
+			raise SystemExit('\033[1;31m ERROR: Failed to retrieve controllers data from vManage API. Check connectivity and authentication. \033[0;0m \n\n')
+		controllers = json.loads(controllers_response)
 		controllers_info, controllers_missinginfo = controllersInfo(controllers)
 		log_file_logger.info('Collected controllers information: {}'.format(controllers_info))
 		if controllers_missinginfo:
 			log_file_logger.error('Controllers missing information: {}'.format(controllers_missinginfo))
 		
-		certificate=json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
-		certificate_info=certificateInfo(certificate)
-		log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
+		certificate = safe_json_loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'certificate/record', args.vmanage_port, tokenid))
+		if certificate:
+			certificate_info=certificateInfo(certificate)
+			log_file_logger.info('Collected controllers certificate information: {}'.format(certificate_info))
+		else:
+			certificate_info = {}
+			log_file_logger.warning('Failed to retrieve certificate information')
 				
-		system_ip_data = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
-		system_ip = system_ip_data['data']['ipAddress']
-		table_data.append(['vManage System IP address',str(system_ip)]) 
+		system_ip_data = safe_json_loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device/vmanage', args.vmanage_port, tokenid))
+		if system_ip_data and 'data' in system_ip_data:
+			system_ip = system_ip_data['data']['ipAddress']
+			table_data.append(['vManage System IP address',str(system_ip)]) 
+		else:
+			log_file_logger.warning('Failed to retrieve vManage system IP data') 
 
 		cpu_speed = cpuSpeed()
 		table_data.append(['vManage CPU Speed',str(cpu_speed)]) 
@@ -2049,9 +2200,29 @@ if __name__ == "__main__":
 		cpu_count = cpuCount()
 		table_data.append(['vManage CPU Count',str(cpu_count)]) 
 
-		vedges = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device', args.vmanage_port , tokenid))
-		vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
-		table_data.append(['xEdge Count',str(vedge_count)]) 
+
+		vedges = safe_json_loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'device', args.vmanage_port , tokenid))
+		if vedges:
+			vedge_count,vedge_count_active, vedge_info = vedgeCount(vedges)
+			table_data.append(['xEdge Count',str(vedge_count)])
+		else:
+			vedge_count, vedge_count_active, vedge_info = 0, 0, {}
+			table_data.append(['xEdge Count','0'])
+			log_file_logger.warning('Failed to retrieve device count information')
+
+		# Always run the deprecated vEdge model check and add to summary table only
+		warning_checks = {}
+		run_deprecated_vedge_check(
+			vedges,
+			log_file_logger,
+			report_data,
+			failed_check_data,
+			warning_checks,
+			json_final_result,
+			'Warning',
+			result_log
+		)
+	# No separate print or writeFile for deprecated vEdge warning; only table row will be shown
 
 		cluster_size, server_mode, vmanage_info = serverMode(controllers_info)
 		table_data.append(['vManage Cluster Size',str(cluster_size)])   
@@ -2060,9 +2231,13 @@ if __name__ == "__main__":
 		disk_controller = diskController()
 		table_data.append(['vManage Disk Controller Type',str(disk_controller)])    
 
-		dpi_stats = json.loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
-		dpi_status = dpiStatus(dpi_stats)
-		table_data.append(['DPI Status',str(dpi_status)])
+		dpi_stats = safe_json_loads(getRequestpy3(version_tuple, vmanage_lo_ip, jsessionid , 'statistics/settings/status', args.vmanage_port, tokenid))
+		if dpi_stats:
+			dpi_status = dpiStatus(dpi_stats)
+			table_data.append(['DPI Status',str(dpi_status)])
+		else:
+			table_data.append(['DPI Status','Unknown'])
+			log_file_logger.warning('Failed to retrieve DPI status')
 
 		server_type, server_company  = serverType()
 		table_data.append(['Server Type',str(server_type)])
@@ -2086,10 +2261,13 @@ if __name__ == "__main__":
 																			"System IP Address":"{}".format(system_ip)
 																			}}
 		if cluster_size > 1:
-			cluster_health_data = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
-			vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
-			vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
-			log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
+			cluster_health_data = safe_json_loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'clusterManagement/health/details', args.vmanage_port, tokenid))
+			if cluster_health_data:
+				vmanage_cluster_ips = vmanage_cluster_ips(cluster_health_data)
+				vmanage_service_details = vmanage_service_details(vmanage_cluster_ips)
+				log_file_logger.info('deviceIPs of vManages in the cluster: {}'.format(vmanage_cluster_ips))
+			else:
+				log_file_logger.warning('Failed to retrieve cluster health data')
 			#log_file_logger.info('Service details of all vManages in the cluster: {}'.format(vmanage_service_details))
 		log_file_logger.info('Preliminary Tabulated data:\n{}'.format(printTable(table_data)))
 	except Exception as e:
@@ -2744,7 +2922,16 @@ if __name__ == "__main__":
 	try:
 		if vedge_info:
 			cedge_ip = next(iter(vedge_info.values()))[0]
-			cedge_validvsmarts_info = json.loads(getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'device/control/validvsmarts?deviceId={}'.format(cedge_ip), args.vmanage_port, tokenid))
+			validvsmarts_response = getRequestpy3(version_tuple,vmanage_lo_ip, jsessionid, 'device/control/validvsmarts?deviceId={}'.format(cedge_ip), args.vmanage_port, tokenid)
+			if validvsmarts_response is not None:
+				try:
+					cedge_validvsmarts_info = json.loads(validvsmarts_response)
+				except Exception as e:
+					log_file_logger.error('#{}: Error parsing validvsmarts API response: {}'.format(check_count_zfill, str(e)))
+					cedge_validvsmarts_info = None
+			else:
+				log_file_logger.error('#{}: validvsmarts API returned None for deviceId {}'.format(check_count_zfill, cedge_ip))
+				cedge_validvsmarts_info = None
 		else:
 			cedge_ip = None
 			cedge_validvsmarts_info = None
@@ -3459,6 +3646,23 @@ if __name__ == "__main__":
 		checks_failed = len(critical_checks)
 		checks_passed = check_count - checks_failed
 
+
+
+	# Always insert deprecated vEdge warning row as the first data row in the summary table
+	try:
+		if deprecated_vedge_row:
+			summary_row = [
+				deprecated_vedge_row[0],
+				deprecated_vedge_row[1],
+				deprecated_vedge_row[3],
+				deprecated_vedge_row[4]
+			]
+			# Only add if not already present
+			if summary_row not in failed_check_data:
+				failed_check_data.append(summary_row)
+	except Exception:
+		pass
+
 	#Writing to the failed checks to the report
 	if len(critical_checks) != 0:
 		for i in sorted (critical_checks.keys()):
@@ -3473,6 +3677,20 @@ if __name__ == "__main__":
 				failed_check_data.append([i.split(':')[0],i.split(':')[-1],cluster_checks[i][0],cluster_checks[i][1]])
 			else:
 				failed_check_data.append([i.split(':')[0],i.split(':')[-1],cluster_checks[i][0],""])
+
+	# Insert deprecated vEdge warning row at the top of failed_check_data if needed
+	try:
+		if deprecated_vedge_row and deprecated_vedge_row[2] in ("Warning", "Failed"):
+			summary_row = [
+				deprecated_vedge_row[0],
+				deprecated_vedge_row[1],
+				deprecated_vedge_row[3],
+				deprecated_vedge_row[4]
+			]
+			if summary_row not in failed_check_data:
+				failed_check_data.insert(1, summary_row)
+	except Exception:
+		pass
 
 
 	if cluster_size>1:
@@ -3504,9 +3722,73 @@ if __name__ == "__main__":
 	'Preliminary Tabulated data:\n\n',printTable(table_data),"\n\n"
 	]
 
+
+	# Add all warning checks to the ALL checks table
+	all_checks_data = []
+	all_checks_data.append(["Check no","Check Name","Check Result","Check Analysis","Check Actions"])
+	# Add critical and cluster checks first
+	for i in sorted(critical_checks.keys()):
+		if critical_checks[i][1] != None:
+			all_checks_data.append([str(i.split(':')[0]),i.split(':')[-1],"Failed",critical_checks[i][0],str(critical_checks[i][1])])
+		else:
+			all_checks_data.append([i.split(':')[0],i.split(':')[-1],"Failed",critical_checks[i][0],""])
+	if cluster_size>1 and len(cluster_checks) != 0:
+		for i in sorted(cluster_checks.keys()):
+			if cluster_checks[i][1] != None:
+				all_checks_data.append([i.split(':')[0],i.split(':')[-1],"Failed",cluster_checks[i][0],cluster_checks[i][1]])
+			else:
+				all_checks_data.append([i.split(':')[0],i.split(':')[-1],"Failed",cluster_checks[i][0],""])
+
+	# Always add deprecated vEdge device model warning as the first row in the table for visibility
+	try:
+		if deprecated_vedge_row:
+			# Reformat to combine warning and action into Check Actions column only
+			if deprecated_vedge_row[2] == "Failed":
+				combined_action = f"{deprecated_vedge_row[3]} {deprecated_vedge_row[4]}".strip()
+				all_checks_data.insert(1, [
+					deprecated_vedge_row[0],
+					deprecated_vedge_row[1],
+					deprecated_vedge_row[2],
+					"",  # Check Analysis left blank
+					combined_action
+				])
+			else:
+				all_checks_data.insert(1, [
+					deprecated_vedge_row[0],
+					deprecated_vedge_row[1],
+					deprecated_vedge_row[2],
+					"",
+					deprecated_vedge_row[4]
+				])
+	except Exception:
+		pass
+
+	# Also add the deprecated vEdge warning row to the failed_check_data for the summary table if it's a warning or failure
+	try:
+		if deprecated_vedge_row and deprecated_vedge_row[2] in ("Warning", "Failed"):
+			# Format: [Check no, Check Name, Check Result, Check Actions]
+			# For summary table, Check Result = Check Analysis, Check Actions = Check Actions
+			failed_check_data.insert(0, [
+				deprecated_vedge_row[0],
+				deprecated_vedge_row[1],
+				deprecated_vedge_row[3],
+				deprecated_vedge_row[4]
+			])
+	except Exception:
+		pass
+
+	# Add warning checks
+	for i in sorted(warning_checks.keys()):
+		if warning_checks[i][1] != None:
+			all_checks_data.append([i.split(':')[0],i.split(':')[-1],"Warning",warning_checks[i][0],warning_checks[i][1]])
+		else:
+			all_checks_data.append([i.split(':')[0],i.split(':')[-1],"Warning",warning_checks[i][0],""])
+
 	full_lst = [
 	'-----------------------------------------------------------------------------------------------------------------\n\n',
-	'Detailed list of ALL checks, and actions recommended\n\n'
+	'Detailed list of ALL checks, and actions recommended\n\n',
+	printTable(all_checks_data),
+	'\n\n'
 	]
 
 	json_final_result['json_data_pdf']['result summary'] = {'Overall upgrade evaluation': '{}'.format(final_eval),
