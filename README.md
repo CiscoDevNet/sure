@@ -98,7 +98,7 @@ optional arguments:
 | Specify vManage Port   | python py2_sure.py -u <vManageUsername> -vp <vManagePort> | python3 py3_sure.py -u <vManageUsername> -vp <vManagePort> |
 
 
-### Step3 :vManagae Password <br>
+### Step3 :vManage Password <br>
 After executing the python/python3 command, there will be a input prompt to enter the vManage Password. 
 ```sh 
 vmanage-cluster1:~$ python3 py3_sure.py -u <username>
